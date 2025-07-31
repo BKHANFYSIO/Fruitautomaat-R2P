@@ -390,6 +390,15 @@
   min-width: 100%;
 }
 
+.sub-sub-selector {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9em;
+}
+
 .game-mode-selector label:first-of-type {
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;

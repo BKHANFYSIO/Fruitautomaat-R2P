@@ -13,6 +13,7 @@ import { Scorebord } from './components/Scorebord';
 import { Fruitautomaat } from './components/Fruitautomaat';
 import { CategorieFilter } from './components/CategorieFilter';
 import { BestandsUploader } from './components/BestandsUploader';
+import { CategorieSelectieModal } from './components/CategorieSelectieModal';
 import { Instellingen } from './components/Instellingen';
 import { Uitleg } from './components/Uitleg';
 import { ActieDashboard } from './components/ActieDashboard';
@@ -78,8 +79,8 @@ function App() {
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
-    isLeitnerActief,
-    setIsLeitnerActief,
+      leermodusType,
+  setLeermodusType,
   } = useSettings();
 
   // Game engine hook
@@ -109,6 +110,8 @@ function App() {
   // UI state
 const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>([]);
 const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>([]);
+const [geselecteerdeMultiplayerCategorieen, setGeselecteerdeMultiplayerCategorieen] = useState<string[]>([]);
+const [geselecteerdeHighscoreCategorieen, setGeselecteerdeHighscoreCategorieen] = useState<string[]>([]);
 const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
@@ -116,6 +119,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [notificatie, setNotificatie] = useState<Notificatie>({ zichtbaar: false, bericht: '', type: 'succes' });
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
+  const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
+  const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
 
 
 
@@ -223,7 +228,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   // Effect om automatisch Leitner te activeren bij serieuze leer-modus
   useEffect(() => {
     if (isSerieuzeLeerModusActief && gameMode === 'single') {
-      setIsLeitnerActief(true);
+      setLeermodusType('leitner');
     }
   }, [isSerieuzeLeerModusActief, gameMode]);
 
@@ -255,7 +260,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   useEffect(() => {
     const leerDataManager = getLeerDataManager();
     const leitnerData = leerDataManager.loadLeitnerData();
-    setIsLeitnerActief(leitnerData.isLeitnerActief);
+            setLeermodusType(leitnerData.isLeitnerActief ? 'leitner' : 'normaal');
   }, []);
 
   // Effect om preferences te laden
@@ -273,11 +278,11 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   useEffect(() => {
     const leerDataManager = getLeerDataManager();
     const leitnerData = leerDataManager.loadLeitnerData();
-    if (leitnerData.isLeitnerActief !== isLeitnerActief) {
-      leitnerData.isLeitnerActief = isLeitnerActief;
+    if (leitnerData.isLeitnerActief !== (leermodusType === 'leitner')) {
+      leitnerData.isLeitnerActief = leermodusType === 'leitner';
       leerDataManager.saveLeitnerData(leitnerData);
     }
-  }, [isLeitnerActief]);
+  }, [leermodusType]);
 
   // Effect om spin vergrendeling voorkeur op te slaan wanneer deze verandert
   useEffect(() => {
@@ -352,7 +357,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     setGeselecteerdeCategorieen(categorieen);
     setGameMode('single');
     setIsSerieuzeLeerModusActief(true);
-    setIsLeitnerActief(true);
+          setLeermodusType('leitner');
 
     // Stap 3: Forceer een handmatige, synchrone update van de teller.
     // Dit omzeilt de asynchrone aard van useEffect voor een directe UI-update.
@@ -395,6 +400,18 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 
     window.addEventListener('openLeeranalyse', handleOpenLeeranalyse);
     return () => window.removeEventListener('openLeeranalyse', handleOpenLeeranalyse);
+  }, []);
+
+  // Effect om LeitnerCategorieBeheer te openen via custom event
+  useEffect(() => {
+      const handleOpenLeitnerCategorieBeheer = () => {
+    setIsCategorieBeheerOpen(true);
+    setIsCategorieSelectieOpen(false); // Sluit categorie selectie modal
+    setIsScoreLadeOpen(false); // Sluit mobiele menu
+  };
+
+    window.addEventListener('openLeitnerCategorieBeheer', handleOpenLeitnerCategorieBeheer);
+    return () => window.removeEventListener('openLeitnerCategorieBeheer', handleOpenLeitnerCategorieBeheer);
   }, []);
 
   // Effect om te scrollen naar de beoordelingssectie na een spin
@@ -451,14 +468,14 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 
   // Effect om Leitner statistieken te berekenen
   useEffect(() => {
-    if (isLeitnerActief && isSerieuzeLeerModusActief) {
+    if (leermodusType === 'leitner' && isSerieuzeLeerModusActief) {
       const leerDataManager = getLeerDataManager();
       const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen);
       setLeitnerStats(stats);
     } else {
       setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
     }
-  }, [isLeitnerActief, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, aantalBeurtenGespeeld]);
+  }, [leermodusType, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, aantalBeurtenGespeeld]);
 
   // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
   useEffect(() => {
@@ -522,6 +539,22 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       // Alleen initialiseren als er geen opgeslagen data is
       setGeselecteerdeLeitnerCategorieen([]);
     }
+
+    const multiplayerSelectie = localStorage.getItem('geselecteerdeCategorieen_multiplayer');
+    if (multiplayerSelectie) {
+      setGeselecteerdeMultiplayerCategorieen(JSON.parse(multiplayerSelectie));
+    } else if (opdrachten.length > 0) {
+      // Alleen initialiseren als er geen opgeslagen data is
+      setGeselecteerdeMultiplayerCategorieen(alleUniekeCategorieen);
+    }
+
+    const highscoreSelectie = localStorage.getItem('geselecteerdeCategorieen_highscore');
+    if (highscoreSelectie) {
+      setGeselecteerdeHighscoreCategorieen(JSON.parse(highscoreSelectie));
+    } else if (opdrachten.length > 0) {
+      // Alleen initialiseren als er geen opgeslagen data is
+      setGeselecteerdeHighscoreCategorieen(alleUniekeCategorieen);
+    }
   }, [opdrachten, alleUniekeCategorieen]);
 
   // Effect om normale categorie-selectie op te slaan
@@ -536,6 +569,16 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   useEffect(() => {
     localStorage.setItem('geselecteerdeCategorieen_leitner', JSON.stringify(geselecteerdeLeitnerCategorieen));
   }, [geselecteerdeLeitnerCategorieen]);
+
+  // Effect om multiplayer categorie-selectie op te slaan
+  useEffect(() => {
+    localStorage.setItem('geselecteerdeCategorieen_multiplayer', JSON.stringify(geselecteerdeMultiplayerCategorieen));
+  }, [geselecteerdeMultiplayerCategorieen]);
+
+  // Effect om highscore categorie-selectie op te slaan
+  useEffect(() => {
+    localStorage.setItem('geselecteerdeCategorieen_highscore', JSON.stringify(geselecteerdeHighscoreCategorieen));
+  }, [geselecteerdeHighscoreCategorieen]);
 
 
 
@@ -561,7 +604,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 
   // Filter opdrachten op basis van de juiste selectie
   const gefilterdeOpdrachten = useMemo(() => {
-    const actieveSelectie = isSerieuzeLeerModusActief && isLeitnerActief
+    const actieveSelectie = isSerieuzeLeerModusActief && leermodusType === 'leitner'
       ? geselecteerdeLeitnerCategorieen
       : geselecteerdeCategorieen;
     
@@ -573,7 +616,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     return opdrachten.filter((opdracht) =>
       actieveSelectie.includes(opdracht.Categorie)
     );
-  }, [opdrachten, geselecteerdeCategorieen, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, isLeitnerActief]);
+  }, [opdrachten, geselecteerdeCategorieen, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, leermodusType]);
 
   // Effect om de beurt te resetten als de huidige opdracht ongeldig wordt door categoriewijziging
   useEffect(() => {
@@ -634,7 +677,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const handleSpin = () => {
     // Vang het geval af waar geen opdrachten beschikbaar zijn
     if (gefilterdeOpdrachten.length === 0) {
-      const melding = isSerieuzeLeerModusActief && isLeitnerActief 
+      const melding = isSerieuzeLeerModusActief && leermodusType === 'leitner' 
         ? 'Selecteer eerst de categorieën die je wilt leren in het "Leitner Beheer" scherm.'
         : 'Selecteer eerst categorieën in de "Instellingen".';
         
@@ -1217,6 +1260,28 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     setIsUitlegOpen(true);
   };
 
+  // Handlers voor directe tab navigatie
+  const handleOpenHighscoreCategorieSelectie = () => {
+    setCategorieSelectieActiveTab('highscore');
+    setIsCategorieSelectieOpen(true);
+    setIsCategorieBeheerOpen(false); // Sluit Leitner modal
+    setIsScoreLadeOpen(false); // Sluit mobiele menu
+  };
+
+  const handleOpenMultiplayerCategorieSelectie = () => {
+    setCategorieSelectieActiveTab('multiplayer');
+    setIsCategorieSelectieOpen(true);
+    setIsCategorieBeheerOpen(false); // Sluit Leitner modal
+    setIsScoreLadeOpen(false); // Sluit mobiele menu
+  };
+
+  const handleOpenNormaleLeermodusCategorieSelectie = () => {
+    setCategorieSelectieActiveTab('normaal');
+    setIsCategorieSelectieOpen(true);
+    setIsCategorieBeheerOpen(false); // Sluit Leitner modal
+    setIsScoreLadeOpen(false); // Sluit mobiele menu
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -1288,6 +1353,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
           onSpelReset={resetSpelState}
           // Categorie beheer
           onOpenCategorieBeheer={handleOpenLeitnerCategorieBeheer}
+          onOpenCategorieSelectie={() => setIsCategorieSelectieOpen(true)}
         >
           {/* Opdrachtenbeheer Content */}
           <BestandsUploader
@@ -1336,10 +1402,35 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
         openToAchievements={openLeeranalyseToAchievements}
       />
 
+              <CategorieSelectieModal
+          isOpen={isCategorieSelectieOpen}
+          onClose={() => {
+            setIsCategorieSelectieOpen(false);
+            setIsCategorieBeheerOpen(false); // Reset Leitner modal state
+          }}
+        opdrachten={opdrachtenVoorFilter}
+        geselecteerdeCategorieen={geselecteerdeCategorieen}
+        onCategorieSelectie={handleCategorieSelectie}
+        onBulkCategorieSelectie={handleBulkCategorieSelectie}
+        gameMode={gameMode}
+        highScoreLibrary={getHighScoreLibrary()}
+        onHighScoreSelect={setGeselecteerdeCategorieen}
+        geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
+        setGeselecteerdeLeitnerCategorieen={setGeselecteerdeLeitnerCategorieen}
+        geselecteerdeMultiplayerCategorieen={geselecteerdeMultiplayerCategorieen}
+        setGeselecteerdeMultiplayerCategorieen={setGeselecteerdeMultiplayerCategorieen}
+        geselecteerdeHighscoreCategorieen={geselecteerdeHighscoreCategorieen}
+        setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
+        initialActiveTab={categorieSelectieActiveTab}
+      />
+
       {isCategorieBeheerOpen && (
         <LeitnerCategorieBeheer
           isOpen={isCategorieBeheerOpen}
-          onClose={() => setIsCategorieBeheerOpen(false)}
+          onClose={() => {
+            setIsCategorieBeheerOpen(false);
+            setIsCategorieSelectieOpen(false); // Reset categorie modal state
+          }}
           geselecteerdeCategorieen={geselecteerdeLeitnerCategorieen}
           setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
           alleCategorieen={alleUniekeCategorieen}
@@ -1375,6 +1466,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
                 isSpelGestart={isSpelGestart}
                 isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
                 setIsSerieuzeLeerModusActief={setIsSerieuzeLeerModusActief}
+                leermodusType={leermodusType}
+                setLeermodusType={setLeermodusType}
                 onSpelReset={resetSpelState}
               />
             </>
@@ -1393,32 +1486,64 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
             aantalBeurtenGespeeld={aantalBeurtenGespeeld}
           />
 
-          {/* Leitner informatie - alleen zichtbaar in leermodus */}
+          {/* Highscore informatie - alleen zichtbaar in highscore modus */}
+          {gameMode === 'single' && !isSerieuzeLeerModusActief && (
+            <div className="highscore-sectie">
+              <div className="highscore-header">
+                <h5>🏆 Highscore Modus</h5>
+              </div>
+              <div className="highscore-info">
+                <button 
+                  onClick={handleOpenHighscoreCategorieSelectie}
+                  className="categorie-beheer-knop"
+                  disabled={isSpelGestart}
+                >
+                  Categorieën aanpassen ({geselecteerdeHighscoreCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                  {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
+                </button>
+                <div className="highscore-info-text">
+                  <p>Probeer je beste score te behalen met de geselecteerde categorieën!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Multiplayer informatie - alleen zichtbaar in multiplayer modus */}
+          {gameMode === 'multi' && (
+            <div className="multiplayer-sectie">
+              <div className="multiplayer-header">
+                <h5>🎮 Multiplayer Modus</h5>
+              </div>
+              <div className="multiplayer-info">
+                <button 
+                  onClick={handleOpenMultiplayerCategorieSelectie}
+                  className="categorie-beheer-knop"
+                  disabled={isSpelGestart}
+                >
+                  Categorieën aanpassen ({geselecteerdeMultiplayerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                  {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
+                </button>
+                <div className="multiplayer-info-text">
+                  <p>Speel samen met vrienden en familie!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Leermodus informatie - alleen zichtbaar in leermodus */}
           {gameMode === 'single' && isSerieuzeLeerModusActief && (
             <div className="serieuze-leermodus-uitleg">
-              <div className="leitner-sectie">
-                <div className="leitner-header">
-                  <h5>🔄 Leitner Modus</h5>
-                  {setIsLeitnerActief && (
-                    <label className="leitner-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={isLeitnerActief}
-                        onChange={(e) => setIsLeitnerActief(e.target.checked)}
-                        disabled={isSpelGestart}
-                      />
-                      <span>Actief</span>
-                    </label>
-                  )}
-                </div>
-                
-                {isLeitnerActief && (
+              {leermodusType === 'leitner' && (
+                <div className="leitner-sectie">
+                  <div className="leitner-header">
+                    <h5>🔄 Leitner</h5>
+                  </div>
                   <div className="leitner-stats">
                     <button 
                       onClick={handleOpenLeitnerCategorieBeheer}
                       className="categorie-beheer-knop"
                     >
-                      📊 Pas te leren categorieën aan ({geselecteerdeLeitnerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                      Categorieën aanpassen ({geselecteerdeLeitnerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
                     </button>
                     <div className="leitner-stats-info">
                       <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
@@ -1429,8 +1554,26 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
                       </p>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+              {leermodusType === 'normaal' && (
+                <div className="normale-leermodus-sectie">
+                  <div className="normale-leermodus-header">
+                    <h5>📚 Normaal</h5>
+                  </div>
+                  <div className="normale-leermodus-info">
+                    <button 
+                      onClick={handleOpenNormaleLeermodusCategorieSelectie}
+                      className="categorie-beheer-knop"
+                    >
+                      Categorieën aanpassen ({geselecteerdeCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                    </button>
+                    <div className="normale-leermodus-info-text">
+                      <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

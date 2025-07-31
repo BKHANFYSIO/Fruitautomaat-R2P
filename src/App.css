@@ -494,4 +494,75 @@ header, footer, main {
   border-radius: 4px;
   z-index: 9999;
   font-size: 12px;
+}
+
+/* Modus-specifieke secties styling */
+.highscore-sectie {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(241, 196, 15, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #f1c40f;
+}
+
+.multiplayer-sectie {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(155, 89, 182, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #9b59b6;
+}
+
+.normale-leermodus-sectie {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(46, 204, 113, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #2ecc71;
+}
+
+.leitner-sectie {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.highscore-header h5,
+.multiplayer-header h5,
+.normale-leermodus-header h5,
+.leitner-header h5 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+}
+
+.highscore-info-text p,
+.multiplayer-info-text p,
+.normale-leermodus-info-text p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: #bdc3c7;
+  line-height: 1.4;
+}
+
+/* Disabled state styling voor categorie knoppen */
+.categorie-beheer-knop:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background-color: #7f8c8d !important;
+  color: #ecf0f1 !important;
+}
+
+.categorie-beheer-knop:disabled:hover {
+  background-color: #7f8c8d !important;
+  color: #ecf0f1 !important;
+}
+
+.disabled-hint {
+  color: #c0392b;
+  font-size: 0.8em;
+  font-style: italic;
+  font-weight: bold;
 } 

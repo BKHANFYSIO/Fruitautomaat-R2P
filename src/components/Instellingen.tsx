@@ -26,6 +26,7 @@ interface InstellingenProps {
   onSpelReset: () => void;
   // Categorie beheer
   onOpenCategorieBeheer: () => void;
+  onOpenCategorieSelectie: () => void;
 }
 
 export const Instellingen = React.memo(({
@@ -42,6 +43,7 @@ export const Instellingen = React.memo(({
   onSpelReset,
   // Categorie beheer
   onOpenCategorieBeheer,
+  onOpenCategorieSelectie,
 }: InstellingenProps) => {
   // Settings context
   const {
@@ -418,21 +420,33 @@ export const Instellingen = React.memo(({
 
             {/* --- Groep: Opdrachtenbeheer --- */}
           <div className="settings-group">
-            <h4>Opdrachtenbeheer</h4>
+            <h4>Opdrachten & Categorieën</h4>
             <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-              Je kunt de standaard opdrachten gebruiken, maar ook zelf opdrachten toevoegen of overschrijven. 
-              <br /><br />
-              <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
-              Kies vervolgens of je wilt aanvullen of overschrijven.
+              Beheer hier de opdrachten en selecteer de categorieën voor de normale spelmodus (Single Player & Multiplayer).
+            </p>
+
+            <button
+              className="instellingen-knop"
+              onClick={() => {
+                onOpenCategorieSelectie();
+                onClose(); // Sluit instellingen om de nieuwe modal te tonen
+              }}
+              style={{ marginBottom: '20px' }}
+            >
+              🎯 Beheer Categorieën (Normale Modus)
+            </button>
+            
+            <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+              <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand".
             </p>
             
             <div className="opdracht-knoppen-container">
               <button 
                 onClick={() => {
-                  // Call the downloadTemplate function from the BestandsUploader props
                   const data = [
                     { 
-                      Categorie: 'Voorbeeld Categorie', 
+                      Hoofdcategorie: 'Voorbeeld Hoofd',
+                      Categorie: 'Voorbeeld Sub', 
                       Opdracht: 'Voorbeeld Opdracht', 
                       Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
                       Tijdslimiet: 60,
@@ -450,8 +464,7 @@ export const Instellingen = React.memo(({
               </button>
               
               <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-                <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
-                Dit is een snelle manier om veel opdrachten te maken.
+                <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool.
               </p>
               
               <button 
@@ -463,8 +476,7 @@ export const Instellingen = React.memo(({
             </div>
             
             <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-              <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
-              Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
+              <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je Excel-bestand. Kies vervolgens of je wilt aanvullen of overschrijven.
             </p>
             
             {children}

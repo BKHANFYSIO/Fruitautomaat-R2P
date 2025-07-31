@@ -38,8 +38,8 @@ interface SettingsContextType {
   setIsSerieuzeLeerModusActief: (actief: boolean) => void;
   isLeerFeedbackActief: boolean;
   setIsLeerFeedbackActief: (actief: boolean) => void;
-  isLeitnerActief: boolean;
-  setIsLeitnerActief: (actief: boolean) => void;
+  leermodusType: 'normaal' | 'leitner';
+  setLeermodusType: (type: 'normaal' | 'leitner') => void;
   
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
@@ -81,7 +81,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Learning mode settings
   const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(false);
   const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(true);
-  const [isLeitnerActief, setIsLeitnerActief] = useState(false);
+  const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>('normaal');
   
   // Bonus settings
   const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(false);
@@ -120,8 +120,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
-    isLeitnerActief,
-    setIsLeitnerActief,
+    leermodusType,
+    setLeermodusType,
     
     // Bonus settings
     isLokaleBonusOpslagActief,

@@ -11,6 +11,8 @@ interface SpelerInputProps {
   isSpelGestart: boolean;
   isSerieuzeLeerModusActief?: boolean;
   setIsSerieuzeLeerModusActief?: (isActief: boolean) => void;
+  leermodusType?: 'normaal' | 'leitner';
+  setLeermodusType?: (type: 'normaal' | 'leitner') => void;
   onSpelReset?: () => void;
 }
 
@@ -22,6 +24,8 @@ export const SpelerInput = ({
   isSpelGestart, 
   isSerieuzeLeerModusActief = false,
   setIsSerieuzeLeerModusActief,
+  leermodusType = 'normaal',
+  setLeermodusType,
   onSpelReset,
 }: SpelerInputProps) => {
   const [naam, setNaam] = useState('');
@@ -86,11 +90,33 @@ export const SpelerInput = ({
     </div>
   );
 
+  // Tooltip content voor leermodus types - dynamisch op basis van huidige selectie
+  const leermodusTypeTooltip = leermodusType === 'normaal' ? (
+    <div className="tooltip-content">
+      <h4>🔄 Schakel naar Leitner</h4>
+      <p><strong>Wat verandert er?</strong> Je schakelt over naar de geavanceerde Leitner leermethode.</p>
+      <p><strong>Voordelen:</strong> Spaced repetition met box systeem, gedetailleerde statistieken en optimale herhaling timing.</p>
+      <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
+    </div>
+  ) : (
+    <div className="tooltip-content">
+      <h4>📚 Schakel naar Normaal</h4>
+      <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige normale leermodus.</p>
+      <p><strong>Voordelen:</strong> Eenvoudige herhaling, snelle sessies en basis data opslag.</p>
+      <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
+    </div>
+  );
+
   // Eenvoudige tooltip state
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
 
   const handleTooltipToggle = () => {
     setShowTooltip(!showTooltip);
+  };
+
+  const handleLeermodusTypeTooltipToggle = () => {
+    setShowLeermodusTypeTooltip(!showLeermodusTypeTooltip);
   };
 
   const gameModeSelector = (
@@ -151,6 +177,37 @@ export const SpelerInput = ({
     </div>
   );
 
+  const leermodusTypeSelector = (
+    <div 
+      className="game-mode-selector sub-selector sub-sub-selector"
+      onMouseEnter={handleLeermodusTypeTooltipToggle}
+      onMouseLeave={handleLeermodusTypeTooltipToggle}
+    >
+      <label>
+        <input 
+          type="radio" 
+          name="leermodusType" 
+          value="normaal" 
+          checked={leermodusType === 'normaal'} 
+          onChange={() => setLeermodusType?.('normaal')}
+          disabled={isSpelGestart}
+        />
+        📚 Normaal
+      </label>
+      <label>
+        <input 
+          type="radio" 
+          name="leermodusType" 
+          value="leitner" 
+          checked={leermodusType === 'leitner'} 
+          onChange={() => setLeermodusType?.('leitner')}
+          disabled={isSpelGestart}
+        />
+        🔄 Leitner
+      </label>
+    </div>
+  );
+
   return (
     <div className="speler-input-form">
       {gameModeSelector}
@@ -161,6 +218,17 @@ export const SpelerInput = ({
           {showTooltip && (
             <div className="tooltip tooltip-top">
               {leermodusTooltip}
+            </div>
+          )}
+        </div>
+      )}
+
+      {gameMode === 'single' && isSerieuzeLeerModusActief && (
+        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'stretch' }}>
+          {leermodusTypeSelector}
+          {showLeermodusTypeTooltip && (
+            <div className="tooltip tooltip-top">
+              {leermodusTypeTooltip}
             </div>
           )}
         </div>
