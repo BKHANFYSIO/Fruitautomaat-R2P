@@ -107,14 +107,17 @@ function App() {
   } = useGameEngine();
 
   // UI state
-  const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>([]);
-  const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
+const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>([]);
+const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>([]);
+const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [notificatie, setNotificatie] = useState<Notificatie>({ zichtbaar: false, bericht: '', type: 'succes' });
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
+
+
 
   // File upload state
   const [isVervangenActief, setIsVervangenActief] = useState(false);
@@ -415,6 +418,7 @@ function App() {
     }
   }, [gamePhase]);
 
+
   // Effect om te waarschuwen bij het verlaten van de pagina
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -449,12 +453,12 @@ function App() {
   useEffect(() => {
     if (isLeitnerActief && isSerieuzeLeerModusActief) {
       const leerDataManager = getLeerDataManager();
-      const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen);
+      const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen);
       setLeitnerStats(stats);
     } else {
       setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
     }
-  }, [isLeitnerActief, isSerieuzeLeerModusActief, geselecteerdeCategorieen, aantalBeurtenGespeeld]);
+  }, [isLeitnerActief, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, aantalBeurtenGespeeld]);
 
   // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
   useEffect(() => {
@@ -500,12 +504,40 @@ function App() {
     return [...new Set(opdrachten.map((o) => o.Categorie))];
   }, [opdrachten]);
 
-  // Update de geselecteerde categorieën wanneer de opdrachten geladen zijn
+  // Effect om categorie-selecties te laden uit localStorage of te initialiseren
   useEffect(() => {
-    if (opdrachten.length > 0) {
+    // Probeer eerst opgeslagen selecties te laden
+    const normaleSelectie = localStorage.getItem('geselecteerdeCategorieen_normaal');
+    if (normaleSelectie) {
+      setGeselecteerdeCategorieen(JSON.parse(normaleSelectie));
+    } else if (opdrachten.length > 0) {
+      // Alleen initialiseren als er geen opgeslagen data is EN opdrachten geladen zijn
       setGeselecteerdeCategorieen(alleUniekeCategorieen);
     }
+
+    const leitnerSelectie = localStorage.getItem('geselecteerdeCategorieen_leitner');
+    if (leitnerSelectie) {
+      setGeselecteerdeLeitnerCategorieen(JSON.parse(leitnerSelectie));
+    } else if (opdrachten.length > 0) {
+      // Alleen initialiseren als er geen opgeslagen data is
+      setGeselecteerdeLeitnerCategorieen([]);
+    }
   }, [opdrachten, alleUniekeCategorieen]);
+
+  // Effect om normale categorie-selectie op te slaan
+  useEffect(() => {
+    // Voorkom het opslaan van een lege array bij de allereerste render
+    if (geselecteerdeCategorieen.length > 0) {
+      localStorage.setItem('geselecteerdeCategorieen_normaal', JSON.stringify(geselecteerdeCategorieen));
+    }
+  }, [geselecteerdeCategorieen]);
+
+  // Effect om Leitner categorie-selectie op te slaan
+  useEffect(() => {
+    localStorage.setItem('geselecteerdeCategorieen_leitner', JSON.stringify(geselecteerdeLeitnerCategorieen));
+  }, [geselecteerdeLeitnerCategorieen]);
+
+
 
   const handleCategorieSelectie = (categorie: string) => {
     setGeselecteerdeCategorieen((prev) =>
@@ -527,17 +559,33 @@ function App() {
     });
   };
 
-  // Filter opdrachten op basis van selectie
+  // Filter opdrachten op basis van de juiste selectie
   const gefilterdeOpdrachten = useMemo(() => {
-    // In multiplayer of als geen categorieën geselecteerd zijn, toon alle opdrachten
-    if (gameMode === 'multi' || geselecteerdeCategorieen.length === 0) {
-      return opdrachten;
+    const actieveSelectie = isSerieuzeLeerModusActief && isLeitnerActief
+      ? geselecteerdeLeitnerCategorieen
+      : geselecteerdeCategorieen;
+    
+    // Als de selectie leeg is, zijn er geen opdrachten
+    if (actieveSelectie.length === 0) {
+      return [];
     }
-    // Anders filter op geselecteerde categorieën
+
     return opdrachten.filter((opdracht) =>
-      geselecteerdeCategorieen.includes(opdracht.Categorie)
+      actieveSelectie.includes(opdracht.Categorie)
     );
-  }, [opdrachten, geselecteerdeCategorieen, gameMode]);
+  }, [opdrachten, geselecteerdeCategorieen, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, isLeitnerActief]);
+
+  // Effect om de beurt te resetten als de huidige opdracht ongeldig wordt door categoriewijziging
+  useEffect(() => {
+    if (huidigeOpdracht && !gefilterdeOpdrachten.some(op => op.Opdracht === huidigeOpdracht.opdracht.Opdracht)) {
+      // De huidige opdracht is niet langer in de lijst van geldige opdrachten.
+      // Reset de beurt om een 'stuck' state te voorkomen.
+      setHuidigeOpdracht(null);
+      setHuidigeSpinAnalyse(null);
+      setIsAntwoordVergrendeld(false);
+      setGamePhase('idle');
+    }
+  }, [gefilterdeOpdrachten, huidigeOpdracht]);
 
   const handleSpelerToevoegen = (naam: string) => {
     if (spelers.find((speler) => speler.naam.toLowerCase() === naam.toLowerCase())) {
@@ -584,6 +632,21 @@ function App() {
   }));
 
   const handleSpin = () => {
+    // Vang het geval af waar geen opdrachten beschikbaar zijn
+    if (gefilterdeOpdrachten.length === 0) {
+      const melding = isSerieuzeLeerModusActief && isLeitnerActief 
+        ? 'Selecteer eerst de categorieën die je wilt leren in het "Leitner Beheer" scherm.'
+        : 'Selecteer eerst categorieën in de "Instellingen".';
+        
+      setNotificatie({ 
+        zichtbaar: true, 
+        bericht: `Geen opdrachten beschikbaar. ${melding}`,
+        type: 'fout' 
+      });
+      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 5000);
+      return;
+    }
+
     if (!isSpelGestart) {
       setIsSpelGestart(true);
       
@@ -681,10 +744,10 @@ function App() {
       // Filter de te herhalen opdrachten HIER met de meest up-to-date state
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
-        geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
+        geselecteerdeLeitnerCategorieen.includes(item.opdrachtId.split('_')[0])
       );
       
-      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
+      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeLeitnerCategorieen);
       gekozenOpdracht = result.opdracht;
       opdrachtType = result.type;
       boxNummer = result.box;
@@ -1277,8 +1340,8 @@ function App() {
         <LeitnerCategorieBeheer
           isOpen={isCategorieBeheerOpen}
           onClose={() => setIsCategorieBeheerOpen(false)}
-          geselecteerdeCategorieen={geselecteerdeCategorieen}
-          setGeselecteerdeCategorieen={setGeselecteerdeCategorieen}
+          geselecteerdeCategorieen={geselecteerdeLeitnerCategorieen}
+          setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
           alleCategorieen={alleUniekeCategorieen}
           alleOpdrachten={opdrachten}
         />
@@ -1355,7 +1418,7 @@ function App() {
                       onClick={handleOpenLeitnerCategorieBeheer}
                       className="categorie-beheer-knop"
                     >
-                      📊 Pas te leren categorieën aan ({geselecteerdeCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                      📊 Pas te leren categorieën aan ({geselecteerdeLeitnerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
                     </button>
                     <div className="leitner-stats-info">
                       <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
@@ -1431,7 +1494,7 @@ function App() {
             resultaat={spinResultaat}
             fruitDisplayItems={fruitDisplayItems}
             onSpin={handleSpin}
-            isSpinButtonDisabled={isAanHetSpinnen || gefilterdeOpdrachten.length === 0 || !heeftVoldoendeSpelers() || isAntwoordVergrendeld}
+            isSpinButtonDisabled={isAanHetSpinnen || !heeftVoldoendeSpelers() || isAntwoordVergrendeld}
             spinAnalyse={huidigeSpinAnalyse}
             isGeluidActief={isGeluidActief}
             gamePhase={gamePhase}
