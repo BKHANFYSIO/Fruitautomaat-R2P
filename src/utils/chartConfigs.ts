@@ -10,6 +10,7 @@ import {
   Legend,
   RadialLinearScale,
   ArcElement,
+  Filler, 
 } from 'chart.js';
 
 // Registreer alle benodigde Chart.js componenten
@@ -23,7 +24,8 @@ ChartJS.register(
   Tooltip,
   Legend,
   RadialLinearScale,
-  ArcElement
+  ArcElement,
+  Filler
 );
 
 // Basis configuratie voor alle grafieken

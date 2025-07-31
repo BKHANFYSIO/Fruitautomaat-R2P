@@ -1,6 +1,7 @@
 export type GamePhase = 'idle' | 'spinning' | 'assessment' | 'partner_choice' | 'double_or_nothing' | 'bonus_round' | 'ended';
 
 export interface Opdracht {
+  Hoofdcategorie?: string;
   Categorie: string;
   Opdracht: string;
   Antwoordsleutel: string;

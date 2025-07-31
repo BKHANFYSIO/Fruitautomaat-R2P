@@ -341,9 +341,14 @@ const LEITNER_ACHIEVEMENTS: Omit<LeitnerAchievement, 'behaaldOp'>[] = [
 // LeerData Manager Class
 class LeerDataManager {
   private spelerId: string;
+  private _alleOpdrachten: Opdracht[] = [];
 
   constructor(spelerId: string) {
     this.spelerId = spelerId;
+  }
+
+  public setAlleOpdrachten(opdrachten: Opdracht[]): void {
+    this._alleOpdrachten = opdrachten;
   }
 
   getSpelerId(): string {
@@ -561,8 +566,17 @@ class LeerDataManager {
 
   // Statistieken berekening
   private updateStatistieken(leerData: LeerData): void {
+    const alleOpdrachten = this._alleOpdrachten;
     const opdrachten = Object.values(leerData.opdrachten);
     const sessies = Object.values(leerData.sessies).filter(s => s.eindTijd);
+
+    // Maak een map van subcategorie naar hoofdcategorie
+    const subNaarHoofdMap = new Map<string, string>();
+    alleOpdrachten.forEach(op => {
+        if (!subNaarHoofdMap.has(op.Categorie)) {
+            subNaarHoofdMap.set(op.Categorie, op.Hoofdcategorie || 'Overig');
+        }
+    });
 
     // Basis statistieken
     leerData.statistieken.totaalOpdrachten = opdrachten.reduce((sum, op) => sum + op.aantalKeerGedaan, 0);
@@ -902,6 +916,56 @@ class LeerDataManager {
       opdrachten: {},
       sessies: {}
     };
+  }
+
+  public getHoofdcategorieStatistieken(): Record<string, any> {
+    const leerData = this.loadLeerData();
+    if (!leerData || !this._alleOpdrachten.length) {
+      return {};
+    }
+
+    // Maak een map van subcategorie naar hoofdcategorie
+    const subNaarHoofdMap = new Map<string, string>();
+    this._alleOpdrachten.forEach(op => {
+      if (!subNaarHoofdMap.has(op.Categorie)) {
+        subNaarHoofdMap.set(op.Categorie, op.Hoofdcategorie || 'Overig');
+      }
+    });
+
+    const hoofdCategorieStats: Record<string, any> = {};
+
+    for (const subCat in leerData.statistieken.categorieStatistieken) {
+      const subStat = leerData.statistieken.categorieStatistieken[subCat];
+      const hoofdCat = subNaarHoofdMap.get(subCat) || 'Overig';
+
+      if (!hoofdCategorieStats[hoofdCat]) {
+        hoofdCategorieStats[hoofdCat] = {
+          categorie: hoofdCat,
+          aantalOpdrachten: 0,
+          gemiddeldeScore: [],
+          laatsteActiviteit: '1970-01-01T00:00:00.000Z',
+          subCategorieen: []
+        };
+      }
+
+      const hoofdStat = hoofdCategorieStats[hoofdCat];
+      hoofdStat.aantalOpdrachten += subStat.aantalOpdrachten;
+      hoofdStat.gemiddeldeScore.push(subStat.gemiddeldeScore);
+      if (new Date(subStat.laatsteActiviteit) > new Date(hoofdStat.laatsteActiviteit)) {
+        hoofdStat.laatsteActiviteit = subStat.laatsteActiviteit;
+      }
+      hoofdStat.subCategorieen.push(subStat);
+    }
+    
+    // Bereken het uiteindelijke gemiddelde
+    for (const hoofdCat in hoofdCategorieStats) {
+      const scores = hoofdCategorieStats[hoofdCat].gemiddeldeScore;
+      hoofdCategorieStats[hoofdCat].gemiddeldeScore = scores.length > 0
+        ? berekenGemiddeldeScore(scores)
+        : 0;
+    }
+
+    return hoofdCategorieStats;
   }
 
   // Export/Import functionaliteit

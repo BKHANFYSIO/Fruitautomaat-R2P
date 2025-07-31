@@ -67,7 +67,17 @@ export const Fruitautomaat = ({
     }
   }, [isSpinning, playRolStop]);
 
-  const categorieen = useMemo(() => [...new Set(opdrachten.map(o => o.Categorie))], [opdrachten]);
+  const categorieItems = useMemo(() => {
+    return [
+      ...new Set(
+        opdrachten.map(o => 
+          o.Hoofdcategorie 
+            ? `${o.Hoofdcategorie}: ${o.Categorie}` 
+            : o.Categorie
+        )
+      )
+    ];
+  }, [opdrachten]);
   const opdrachtTeksten = useMemo(() => opdrachten.map(o => o.Opdracht), [opdrachten]);
   const spelerNamen = useMemo(() => {
     return spelers.map(s => s.naam);
@@ -91,7 +101,7 @@ export const Fruitautomaat = ({
 
           <div className="opdracht-rij">
             <div className="opdracht-rol categorie-rol">
-              <Rol items={resultaat.categorie === -1 ? ['Categorie'] : categorieen} stopAt={resultaat.categorie === -1 ? 0 : resultaat.categorie} isSpinning={activeSpin.categorie} height={120} />
+              <Rol items={resultaat.categorie === -1 ? ['Categorie'] : categorieItems} stopAt={resultaat.categorie === -1 ? 0 : resultaat.categorie} isSpinning={activeSpin.categorie} height={120} />
             </div>
             <div className="opdracht-rol opdracht-tekst-rol">
               <Rol items={isBonusRondeActief ? ['Doe eerst de bonusopdracht'] : (resultaat.opdracht === -1 ? ['Opdracht'] : opdrachtTeksten)} stopAt={isBonusRondeActief ? 0 : (resultaat.opdracht === -1 ? 0 : resultaat.opdracht)} isSpinning={activeSpin.opdracht} height={120} />

@@ -133,6 +133,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   const [leitnerData, setLeitnerData] = useState<LeitnerData | null>(null);
   const [achievementDefs, setAchievementDefs] = useState<{ algemeen: Omit<Achievement, 'behaaldOp'>[], leitner: Omit<LeitnerAchievement, 'behaaldOp'>[] }>({ algemeen: [], leitner: [] });
   const [activeTab, setActiveTab] = useState<'overzicht' | 'categorieen' | 'achievements' | 'leitner'>(openToAchievements ? 'achievements' : 'overzicht');
+  const [openAnalyseCategorieen, setOpenAnalyseCategorieen] = useState<Record<string, boolean>>({});
   const [showLeitnerUitleg, setShowLeitnerUitleg] = useState(false);
   const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({ isOpen: false, title: '', content: '' });
 
@@ -851,159 +852,145 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                 </div>
               )}
 
-              {activeTab === 'categorieen' && (
-                <div className="categorieen-tab">
-                  <h3>📚 Categorie Analyse</h3>
-                  {Object.values(leerData.statistieken.categorieStatistieken).length === 0 ? (
-                    <p>Nog geen categorieën geprobeerd.</p>
-                  ) : (
+              {activeTab === 'categorieen' && (() => {
+                const leerDataManager = getLeerDataManager();
+                const hoofdcategorieData = Object.values(leerDataManager.getHoofdcategorieStatistieken());
+                const vergelijking = leerDataManager.getCategorieVergelijking();
+                
+                const toggleHoofdCategorie = (categorie: string) => {
+                  setOpenAnalyseCategorieen(prev => ({ ...prev, [categorie]: !prev[categorie] }));
+                };
+
+                const renderCardContent = (categorie: any) => {
+                  const beheersing = leerDataManager.getCategorieBeheersing(categorie.categorie);
+                  const verdeling = leerDataManager.getLeitnerBoxVerdelingVoorCategorie(categorie.categorie);
+                  const scoreGeschiedenis = leerDataManager.getScoreGeschiedenisVoorCategorie(categorie.categorie);
+
+                  return (
                     <>
-                      {/* Categorie Vergelijking */}
-                      {(() => {
-                        const leerDataManager = getLeerDataManager();
-                        const vergelijking = leerDataManager.getCategorieVergelijking();
-                        return (
-                          <div className="categorie-vergelijking">
-                            <h4>🏆 Categorie Ranking</h4>
-                            <div className="vergelijking-cards">
-                              <div className="vergelijking-card beste">
-                                <h5>🥇 Beste Categorie</h5>
-                                <p className="categorie-naam">{vergelijking.besteCategorie}</p>
-                                <p className="categorie-score">
-                                  {vergelijking.categorieRanking.length > 0 
-                                    ? `${vergelijking.categorieRanking[0].beheersingPercentage.toFixed(1)}% beheersing`
-                                    : 'Geen data'
-                                  }
-                                </p>
-                              </div>
-                              <div className="vergelijking-card zwakste">
-                                <h5>🎯 Verbeterpunt</h5>
-                                <p className="categorie-naam">{vergelijking.zwaksteCategorie}</p>
-                                <p className="categorie-score">
-                                  {vergelijking.categorieRanking.length > 0 
-                                    ? `${vergelijking.categorieRanking[vergelijking.categorieRanking.length - 1].beheersingPercentage.toFixed(1)}% beheersing`
-                                    : 'Geen data'
-                                  }
-                                </p>
-                              </div>
-                            </div>
+                      <div className="beheersing-statistieken">
+                        <div className="beheersing-row">
+                          <div className="beheersing-item">
+                            <span className="beheersing-label">🎯 Beheersing:</span>
+                            <span className="beheersing-waarde">{beheersing.beheersingPercentage.toFixed(1)}%</span>
                           </div>
-                        );
-                      })()}
-
-                      <div className="categorieen-lijst">
-                        {Object.values(leerData.statistieken.categorieStatistieken).map((categorie) => {
-                          const leerDataManager = getLeerDataManager();
-                          const beheersing = leerDataManager.getCategorieBeheersing(categorie.categorie);
-                          const verdeling = leerDataManager.getLeitnerBoxVerdelingVoorCategorie(categorie.categorie);
-                          const scoreGeschiedenis = leerDataManager.getScoreGeschiedenisVoorCategorie(categorie.categorie);
-                          const mastery = leerDataManager.getCategorieMastery(categorie.categorie);
-
-                          return (
-                            <div key={categorie.categorie} className="categorie-card">
-                              <div className="categorie-card-header">
-                                <h4>{categorie.categorie}</h4>
-                                <MasteryIndicator level={mastery.level} percentage={mastery.percentage} />
-                              </div>
-                              
-                              {/* Nieuwe beheersing statistieken */}
-                              <div className="beheersing-statistieken">
-                                <div className="beheersing-row">
-                                  <div className="beheersing-item">
-                                    <span className="beheersing-label">🎯 Beheersing:</span>
-                                    <span className="beheersing-waarde">{beheersing.beheersingPercentage.toFixed(1)}%</span>
-                                  </div>
-                                  <div className="beheersing-item">
-                                    <span className="beheersing-label">📦 Gemiddelde box:</span>
-                                    <span className="beheersing-waarde">{beheersing.gemiddeldeBox.toFixed(1)}</span>
-                                  </div>
-                                </div>
-                                <div className="beheersing-row">
-                                  <div className="beheersing-item">
-                                    <span className="beheersing-label">✅ Beheerst:</span>
-                                    <span className="beheersing-waarde">{beheersing.beheerstOpdrachten}/{beheersing.totaalOpdrachten}</span>
-                                  </div>
-                                  <div className="beheersing-item">
-                                    <span className="beheersing-label">⚡ Vandaag:</span>
-                                    <span className="beheersing-waarde">{beheersing.vandaagBeschikbaar} beschikbaar</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Score trend en consistentie */}
-                              <div className="score-trend-info">
-                                <div className="trend-item">
-                                  <span className="trend-label">📈 Score trend:</span>
-                                  <span className={`trend-waarde ${beheersing.scoreTrend}`}>
-                                    {beheersing.scoreTrend === 'stijgend' ? '↗️ Stijgend' : 
-                                     beheersing.scoreTrend === 'dalend' ? '↘️ Dalend' : '➡️ Stabiel'}
-                                  </span>
-                                </div>
-                                <div className="trend-item">
-                                  <span className="trend-label">🎯 Consistentie:</span>
-                                  <span className="trend-waarde">{beheersing.consistentieScore.toFixed(0)}%</span>
-                                </div>
-                              </div>
-
-                              <LeitnerVerdelingBar verdeling={verdeling} />
-                              <ScoreTrendSparkline data={scoreGeschiedenis} />
-                              
-                              <div className="categorie-acties">
-                                <button
-                                  className="focus-knop"
-                                  onClick={() => onStartFocusSessie && onStartFocusSessie(categorie.categorie)}
-                                >
-                                  🎯 Focus Oefening
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-
-
-                      {beheersingBarData && (
-                        <div className="chart-sectie">
-                          <h3>📊 Beheersing per Categorie</h3>
-                          <div className="chart-container">
-                            <Bar data={beheersingBarData} options={{
-                              ...barChartConfig,
-                              indexAxis: 'y', // Horizontale bars
-                              plugins: {
-                                ...barChartConfig.plugins,
-                                tooltip: {
-                                  callbacks: {
-                                    label: function(context: any) {
-                                      return `Beheersing: ${context.parsed.x.toFixed(1)}%`;
-                                    }
-                                  }
-                                }
-                              },
-                              scales: {
-                                x: {
-                                  beginAtZero: true,
-                                  max: 100,
-                                  title: {
-                                    display: true,
-                                    text: 'Beheersing Percentage'
-                                  }
-                                },
-                                y: {
-                                  title: {
-                                    display: true,
-                                    text: 'Categorieën'
-                                  }
-                                }
-                              }
-                            }} />
+                          <div className="beheersing-item">
+                            <span className="beheersing-label">📦 Gem. box:</span>
+                            <span className="beheersing-waarde">{beheersing.gemiddeldeBox.toFixed(1)}</span>
                           </div>
                         </div>
-                      )}
+                        <div className="beheersing-row">
+                          <div className="beheersing-item">
+                            <span className="beheersing-label">✅ Beheerst:</span>
+                            <span className="beheersing-waarde">{beheersing.beheerstOpdrachten}/{beheersing.totaalOpdrachten}</span>
+                          </div>
+                          <div className="beheersing-item">
+                            <span className="beheersing-label">⚡ Vandaag:</span>
+                            <span className="beheersing-waarde">{beheersing.vandaagBeschikbaar} beschikbaar</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="score-trend-info">
+                        <div className="trend-item">
+                          <span className="trend-label">📈 Score trend:</span>
+                          <span className={`trend-waarde ${beheersing.scoreTrend}`}>
+                            {beheersing.scoreTrend === 'stijgend' ? '↗️ Stijgend' : 
+                             beheersing.scoreTrend === 'dalend' ? '↘️ Dalend' : '➡️ Stabiel'}
+                          </span>
+                        </div>
+                        <div className="trend-item">
+                          <span className="trend-label">🎯 Consistentie:</span>
+                          <span className="trend-waarde">{beheersing.consistentieScore.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                      <LeitnerVerdelingBar verdeling={verdeling} />
+                      <ScoreTrendSparkline data={scoreGeschiedenis} />
+                      <div className="categorie-acties">
+                        <button
+                          className="focus-knop"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onStartFocusSessie) onStartFocusSessie(categorie.categorie);
+                          }}
+                        >
+                          🎯 Focus Oefening
+                        </button>
+                      </div>
                     </>
-                  )}
-                </div>
-              )}
+                  );
+                };
+
+                return (
+                  <div className="categorieen-tab">
+                    {hoofdcategorieData.length === 0 ? (
+                      <p>Nog geen categorieën geprobeerd.</p>
+                    ) : (
+                      <>
+                        <div className="categorie-vergelijking">
+                          <h4>🏆 Categorie Ranking</h4>
+                          <div className="vergelijking-cards">
+                            <div className="vergelijking-card beste">
+                              <h5>🥇 Beste Categorie</h5>
+                              <p className="categorie-naam">{vergelijking.besteCategorie}</p>
+                              <p className="categorie-score">
+                                {vergelijking.categorieRanking.length > 0
+                                  ? `${vergelijking.categorieRanking[0].beheersingPercentage.toFixed(1)}% beheersing`
+                                  : 'Geen data'
+                                }
+                              </p>
+                            </div>
+                            <div className="vergelijking-card zwakste">
+                              <h5>🎯 Verbeterpunt</h5>
+                              <p className="categorie-naam">{vergelijking.zwaksteCategorie}</p>
+                              <p className="categorie-score">
+                                {vergelijking.categorieRanking.length > 0
+                                  ? `${vergelijking.categorieRanking[vergelijking.categorieRanking.length - 1].beheersingPercentage.toFixed(1)}% beheersing`
+                                  : 'Geen data'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="categorieen-lijst">
+                          {hoofdcategorieData.map((hoofdCat: any) => {
+                            const mastery = leerDataManager.getCategorieMastery(hoofdCat.categorie);
+                            const isOpen = openAnalyseCategorieen[hoofdCat.categorie];
+
+                            return (
+                              <React.Fragment key={hoofdCat.categorie}>
+                                <div className="categorie-card hoofd-categorie" onClick={() => toggleHoofdCategorie(hoofdCat.categorie)}>
+                                  <div className="categorie-card-header">
+                                    <h4>
+                                      <span className={`pijl ${isOpen ? 'open' : ''}`}>▶</span>
+                                      {hoofdCat.categorie}
+                                    </h4>
+                                    <MasteryIndicator level={mastery.level} percentage={mastery.percentage} />
+                                  </div>
+                                  {renderCardContent(hoofdCat)}
+                                </div>
+                                
+                                {isOpen && hoofdCat.subCategorieen.map((subCat: any) => {
+                                  const subMastery = leerDataManager.getCategorieMastery(subCat.categorie);
+                                  return (
+                                    <div key={subCat.categorie} className="categorie-card sub-categorie">
+                                      <div className="categorie-card-header">
+                                        <h4>{subCat.categorie}</h4>
+                                        <MasteryIndicator level={subMastery.level} percentage={subMastery.percentage} />
+                                      </div>
+                                      {renderCardContent(subCat)}
+                                    </div>
+                                  );
+                                })}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
 
 

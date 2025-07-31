@@ -475,4 +475,101 @@
   background-color: #38a169;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
-} 
+}
+
+/* CategorieFilter styling */
+.categorie-filter-container {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  background-color: #384355;
+}
+
+.categorie-filter-acties {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.categorie-filter-knop {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.categorie-filter-knop.selecteer {
+  background-color: #38a169;
+}
+
+.categorie-filter-knop.deselecteer {
+  background-color: #e53e3e;
+}
+
+.recordpoging-selector {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #2d3748;
+  border-radius: 4px;
+}
+.recordpoging-selector p {
+    font-size: 12px;
+    color: #a0aec0;
+    margin-top: 0;
+}
+
+.recordpoging-selector select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #4a5568;
+  background-color: #2d3748;
+  color: white;
+}
+
+.categorie-lijst {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hoofd-categorie-groep {
+  border-left: 3px solid #63b3ed;
+  padding-left: 10px;
+}
+
+.hoofd-categorie-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.hoofd-categorie-naam {
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.pijl {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.pijl.open {
+  transform: rotate(90deg);
+}
+
+.sub-categorie-lijst {
+  padding-left: 25px;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sub-categorie-label {
+    font-weight: normal;
+}

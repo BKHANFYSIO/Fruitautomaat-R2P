@@ -708,6 +708,8 @@
 
 .categorie-card-header h4 {
   margin: 0;
+  display: flex;
+  align-items: center;
 }
 
 .mastery-indicator {
@@ -1048,7 +1050,7 @@
   border-radius: 12px;
   padding: 20px;
   border: 1px solid #e9ecef;
-}
+} 
 
 .achievement-column h3 {
   font-family: 'Bungee', cursive;
@@ -1509,4 +1511,25 @@
 
 .achievement-categorie-groep.speciaal::before {
   --categorie-color: #06B6D4;
-} 
+}
+
+.hoofd-categorie {
+    cursor: pointer;
+    border-left: 5px solid #667eea;
+}
+
+.sub-categorie {
+    margin-left: 20px;
+    border-left: 3px solid #ccc;
+    background-color: #f8f9fa;
+}
+
+.pijl {
+    display: inline-block;
+    margin-right: 10px;
+    transition: transform 0.2s;
+}
+
+.pijl.open {
+    transform: rotate(90deg);
+}

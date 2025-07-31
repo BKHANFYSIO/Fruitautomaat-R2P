@@ -26,6 +26,7 @@ export const useOpdrachten = (defaultFilePath: string) => {
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
 
       return {
+        Hoofdcategorie: row.Hoofdcategorie || undefined,
         Categorie: row.Categorie || "Onbekend",
         Opdracht: row.Opdracht || "Geen opdrachttekst",
         Antwoordsleutel: row.Antwoordsleutel || "",

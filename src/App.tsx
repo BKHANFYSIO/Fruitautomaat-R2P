@@ -49,6 +49,14 @@ function App() {
   // Data hooks
   const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData } = useOpdrachten('/opdrachten.xlsx');
   
+  // Effect om opdrachten door te geven aan de data manager
+  useEffect(() => {
+    if (opdrachten.length > 0) {
+      const leerDataManager = getLeerDataManager();
+      leerDataManager.setAlleOpdrachten(opdrachten);
+    }
+  }, [opdrachten]);
+  
   // Settings context
   const {
     gameMode,
@@ -482,19 +490,22 @@ function App() {
     setHuidigeSessieId(null); // Wis sessie ID bij reset
     setOpdrachtStartTijd(null);
     setGamePhase('idle');
+    setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij spel reset
   };
 
-  // Memoized unieke categorieën voor het filter
-  const uniekeCategorieen = useMemo(() => {
+  // Memoized opdrachten voor het filter
+  const opdrachtenVoorFilter = useMemo(() => opdrachten, [opdrachten]);
+
+  const alleUniekeCategorieen = useMemo(() => {
     return [...new Set(opdrachten.map((o) => o.Categorie))];
   }, [opdrachten]);
 
   // Update de geselecteerde categorieën wanneer de opdrachten geladen zijn
   useEffect(() => {
     if (opdrachten.length > 0) {
-      setGeselecteerdeCategorieen([...new Set(opdrachten.map((o) => o.Categorie))]);
+      setGeselecteerdeCategorieen(alleUniekeCategorieen);
     }
-  }, [opdrachten]);
+  }, [opdrachten, alleUniekeCategorieen]);
 
   const handleCategorieSelectie = (categorie: string) => {
     setGeselecteerdeCategorieen((prev) =>
@@ -502,6 +513,18 @@ function App() {
         ? prev.filter((c) => c !== categorie)
         : [...prev, categorie]
     );
+  };
+
+  const handleBulkCategorieSelectie = (bulkCategorieen: string[], type: 'select' | 'deselect') => {
+    setGeselecteerdeCategorieen(prev => {
+      const categorieenSet = new Set(prev);
+      if (type === 'select') {
+        bulkCategorieen.forEach(cat => categorieenSet.add(cat));
+      } else {
+        bulkCategorieen.forEach(cat => categorieenSet.delete(cat));
+      }
+      return Array.from(categorieenSet);
+    });
   };
 
   // Filter opdrachten op basis van selectie
@@ -543,6 +566,7 @@ function App() {
       // Reset spel state zodat gebruiker kan overschakelen naar multiplayer
       setHuidigeSessieId(null);
       setIsSpelGestart(false);
+      setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij sessie eindigen
     }
   };
 
@@ -715,7 +739,19 @@ function App() {
     const nieuweJackpotIndices = jackpotSymbols.map(sym => SYMBOLEN.findIndex(s => s.symbool === sym));
     
     // Bepaal de indices voor de rollen
-    const categorieen = [...new Set(opdrachten.map(o => o.Categorie))];
+    const categorieItems = [
+      ...new Set(
+        opdrachten.map(o => 
+          o.Hoofdcategorie 
+            ? `${o.Hoofdcategorie}: ${o.Categorie}` 
+            : o.Categorie
+        )
+      )
+    ];
+    const gekozenCategorieString = gekozenOpdracht.Hoofdcategorie 
+      ? `${gekozenOpdracht.Hoofdcategorie}: ${gekozenOpdracht.Categorie}` 
+      : gekozenOpdracht.Categorie;
+    
     const opdrachtTeksten = opdrachten.map(o => o.Opdracht);
     
     // Bepaal speler naam index
@@ -729,7 +765,7 @@ function App() {
 
     setSpinResultaat({
       jackpot: nieuweJackpotIndices,
-      categorie: categorieen.indexOf(gekozenOpdracht.Categorie),
+      categorie: categorieItems.indexOf(gekozenCategorieString),
       opdracht: opdrachtTeksten.indexOf(gekozenOpdracht.Opdracht),
       naam: spelerNaamIndex,
     });
@@ -894,7 +930,17 @@ function App() {
         return;
       }
 
-      const totaalGewonnenPunten = opdrachtPunten + huidigeSpinAnalyse.bonusPunten + opgespaardeBonusPunten;
+      // Bereken bonuspunten op basis van beoordeling
+      let bonusPunten: number;
+      if (prestatie === 'Heel Goed') {
+        bonusPunten = huidigeSpinAnalyse.bonusPunten + opgespaardeBonusPunten; // 100% van de bonuspunten
+      } else if (prestatie === 'Redelijk') {
+        bonusPunten = (huidigeSpinAnalyse.bonusPunten + opgespaardeBonusPunten) * 0.5; // 50% van de bonuspunten
+      } else {
+        bonusPunten = 0; // Niet Goed - geen bonuspunten
+      }
+
+      const totaalGewonnenPunten = opdrachtPunten + bonusPunten;
 
       setSpelers(spelers.map(speler => {
         if (speler.naam === huidigeSpeler.naam || (gekozenPartner && speler.naam === gekozenPartner.naam)) {
@@ -1121,7 +1167,18 @@ function App() {
   };
 
   const handleStartFocusSessie = (categorie: string) => {
-    setGeselecteerdeCategorieen([categorie]);
+    // Bepaal of de gekozen categorie een hoofd- of subcategorie is
+    const isHoofdcategorie = opdrachten.some(op => op.Hoofdcategorie === categorie);
+
+    if (isHoofdcategorie) {
+      const subcategorieen = opdrachten
+        .filter(op => op.Hoofdcategorie === categorie)
+        .map(op => op.Categorie);
+      setGeselecteerdeCategorieen([...new Set(subcategorieen)]);
+    } else {
+      setGeselecteerdeCategorieen([categorie]);
+    }
+
     setIsLeeranalyseOpen(false);
     // Optioneel: toon een notificatie
     setNotificatie({
@@ -1183,9 +1240,10 @@ function App() {
               Standaard zijn alle categorieën aangevinkt.
           </p>
           <CategorieFilter
-            categorieen={uniekeCategorieen}
+            opdrachten={opdrachtenVoorFilter}
             geselecteerdeCategorieen={geselecteerdeCategorieen}
             onCategorieSelectie={handleCategorieSelectie}
+            onBulkCategorieSelectie={handleBulkCategorieSelectie}
             gameMode={gameMode}
             highScoreLibrary={getHighScoreLibrary()}
             onHighScoreSelect={setGeselecteerdeCategorieen}
@@ -1221,7 +1279,7 @@ function App() {
           onClose={() => setIsCategorieBeheerOpen(false)}
           geselecteerdeCategorieen={geselecteerdeCategorieen}
           setGeselecteerdeCategorieen={setGeselecteerdeCategorieen}
-          alleCategorieen={uniekeCategorieen}
+          alleCategorieen={alleUniekeCategorieen}
           alleOpdrachten={opdrachten}
         />
       )}
@@ -1297,7 +1355,7 @@ function App() {
                       onClick={handleOpenLeitnerCategorieBeheer}
                       className="categorie-beheer-knop"
                     >
-                      📊 Pas te leren categorieën aan ({geselecteerdeCategorieen.length} van {uniekeCategorieen.length} geselecteerd)
+                      📊 Pas te leren categorieën aan ({geselecteerdeCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
                     </button>
                     <div className="leitner-stats-info">
                       <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
