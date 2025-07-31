@@ -100,8 +100,8 @@ export const SpelerInput = ({
     </div>
   ) : (
     <div className="tooltip-content">
-      <h4>📚 Schakel naar Normaal</h4>
-      <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige normale leermodus.</p>
+      <h4>📚 Schakel naar Vrije Leermodus</h4>
+      <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige vrije leermodus.</p>
       <p><strong>Voordelen:</strong> Eenvoudige herhaling, snelle sessies en basis data opslag.</p>
       <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
     </div>
@@ -192,7 +192,7 @@ export const SpelerInput = ({
           onChange={() => setLeermodusType?.('normaal')}
           disabled={isSpelGestart}
         />
-        📚 Normaal
+        📚 Vrije Leermodus
       </label>
       <label>
         <input 

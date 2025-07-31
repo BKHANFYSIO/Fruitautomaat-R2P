@@ -26,7 +26,6 @@ interface InstellingenProps {
   onSpelReset: () => void;
   // Categorie beheer
   onOpenCategorieBeheer: () => void;
-  onOpenCategorieSelectie: () => void;
 }
 
 export const Instellingen = React.memo(({
@@ -43,7 +42,6 @@ export const Instellingen = React.memo(({
   onSpelReset,
   // Categorie beheer
   onOpenCategorieBeheer,
-  onOpenCategorieSelectie,
 }: InstellingenProps) => {
   // Settings context
   const {
@@ -72,8 +70,7 @@ export const Instellingen = React.memo(({
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
-    isLeitnerActief,
-    setIsLeitnerActief,
+    leermodusType,
     isLokaleBonusOpslagActief,
     setIsLokaleBonusOpslagActief,
   } = useSettings();
@@ -372,18 +369,10 @@ export const Instellingen = React.memo(({
                     Toon leerzame feedback en tips over effectief leren bij spin combinaties. Standaard aan gezet in Leer Modus. Als uitgeschakeld krijg je alleen de Leer Modus zonder feedback.
                   </p>
                   
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isLeitnerActief}
-                      onChange={(e) => setIsLeitnerActief(e.target.checked)}
-                    />
-                    Leitner Leer Modus gebruiken
-                  </label>
                   <p className="setting-description">
                     Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
                   </p>
-                  {isLeitnerActief && (
+                  {leermodusType === 'leitner' && (
                     <button
                       className="instellingen-knop"
                       onClick={handleOpenLeitnerBeheer}
@@ -420,33 +409,21 @@ export const Instellingen = React.memo(({
 
             {/* --- Groep: Opdrachtenbeheer --- */}
           <div className="settings-group">
-            <h4>Opdrachten & Categorieën</h4>
+            <h4>Opdrachtenbeheer</h4>
             <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-              Beheer hier de opdrachten en selecteer de categorieën voor de normale spelmodus (Single Player & Multiplayer).
-            </p>
-
-            <button
-              className="instellingen-knop"
-              onClick={() => {
-                onOpenCategorieSelectie();
-                onClose(); // Sluit instellingen om de nieuwe modal te tonen
-              }}
-              style={{ marginBottom: '20px' }}
-            >
-              🎯 Beheer Categorieën (Normale Modus)
-            </button>
-            
-            <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-              <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand".
+              Je kunt de standaard opdrachten gebruiken, maar ook zelf opdrachten toevoegen of overschrijven. 
+              <br /><br />
+              <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
+              Kies vervolgens of je wilt aanvullen of overschrijven.
             </p>
             
             <div className="opdracht-knoppen-container">
               <button 
                 onClick={() => {
+                  // Call the downloadTemplate function from the BestandsUploader props
                   const data = [
                     { 
-                      Hoofdcategorie: 'Voorbeeld Hoofd',
-                      Categorie: 'Voorbeeld Sub', 
+                      Categorie: 'Voorbeeld Categorie', 
                       Opdracht: 'Voorbeeld Opdracht', 
                       Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
                       Tijdslimiet: 60,
@@ -464,7 +441,8 @@ export const Instellingen = React.memo(({
               </button>
               
               <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-                <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool.
+                <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
+                Dit is een snelle manier om veel opdrachten te maken.
               </p>
               
               <button 
@@ -476,7 +454,8 @@ export const Instellingen = React.memo(({
             </div>
             
             <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-              <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je Excel-bestand. Kies vervolgens of je wilt aanvullen of overschrijven.
+              <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
+              Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
             </p>
             
             {children}
@@ -676,7 +655,7 @@ export const Instellingen = React.memo(({
         <div className="serieuze-modus-modal-overlay" onClick={() => setIsSerieuzeModusUitschakelenOpen(false)}>
           <div className="serieuze-modus-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="serieuze-modus-modal-header">
-              <h3>⚠️ Overschakelen naar Normale Modus</h3>
+              <h3>⚠️ Overschakelen naar Vrije Leermodus</h3>
               <button 
                 onClick={() => setIsSerieuzeModusUitschakelenOpen(false)}
                 className="serieuze-modus-modal-close"
@@ -689,7 +668,7 @@ export const Instellingen = React.memo(({
                 <strong>Weet je zeker dat je serieuze leer-modus wilt uitschakelen?</strong>
               </p>
               <p>
-                Dit zal het huidige spel resetten en overschakelen naar normale single player modus:
+                Dit zal het huidige spel resetten en overschakelen naar vrije leermodus:
               </p>
               <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
                 <li>Aantal beurten wordt gereset naar 0</li>

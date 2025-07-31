@@ -147,7 +147,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
           {/* Bovenste rij */}
           <div className="top-row">
             <div className="timer-wrapper">
-              <Timer isActief={isTimerActief} tijdslimiet={huidigeOpdracht.opdracht.Tijdslimiet} onTimeUp={handleTimeUp} isGeluidActief={isGeluidActief} />
+              <Timer isActief={isTimerActief} tijdslimiet={huidigeOpdracht.opdracht.Tijdslimiet} onTimeUp={handleTimeUp} isGeluidActief={isGeluidActief} isTimerActief={isTimerActief} />
             </div>
             {isJokerSpinActief && huidigeSpeler && huidigeSpeler.extraSpins > 0 && (
               <div className="extra-spin-wrapper">

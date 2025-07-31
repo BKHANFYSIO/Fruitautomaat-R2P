@@ -1557,18 +1557,18 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
                 </div>
               )}
               {leermodusType === 'normaal' && (
-                <div className="normale-leermodus-sectie">
-                  <div className="normale-leermodus-header">
-                    <h5>📚 Normaal</h5>
+                <div className="vrije-leermodus-sectie">
+                  <div className="vrije-leermodus-header">
+                    <h5>📚 Vrije Leermodus</h5>
                   </div>
-                  <div className="normale-leermodus-info">
+                  <div className="vrije-leermodus-info">
                     <button 
                       onClick={handleOpenNormaleLeermodusCategorieSelectie}
                       className="categorie-beheer-knop"
                     >
                       Categorieën aanpassen ({geselecteerdeCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
                     </button>
-                    <div className="normale-leermodus-info-text">
+                    <div className="vrije-leermodus-info-text">
                       <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
                     </div>
                   </div>

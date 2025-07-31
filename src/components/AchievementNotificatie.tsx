@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Achievement, LeitnerAchievement } from '../data/types';
 import './AchievementNotificatie.css';
 
@@ -10,6 +10,10 @@ interface AchievementNotificatieProps {
 
 export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse }: AchievementNotificatieProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const touchStartRef = useRef<number>(0);
+  const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (achievement) {
@@ -24,6 +28,41 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
       return () => clearTimeout(timer);
     }
   }, [achievement, onClose]);
+
+  // Touch event handlers voor swipe functionaliteit
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = e.touches[0].clientX;
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const currentX = e.touches[0].clientX;
+    const deltaX = currentX - touchStartRef.current;
+    
+    // Alleen horizontale beweging toestaan
+    if (Math.abs(deltaX) > 10) {
+      e.preventDefault();
+      setDragOffset(deltaX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    
+    setIsDragging(false);
+    
+    // Als de swipe meer dan 100px is, sluit de notificatie
+    if (Math.abs(dragOffset) > 100) {
+      setIsVisible(false);
+      setTimeout(onClose, 300);
+    } else {
+      // Reset naar originele positie
+      setDragOffset(0);
+    }
+  };
 
   if (!achievement) return null;
 
@@ -79,8 +118,16 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
   return (
     <div className={`achievement-notificatie ${isVisible ? 'visible' : ''}`}>
       <div 
+        ref={elementRef}
         className={`achievement-notificatie-content ${categorieInfo.cssClass} ${onOpenLeeranalyse ? 'clickable' : ''}`}
         onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: `translateX(${dragOffset}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+        }}
       >
         <div className="achievement-icon-large">{achievement.icon}</div>
         <div className="achievement-info">

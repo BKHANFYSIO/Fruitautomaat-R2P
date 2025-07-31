@@ -613,7 +613,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                         return (
                           <>
                             <div className="spelmodus-card leermodus">
-                              <h4>📚 Leer Modus</h4>
+                              <h4>📚 Vrije Leermodus</h4>
                               <div className="modus-statistieken">
                                 <p><strong>Sessies:</strong> {modusStats.normaal.sessies}</p>
                                 <p><strong>Gemiddelde score:</strong> {modusStats.normaal.gemiddeldeScore.toFixed(1)}/5</p>
@@ -667,7 +667,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             </div>
                             <p className="statistiek-waarde">{leerData.statistieken.totaalOpdrachten}</p>
                             <p className="statistiek-context">
-                              Leer: {normaalOpdrachten} opdrachten, Leitner: {leitnerOpdrachten} opdrachten
+                              Vrije Leermodus: {normaalOpdrachten} opdrachten, Leitner: {leitnerOpdrachten} opdrachten
                             </p>
                           </div>
                           <div className="statistiek-card">
@@ -686,7 +686,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             </div>
                             <p className="statistiek-waarde">{leerData.statistieken.totaalSessies}</p>
                             <p className="statistiek-context">
-                              Leer: {modusStats.normaal.sessies} sessies, Leitner: {modusStats.leitner.sessies} sessies
+                              Vrije Leermodus: {modusStats.normaal.sessies} sessies, Leitner: {modusStats.leitner.sessies} sessies
                             </p>
                           </div>
                           <div className="statistiek-card">
@@ -705,7 +705,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             </div>
                             <p className="statistiek-waarde">{formatTijd(leerData.statistieken.totaalSpeeltijd)}</p>
                             <p className="statistiek-context">
-                              Normaal: {formatTijd(modusStats.normaal.speeltijd)}, Leitner: {formatTijd(modusStats.leitner.speeltijd)}
+                              Vrije Leermodus: {formatTijd(modusStats.normaal.speeltijd)}, Leitner: {formatTijd(modusStats.leitner.speeltijd)}
                             </p>
                           </div>
                           <div className="statistiek-card">
@@ -724,7 +724,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             </div>
                             <p className="statistiek-waarde">{leerData.statistieken.gemiddeldeScore.toFixed(1)}/5</p>
                             <p className="statistiek-context">
-                              Normaal: {modusStats.normaal.gemiddeldeScore.toFixed(1)}, Leitner: {modusStats.leitner.gemiddeldeScore.toFixed(1)}
+                              Vrije Leermodus: {modusStats.normaal.gemiddeldeScore.toFixed(1)}, Leitner: {modusStats.leitner.gemiddeldeScore.toFixed(1)}
                             </p>
                           </div>
                           <div className="statistiek-card">
@@ -743,7 +743,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             </div>
                             <p className="statistiek-waarde">{leerData.statistieken.consistentieScore}%</p>
                             <p className="statistiek-context">
-                              {totaalSessies > 0 ? `${Math.round((totaalNormaal / totaalSessies) * 100)}% normale sessies` : 'Geen sessies'}
+                              {totaalSessies > 0 ? `${Math.round((totaalNormaal / totaalSessies) * 100)}% vrije leermodus sessies` : 'Geen sessies'}
                             </p>
                           </div>
                         </>

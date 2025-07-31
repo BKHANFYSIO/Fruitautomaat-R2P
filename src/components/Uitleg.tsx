@@ -51,7 +51,7 @@ export const Uitleg = ({ isOpen, onClose }: UitlegProps) => {
               <strong>Single Player:</strong> Speel alleen met drie verschillende modi:
               <ul>
                 <li><strong>🏆 Highscore Modus:</strong> Competitieve modus met punten en highscores. Perfect voor het verbeteren van je records en competitief leren.</li>
-                <li><strong>📚 Leer Modus:</strong> Focus op leren zonder punten. Je leerdata wordt opgeslagen voor analyses en certificaten. Ideaal voor zelfstudie en portfolio ontwikkeling.</li>
+                <li><strong>📚 Vrije Leermodus:</strong> Focus op leren zonder punten. Geen data opslag - perfect voor snelle leersessies en eenvoudige herhaling.</li>
                 <li><strong>🔄 Leitner Leer Modus:</strong> Geavanceerde leer modus met het Leitner-systeem voor effectieve herhaling van opdrachten.</li>
               </ul>
             </li>
@@ -78,7 +78,7 @@ export const Uitleg = ({ isOpen, onClose }: UitlegProps) => {
           </p>
           <ul>
             <li><strong>🏆 Highscore Modus:</strong> Je records en persoonlijke bests worden opgeslagen in je browser. Bonusopdrachten zijn niet beschikbaar.</li>
-            <li><strong>📚 Leer Modus:</strong> Je leerdata, sessies en analyses worden lokaal opgeslagen. Geen punten, focus op leren en ontwikkeling.</li>
+            <li><strong>📚 Vrije Leermodus:</strong> Geen data opslag - perfect voor snelle leersessies zonder herhalingen of opslag.</li>
             <li><strong>🔄 Leitner Leer Modus:</strong> Geavanceerde leerdata inclusief herhalingsschema's en progressie worden opgeslagen voor optimale leerervaring.</li>
           </ul>
           <p>
@@ -88,18 +88,18 @@ export const Uitleg = ({ isOpen, onClose }: UitlegProps) => {
             <strong>Privacy:</strong> Alle lokaal opgeslagen gegevens (records, bests, bonusopdrachten, leerdata) worden alleen in je browser bewaard en niet gedeeld. Je kunt deze altijd verwijderen via de instellingen onder "Data Beheer".
           </p>
 
-          <h4>Leer Modus & Leeranalyse</h4>
+          <h4>Leermodi & Leeranalyse</h4>
           <p>
-            <strong>Leer Modus:</strong> In single player mode kun je de Leer Modus activeren via de instellingen. In deze modus worden geen punten gegeven, maar krijg je leerzame feedback en tips over effectief leren bij elke spin combinatie. Deze modus is perfect voor zelfstudie en het ontwikkelen van studievaardigheden.
+            <strong>Vrije Leermodus:</strong> In single player mode kun je de Vrije Leermodus activeren via de instellingen. In deze modus worden geen punten gegeven en geen data opgeslagen. Perfect voor snelle leersessies en eenvoudige herhaling.
           </p>
           <p>
-            <strong>Leeractiviteiten Tracking:</strong> Wanneer je Leer Modus gebruikt, worden je leeractiviteiten lokaal opgeslagen. Dit omvat welke opdrachten je hebt voltooid, hoe je jezelf hebt beoordeeld, en de tijd die je hebt genomen. Deze data wordt alleen in je browser bewaard en niet gedeeld.
+            <strong>Leitner Leermodus:</strong> Geavanceerde leermodus met het Leitner-systeem voor effectieve herhaling van opdrachten. Je leeractiviteiten worden lokaal opgeslagen voor analyses en certificaten. Dit omvat welke opdrachten je hebt voltooid, hoe je jezelf hebt beoordeeld, en de tijd die je hebt genomen.
           </p>
           <p>
-            <strong>Leeranalyse:</strong> Via de leeranalyse functie kun je inzicht krijgen in hoe je leert en verbetert. Je kunt je voortgang bekijken, patronen herkennen in je leerproces, en zien welke categorieën je sterker of zwakker vindt. Dit helpt je om je studiestrategieën te optimaliseren.
+            <strong>Leeranalyse:</strong> Via de leeranalyse functie kun je inzicht krijgen in hoe je leert en verbetert (alleen beschikbaar in Leitner modus). Je kunt je voortgang bekijken, patronen herkennen in je leerproces, en zien welke categorieën je sterker of zwakker vindt. Dit helpt je om je studiestrategieën te optimaliseren.
           </p>
           <p>
-            <strong>Certificaat Generatie:</strong> Binnenkort kun je een certificaat genereren op basis van je leeractiviteiten. Dit certificaat toont je inzet, voortgang en ontwikkeling, en kun je gebruiken in je portfolio om te laten zien hoe je systematisch werkt aan je professionele ontwikkeling.
+            <strong>Certificaat Generatie:</strong> Binnenkort kun je een certificaat genereren op basis van je leeractiviteiten (alleen beschikbaar in Leitner modus). Dit certificaat toont je inzet, voortgang en ontwikkeling, en kun je gebruiken in je portfolio om te laten zien hoe je systematisch werkt aan je professionele ontwikkeling.
           </p>
 
 

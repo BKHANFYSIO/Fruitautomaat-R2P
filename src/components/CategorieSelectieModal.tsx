@@ -211,19 +211,19 @@ export const CategorieSelectieModal = ({
 
   const getTabTitle = (tab: TabType) => {
     switch (tab) {
-      case 'leitner': return '📚 Leitner Modus';
-      case 'highscore': return '🏆 Highscore Modus';
       case 'multiplayer': return '🎮 Multiplayer Modus';
-      case 'normaal': return '📖 Normale Leermodus';
+      case 'highscore': return '🏆 Highscore Modus';
+      case 'normaal': return '📖 Vrije Leermodus';
+      case 'leitner': return '📚 Leitner Modus';
     }
   };
 
   const getTabDescription = (tab: TabType) => {
     switch (tab) {
-      case 'leitner': return 'Beheer categorieën voor het Leitner leersysteem met statistieken en box verdeling.';
-      case 'highscore': return 'Selecteer categorieën voor highscore pogingen en bekijk eerdere recordpogingen.';
       case 'multiplayer': return 'Kies categorieën voor multiplayer spelsessies.';
-      case 'normaal': return 'Selecteer categorieën voor normale leersessies zonder Leitner systeem.';
+      case 'highscore': return 'Selecteer categorieën voor highscore pogingen en bekijk eerdere recordpogingen.';
+      case 'normaal': return 'Selecteer categorieën voor vrije leersessies zonder herhalingen of opslag.';
+      case 'leitner': return 'Beheer categorieën voor het Leitner leersysteem met statistieken en box verdeling.';
     }
   };
 

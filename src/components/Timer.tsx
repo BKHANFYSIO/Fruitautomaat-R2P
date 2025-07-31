@@ -7,9 +7,10 @@ interface TimerProps {
   onTimeUp: () => void;
   isActief: boolean;
   isGeluidActief: boolean;
+  isTimerActief?: boolean; // Nieuwe prop voor timer zichtbaarheid
 }
 
-export const Timer = ({ tijdslimiet, onTimeUp, isActief, isGeluidActief }: TimerProps) => {
+export const Timer = ({ tijdslimiet, onTimeUp, isActief, isGeluidActief, isTimerActief = true }: TimerProps) => {
   const [resterendeTijd, setResterendeTijd] = useState(tijdslimiet);
   
   const [playTick, stopTick] = useAudio('/sounds/timer-tick.mp3', isGeluidActief);
@@ -20,7 +21,7 @@ export const Timer = ({ tijdslimiet, onTimeUp, isActief, isGeluidActief }: Timer
   }, [tijdslimiet]);
 
   useEffect(() => {
-    if (!isActief) {
+    if (!isActief || !isTimerActief) {
       return;
     }
 
@@ -45,7 +46,12 @@ export const Timer = ({ tijdslimiet, onTimeUp, isActief, isGeluidActief }: Timer
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isActief, onTimeUp, playTick, playEnd, stopTick]);
+  }, [isActief, isTimerActief, onTimeUp, playTick, playEnd, stopTick]);
+
+  // Als timer niet actief is, toon niets
+  if (!isTimerActief) {
+    return null;
+  }
 
   const progressPercentage = (resterendeTijd / tijdslimiet) * 100;
   const isUrgent = resterendeTijd <= 10;
