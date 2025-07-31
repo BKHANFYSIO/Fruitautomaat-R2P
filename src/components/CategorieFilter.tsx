@@ -61,7 +61,7 @@ export const CategorieFilter = ({
     setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
   };
 
-  const handleHoofdCategorieSelectie = (hoofd: string, subcategorieen: string[], isGeselecteerd: boolean) => {
+  const handleHoofdCategorieSelectie = (subcategorieen: string[], isGeselecteerd: boolean) => {
     onBulkCategorieSelectie(subcategorieen, isGeselecteerd ? 'deselect' : 'select');
   };
 
@@ -133,7 +133,7 @@ export const CategorieFilter = ({
                             ref={input => {
                                 if (input) input.indeterminate = isDeelsGeselecteerd;
                             }}
-                            onChange={() => handleHoofdCategorieSelectie(hoofd, subs, isAllesGeselecteerd)}
+                            onChange={() => handleHoofdCategorieSelectie(subs, isAllesGeselecteerd)}
                             onClick={(e) => e.stopPropagation()}
                         />
                         <span className="hoofd-categorie-naam">{hoofd}</span>

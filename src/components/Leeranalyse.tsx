@@ -205,42 +205,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
 
 
 
-  const beheersingBarData = useMemo(() => {
-    if (!leerData) return null;
 
-    const leerDataManager = getLeerDataManager();
-    const categorieen = Object.keys(leerData.statistieken.categorieStatistieken);
-    
-    // Sorteer categorieën op beheersing percentage (hoogste eerst)
-    const categorieBeheersing = categorieen.map(categorie => {
-      const beheersing = leerDataManager.getCategorieBeheersing(categorie);
-      return {
-        categorie,
-        beheersingPercentage: beheersing.beheersingPercentage,
-        gemiddeldeBox: beheersing.gemiddeldeBox
-      };
-    }).sort((a, b) => b.beheersingPercentage - a.beheersingPercentage);
-
-    return {
-      labels: categorieBeheersing.map(cat => cat.categorie),
-      datasets: [
-        {
-          label: 'Beheersing Percentage',
-          data: categorieBeheersing.map(cat => cat.beheersingPercentage),
-          backgroundColor: categorieBeheersing.map((cat) => {
-            // Kleur op basis van beheersing niveau
-            if (cat.beheersingPercentage >= 80) return '#28a745'; // Groen voor hoog
-            if (cat.beheersingPercentage >= 50) return '#ffc107'; // Geel voor medium
-            return '#dc3545'; // Rood voor laag
-          }),
-          borderColor: chartColors.primary,
-          borderWidth: 1,
-          borderRadius: 4,
-          borderSkipped: false
-        }
-      ]
-    };
-  }, [leerData]);
 
   // Leitner statistieken
   const leitnerStats = useMemo(() => {
