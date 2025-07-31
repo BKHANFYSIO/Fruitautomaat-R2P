@@ -11,7 +11,7 @@ import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
 import { SpelerInput } from './components/SpelerInput';
 import { Scorebord } from './components/Scorebord';
 import { Fruitautomaat } from './components/Fruitautomaat';
-import { CategorieFilter } from './components/CategorieFilter';
+
 import { BestandsUploader } from './components/BestandsUploader';
 import { CategorieSelectieModal } from './components/CategorieSelectieModal';
 import { Instellingen } from './components/Instellingen';
@@ -1365,18 +1365,9 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
             setIsVervangenActief={setIsVervangenActief}
           />
           <p className="setting-description" style={{ marginLeft: 0, marginTop: '20px', marginBottom: '15px' }}>
-              <strong>Categorieën selectie:</strong> Onderstaand selecteer je welke categorieën je wilt gebruiken tijdens het spel. 
-              Standaard zijn alle categorieën aangevinkt.
+              <strong>Categorieën selectie:</strong> Categorieën kunnen nu worden aangepast via de knoppen in het linker menu. 
+              Elke spelmodus heeft zijn eigen categorie selectie.
           </p>
-          <CategorieFilter
-            opdrachten={opdrachtenVoorFilter}
-            geselecteerdeCategorieen={geselecteerdeCategorieen}
-            onCategorieSelectie={handleCategorieSelectie}
-            onBulkCategorieSelectie={handleBulkCategorieSelectie}
-            gameMode={gameMode}
-            highScoreLibrary={getHighScoreLibrary()}
-            onHighScoreSelect={setGeselecteerdeCategorieen}
-          />
         </Instellingen>
       )}
       

@@ -26,6 +26,7 @@ interface InstellingenProps {
   onSpelReset: () => void;
   // Categorie beheer
   onOpenCategorieBeheer: () => void;
+  onOpenCategorieSelectie?: () => void;
 }
 
 export const Instellingen = React.memo(({
