@@ -1,0 +1,401 @@
+.speler-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Dit creëert de ruimte */
+}
+
+.speler-input-form input {
+  width: 100%;
+  box-sizing: border-box; /* Zorgt dat padding en border binnen de 100% vallen */
+}
+
+.speler-input-form button {
+  width: 100%;
+  background-color: #4CAF50; /* Een mooie, toegankelijke groene kleur */
+  color: white;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.speler-input-form button:hover {
+  background-color: #45a049;
+}
+
+.game-mode-selector {
+  display: flex;
+  justify-content: space-around;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  padding: 5px;
+  margin-bottom: 2px;
+  width: 100%;
+  min-width: 100%;
+}
+
+.game-mode-selector label {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.game-mode-selector input[type="radio"] {
+  display: none; /* Verberg de daadwerkelijke radio button */
+}
+
+.game-mode-selector input[type="radio"]:checked + span {
+  /* Dit is een placeholder voor als we de tekst in een span wrappen */
+}
+
+.game-mode-selector label:has(input:checked) {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+/* Serieuze leermodus uitleg styling */
+.serieuze-leermodus-uitleg {
+  background-color: #2c3e50;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 10px;
+  border-left: 4px solid #3498db;
+}
+
+.serieuze-leermodus-uitleg h4 {
+  margin: 0 0 10px 0;
+  color: #3498db;
+  font-size: 1.1em;
+}
+
+.serieuze-leermodus-uitleg p {
+  margin: 5px 0;
+  color: #ecf0f1;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Serieuze leermodus toggle knop styling */
+.serieuze-modus-toggle-knop {
+  background-color: #9b59b6 !important; /* Paarse kleur voor leermodus */
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+  margin-top: 5px;
+  /* Voeg long press indicator toe voor mobiel */
+  position: relative;
+}
+
+.serieuze-modus-toggle-knop:hover {
+  background-color: #8e44ad !important;
+}
+
+/* Long press indicator voor mobiel */
+@media (max-width: 768px) {
+  .serieuze-modus-toggle-knop::before {
+    content: 'ℹ️';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  
+  .serieuze-modus-toggle-knop {
+    padding-right: 30px; /* Extra ruimte voor het icoon */
+  }
+}
+
+/* Leitner sectie styling */
+.leitner-sectie {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #34495e;
+  border-radius: 6px;
+  border-left: 4px solid #9b59b6;
+}
+
+.leitner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.leitner-header h5 {
+  margin: 0;
+  color: #9b59b6;
+  font-size: 1em;
+}
+
+.leitner-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ecf0f1;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.leitner-checkbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.leitner-stats {
+  color: #ecf0f1;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.leitner-stats p {
+  margin: 4px 0;
+}
+
+.leitner-stats-info {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: rgba(52, 73, 94, 0.3);
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+}
+
+.leitner-priority {
+  color: #f39c12 !important;
+  font-style: italic;
+  margin-top: 8px !important;
+}
+
+.categorie-beheer-knop {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.categorie-beheer-knop:hover {
+  background-color: #2980b9;
+}
+
+.serieuze-modus-toggle-knop:disabled {
+  background-color: #95a5a6 !important;
+  cursor: not-allowed;
+}
+
+/* Tooltip styling */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  /* Voorkom text selection tijdens long press */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 10000; /* Verhoog z-index om boven andere elementen te komen */
+  color: #2c3e50;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  width: 250px;
+  font-size: 0.8em;
+  line-height: 1.2;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  /* Voeg touch-action toe voor betere mobiele ervaring */
+  touch-action: none;
+  /* Zorg ervoor dat de tooltip altijd zichtbaar is */
+  pointer-events: none;
+  /* Debug styling om te zien of tooltip wordt gerenderd */
+  min-height: 50px;
+  display: block !important;
+}
+
+.tooltip-top {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 12px;
+}
+
+.tooltip-top::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent #ffffff transparent;
+}
+
+.tooltip-content h4 {
+  margin: 0 0 6px 0;
+  color: #2c3e50;
+  font-size: 0.95em;
+  font-weight: bold;
+}
+
+.tooltip-content {
+  background-color: #ffffff;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.tooltip-content p {
+  margin: 4px 0;
+  color: #34495e;
+}
+
+.tooltip-content strong {
+  color: #e67e22;
+  font-weight: bold;
+}
+
+/* Modal styling voor serieuze leermodus waarschuwingen */
+.serieuze-modus-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.serieuze-modus-modal-content {
+  background-color: #2c3e50;
+  border-radius: 10px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.serieuze-modus-modal-header {
+  background-color: #e74c3c;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.serieuze-modus-modal-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.serieuze-modus-modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serieuze-modus-modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.serieuze-modus-modal-body {
+  padding: 20px;
+  color: #ecf0f1;
+  line-height: 1.5;
+}
+
+.serieuze-modus-modal-body p {
+  margin: 10px 0;
+}
+
+.serieuze-modus-modal-body ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.serieuze-modus-modal-body li {
+  margin: 5px 0;
+}
+
+.serieuze-modus-modal-footer {
+  padding: 15px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid #34495e;
+}
+
+.serieuze-modus-modal-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+.serieuze-modus-modal-button.secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.serieuze-modus-modal-button.secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.serieuze-modus-modal-button.primary {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.serieuze-modus-modal-button.primary:hover {
+  background-color: #c0392b;
+} 
+
+.sub-selector {
+  margin-top: 2px;
+  width: 100%;
+  min-width: 100%;
+}
+
+.game-mode-selector label:first-of-type {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.game-mode-selector label:last-of-type {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+} 

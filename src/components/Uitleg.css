@@ -1,0 +1,156 @@
+.uitleg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.uitleg-content {
+  background-color: #2d3748;
+  padding: 20px 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #4a5568;
+  color: #e2e8f0;
+}
+
+.uitleg-header {
+  display: flex;
+  /* justify-content: space-between; */ /* Verwijderd */
+  align-items: center;
+  border-bottom: 1px solid #4a5568;
+  padding: 10px 10px 10px 10px; /* Padding boven toegevoegd voor betere verticale centrering */
+  margin-bottom: 20px;
+  position: relative; /* Voor positionering van de knop */
+}
+
+.uitleg-header h2 {
+  margin: 0;
+  flex-grow: 1; /* Neemt de beschikbare ruimte in */
+  text-align: center; /* Centreert de titel */
+  padding: 0 40px; /* Voorkomt dat tekst onder de knoppen komt */
+}
+
+.uitleg-body h4 {
+  color: #90cdf4;
+  margin-top: 20px;
+}
+
+.uitleg-body p, .uitleg-body ul {
+  line-height: 1.6;
+  text-align: left;
+}
+
+.uitleg-body ul {
+  padding-left: 20px;
+}
+
+.uitleg-body li {
+  margin-bottom: 10px;
+}
+
+.uitleg-body ul li::before {
+  content: '•';
+  color: #81c784; /* Groen accent */
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.bonus-info-sectie {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid #444;
+}
+
+.bonus-lijst {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.bonus-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #3a3a3a;
+  margin-bottom: 10px;
+}
+
+.bonus-item::before {
+  content: '';
+  display: none; /* Override de standaard bullet */
+}
+
+.symbolen-container {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.symbool-wrapper {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background-color: #2c2c2e;
+  border-radius: 5px;
+  border: 1px solid #555;
+}
+
+.uitleg-symbool-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.uitleg-symbool-text {
+  font-size: 24px;
+}
+
+.lucky7-symbol {
+  filter: drop-shadow(0 0 5px #ff4500);
+}
+
+.vraagteken-symbol {
+  filter: drop-shadow(0 0 5px #ffd700);
+}
+
+.combo-beschrijving {
+  flex: 1;
+}
+
+.combo-beschrijving strong {
+  color: #a5d6a7; /* Lichtgroen */
+}
+
+.han-logo-container-uitleg {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #444;
+  text-align: center;
+}
+
+.han-logo-container-uitleg .han-logo {
+  max-width: 140px;
+  margin-bottom: 10px;
+}
+
+.han-logo-container-uitleg p {
+  font-size: 0.85rem;
+  color: #a0aec0;
+  margin: 0;
+} 

@@ -1,0 +1,478 @@
+.instellingen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.instellingen-content {
+  background-color: #2d3748;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #4a5568;
+}
+
+.instellingen-header {
+  display: flex;
+  /* justify-content: space-between; */ /* Verwijderd */
+  align-items: center;
+  border-bottom: 1px solid #4a5568;
+  padding: 10px 10px 10px 10px; /* Padding boven toegevoegd voor betere verticale centrering */
+  margin-bottom: 20px;
+  position: relative; /* Voor positionering van de knop */
+}
+
+.instellingen-header h2 {
+  margin: 0;
+  flex-grow: 1; /* Neemt de beschikbare ruimte in */
+  text-align: center; /* Centreert de titel */
+  padding: 0 40px; /* Voorkomt dat tekst onder de knoppen komt */
+}
+
+.instellingen-body {
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Ruimte tussen de groepen */
+}
+
+.settings-group {
+  background-color: #384355;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.settings-group h4 {
+  margin-top: 0;
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+  color: #63b3ed;
+  font-weight: 600;
+}
+
+.settings-group label {
+  display: flex; /* Gebruik flexbox voor uitlijning */
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.settings-group input[type="checkbox"],
+.settings-group input[type="radio"] {
+  margin-right: 10px;
+  width: 18px; /* Grotere checkbox */
+  height: 18px;
+}
+
+.settings-group .setting-description {
+  font-size: 0.9rem;
+  color: #a0aec0; /* Grijsachtige kleur */
+  margin-top: -5px;
+  margin-left: 28px; /* Uitlijnen met de tekst van de checkbox */
+  margin-bottom: 10px;
+}
+
+.settings-group .kansen-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-group label:has(input:disabled) {
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: #63b3ed;
+  color: #1a202c;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.file-upload-label:hover {
+  background-color: #90cdf4;
+}
+
+/* De .sluit-knop styling is verplaatst naar Modal.css als .modal-close-button */
+
+.settings-group .harmonica-knop {
+  background-color: #4a5568;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  width: 100%;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-group .harmonica-knop:hover {
+  background-color: #5a6578;
+}
+
+.settings-group .harmonica-knop .pijl {
+  transition: transform 0.3s ease;
+}
+
+.settings-group .harmonica-knop .pijl.open {
+  transform: rotate(90deg);
+}
+
+.settings-group .harmonica-content {
+  padding-left: 15px;
+  border-left: 2px solid #4a5568;
+  margin-top: 15px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.4s ease-in-out, margin-top 0.4s ease-in-out, padding 0.4s ease-in-out;
+}
+
+.settings-group .harmonica-content.open {
+  max-height: 50vh; /* Maximaal 50% van de viewport hoogte */
+  overflow-y: auto; /* Scrollbar tonen als de inhoud te hoog is */
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-top: 15px;
+}
+
+.ai-generator-knop {
+  background-color: #48bb78;
+  color: white;
+  border: none !important;
+  border-radius: 5px !important;
+  padding: 10px 15px !important;
+  cursor: pointer !important;
+  font-weight: bold !important;
+  margin-bottom: 15px !important;
+  width: 100% !important;
+  transition: background-color 0.2s !important;
+}
+
+.ai-generator-knop:hover {
+  background-color: #48bb78 !important;
+}
+
+/* BestandsUploader styling */
+.download-template-knop {
+  background-color: #63b3ed;
+  color: #1a202c;
+  border: none !important;
+  border-radius: 5px !important;
+  padding: 10px 15px !important;
+  cursor: pointer !important;
+  font-weight: bold !important;
+  margin-bottom: 15px !important;
+  width: 100% !important;
+  transition: background-color 0.2s !important;
+}
+
+.download-template-knop:hover {
+  background-color: #90cdf4 !important;
+}
+
+.opdracht-knoppen-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.instellingen-knop {
+  width: 80%;
+  max-width: 350px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.instellingen-knop:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+
+.file-upload-label.instellingen-knop {
+  background-color: #a0aec0;
+  color: #1a202c;
+  display: inline-block; /* Belangrijk voor padding en centreren */
+  line-height: normal; /* Zorgt voor correcte verticale uitlijning */
+} 
+
+/* Data Beheer Knoppen */
+.data-beheer-knoppen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.data-beheer-knop {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 16px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: left;
+  font-weight: 500;
+}
+
+.data-beheer-knop:hover {
+  background-color: #5a6a7a;
+}
+
+.data-beheer-knop.single-player-knop {
+  background-color: #3182ce;
+}
+
+.data-beheer-knop.single-player-knop:hover {
+  background-color: #2c5aa0;
+}
+
+.data-beheer-knop.bonus-knop {
+  background-color: #d69e2e;
+}
+
+.data-beheer-knop.bonus-knop:hover {
+  background-color: #b7791f;
+}
+
+.data-beheer-knop.alles-knop {
+  background-color: #e53e3e;
+}
+
+.data-beheer-knop.alles-knop:hover {
+  background-color: #c53030;
+}
+
+.data-beheer-knop.leeranalyse-knop {
+  background-color: #667eea;
+}
+
+.data-beheer-knop.leeranalyse-knop:hover {
+  background-color: #5a67d8;
+}
+
+.data-beheer-knop.leitner-knop {
+  background-color: #9b59b6;
+}
+
+.data-beheer-knop.leitner-knop:hover {
+  background-color: #8e44ad;
+}
+
+/* Leer-modus Knoppen */
+.leer-modus-knoppen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.leer-analyse-knop {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  background-color: #667eea;
+  color: white;
+}
+
+  .leer-analyse-knop:hover {
+    background-color: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  .multiplayer-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 10px 0;
+  }
+
+  .warning-text {
+    color: #856404 !important;
+    margin: 0 !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .serieuze-modus-notice {
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 10px 0;
+  }
+
+  .serieuze-modus-notice .setting-description {
+    color: #2d5a2d !important;
+    margin: 0 !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  /* Serieuze Modus Waarschuwing Modal */
+  .serieuze-modus-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+  }
+
+  .serieuze-modus-modal-content {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid #444;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .serieuze-modus-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #555;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+
+  .serieuze-modus-modal-header h3 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: #ff6b6b;
+  }
+
+  .serieuze-modus-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 10px;
+    line-height: 1;
+  }
+
+  .serieuze-modus-modal-close:hover {
+    color: #bbb;
+  }
+
+  .serieuze-modus-modal-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .serieuze-modus-modal-body p {
+    margin: 0 0 16px 0;
+    color: #e0e0e0;
+  }
+
+  .serieuze-modus-modal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .serieuze-modus-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #555;
+    padding-top: 20px;
+  }
+
+  .serieuze-modus-modal-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .serieuze-modus-modal-button.secondary {
+    background-color: #555;
+    color: #e0e0e0;
+  }
+
+  .serieuze-modus-modal-button.secondary:hover {
+    background-color: #666;
+  }
+
+  .serieuze-modus-modal-button.primary {
+    background-color: #ff6b6b;
+    color: white;
+  }
+
+  .serieuze-modus-modal-button.primary:hover {
+    background-color: #ff5252;
+  }
+
+.certificaat-knop {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  background-color: #48bb78;
+  color: white;
+}
+
+.certificaat-knop:hover {
+  background-color: #38a169;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+} 

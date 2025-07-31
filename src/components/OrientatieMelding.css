@@ -1,0 +1,95 @@
+.orientatie-melding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 2000; /* Zorgt dat het boven alles komt */
+}
+
+.orientatie-melding-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.orientatie-icoon {
+  width: 60px;
+  height: 60px;
+  animation: rotate-animation 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate-animation {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+
+/* Verberg de melding in landschapsmodus */
+@media (orientation: landscape) {
+  .orientatie-melding-overlay {
+    display: none;
+  }
+}
+
+/* Verberg de melding standaard op grotere schermen (tablets en desktops) */
+@media (min-width: 769px) {
+  .orientatie-melding-overlay {
+    display: none;
+  }
+}
+
+.orientatie-melding-content p {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.fullscreen-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.fullscreen-tip p {
+  margin: 0 10px 0 0;
+  font-size: 1rem;
+}
+
+.fullscreen-icoon {
+  width: 24px;
+  height: 24px;
+}
+
+.negeer-knop {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.negeer-knop:hover {
+  background-color: #0056b3;
+} 

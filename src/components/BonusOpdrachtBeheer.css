@@ -1,0 +1,326 @@
+.bonus-opdracht-beheer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /* Verwijder padding en border voor betere integratie in harmonica */
+}
+
+.bonus-opdracht-beheer .uitleg-tekst {
+  font-size: 0.9em;
+  color: #ccc;
+  margin-bottom: 5px;
+  max-width: 600px;
+}
+
+/* Excel Sectie */
+.bonus-opdracht-beheer .excel-sectie {
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.bonus-opdracht-beheer .excel-sectie h5 {
+  margin: 0 0 10px 0;
+  color: #fff;
+  font-size: 1em;
+}
+
+.bonus-opdracht-beheer .excel-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bonus-opdracht-beheer .excel-knop {
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex: 1;
+  min-width: 140px;
+}
+
+.bonus-opdracht-beheer .excel-knop:hover {
+  background-color: #5a5a5a;
+}
+
+.bonus-opdracht-beheer .excel-knop:disabled {
+  background-color: #3a3a3a;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.bonus-opdracht-beheer .sjabloon-knop {
+  background-color: #2196F3;
+}
+
+.bonus-opdracht-beheer .sjabloon-knop:hover {
+  background-color: #1976D2;
+}
+
+.bonus-opdracht-beheer .export-knop {
+  background-color: #4CAF50;
+}
+
+.bonus-opdracht-beheer .export-knop:hover {
+  background-color: #388E3C;
+}
+
+.bonus-opdracht-beheer .import-knop {
+  background-color: #FF9800;
+}
+
+.bonus-opdracht-beheer .import-knop:hover {
+  background-color: #F57C00;
+}
+
+/* Beheer Knoppen */
+.bonus-opdracht-beheer .beheer-knoppen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bonus-opdracht-beheer .bulk-verwijder-knop {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.bonus-opdracht-beheer .bulk-verwijder-knop:hover {
+  background-color: #c62828;
+}
+
+.bonus-opdracht-beheer .reset-basis-knop {
+  background-color: #FF9800;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.bonus-opdracht-beheer .reset-basis-knop:hover {
+  background-color: #F57C00;
+}
+
+/* Handmatige Sectie */
+.bonus-opdracht-beheer .handmatig-sectie {
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.bonus-opdracht-beheer .handmatig-sectie h5 {
+  margin: 0 0 10px 0;
+  color: #fff;
+  font-size: 1em;
+}
+
+/* Lijst Sectie */
+.bonus-opdracht-beheer .lijst-sectie {
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.bonus-opdracht-beheer .lijst-sectie h5 {
+  margin: 0 0 10px 0;
+  color: #fff;
+  font-size: 1em;
+}
+
+.bonus-opdracht-beheer .schakelaar-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #3a3a3a;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.bonus-opdracht-beheer .schakelaar {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #555;
+  border-radius: 26px;
+  transition: background-color 0.3s;
+  outline: none;
+  cursor: pointer;
+}
+
+.bonus-opdracht-beheer .schakelaar::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  transition: transform 0.3s;
+}
+
+.bonus-opdracht-beheer .schakelaar:checked {
+  background-color: #4CAF50; /* Groen */
+}
+
+.bonus-opdracht-beheer .schakelaar:checked::before {
+  transform: translateX(24px);
+}
+
+.bonus-opdracht-beheer .bonus-opdrachten-lijst {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bonus-opdracht-beheer .bonus-opdracht-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
+}
+
+.bonus-opdracht-beheer .opdracht-tekst {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.bonus-opdracht-beheer .verwijder-knop {
+  background-color: #e53935; /* Rood */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bonus-opdracht-beheer .verwijder-knop:hover {
+  background-color: #c62828;
+}
+
+.bonus-opdracht-beheer .nieuwe-opdracht-formulier {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.bonus-opdracht-beheer .tekst-input {
+  flex-grow: 1;
+  padding: 8px;
+}
+
+.bonus-opdracht-beheer .punten-input {
+  width: 120px;
+  padding: 8px;
+}
+
+.bonus-opdracht-beheer .toevoeg-knop {
+  background-color: #4CAF50; /* Groen */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Bevestigingsdialoog */
+.bonus-opdracht-beheer .bevestigings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.bonus-opdracht-beheer .bevestigings-dialoog {
+  background-color: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.bonus-opdracht-beheer .bevestigings-dialoog h4 {
+  margin: 0 0 15px 0;
+  color: #fff;
+}
+
+.bonus-opdracht-beheer .bevestigings-dialoog p {
+  margin: 0 0 20px 0;
+  color: #ccc;
+}
+
+.bonus-opdracht-beheer .bevestigings-knoppen {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.bonus-opdracht-beheer .annuleer-knop {
+  background-color: #666;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bonus-opdracht-beheer .annuleer-knop:hover {
+  background-color: #555;
+}
+
+.bonus-opdracht-beheer .bevestig-knop {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bonus-opdracht-beheer .bevestig-knop:hover {
+  background-color: #c62828;
+} 

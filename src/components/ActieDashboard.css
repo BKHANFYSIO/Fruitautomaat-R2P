@@ -1,0 +1,78 @@
+.actie-dashboard {
+  width: 100%;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assessment-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.top-row, .bottom-row {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+.top-row {
+  align-items: center;
+}
+
+.timer-wrapper {
+  flex-grow: 1;
+}
+
+.extra-spin-wrapper {
+  flex-shrink: 0;
+}
+
+.extra-spin-wrapper .joker-spin-knop {
+    background-color: #5a4fcf;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+    border: 1px solid #7a70e2;
+}
+.extra-spin-wrapper .joker-spin-knop:hover {
+    background-color: #7a70e2;
+}
+
+
+.bottom-row {
+  align-items: flex-end; /* Lijn de onderkanten uit */
+}
+
+.action-buttons-wrapper {
+  flex: 1; /* Neemt 1 deel van de ruimte */
+  min-width: 0;
+}
+
+.assessment-wrapper {
+  flex: 1.2; /* Neemt 1.2 deel, iets meer ruimte */
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .bottom-row {
+    flex-direction: column;
+    align-items: stretch; /* Zorg dat items de volledige breedte gebruiken */
+    gap: 15px; /* Wat meer verticale ruimte tussen de groepen */
+  }
+
+  .assessment-wrapper {
+    /* De flex-waarde is niet meer nodig in kolom-modus */
+  }
+} 

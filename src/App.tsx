@@ -1,0 +1,1445 @@
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+
+// Data and types
+import { useOpdrachten } from './data/useOpdrachten';
+import type { Opdracht, Speler, Achievement, GamePhase } from './data/types';
+import { getHighScore, saveHighScore, getPersonalBest, savePersonalBest, getHighScoreLibrary, type HighScore } from './data/highScoreManager';
+import { getLeerDataManager } from './data/leerDataManager';
+import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
+
+// Components
+import { SpelerInput } from './components/SpelerInput';
+import { Scorebord } from './components/Scorebord';
+import { Fruitautomaat } from './components/Fruitautomaat';
+import { CategorieFilter } from './components/CategorieFilter';
+import { BestandsUploader } from './components/BestandsUploader';
+import { Instellingen } from './components/Instellingen';
+import { Uitleg } from './components/Uitleg';
+import { ActieDashboard } from './components/ActieDashboard';
+import { OrientatieMelding } from './components/OrientatieMelding';
+import { Eindscherm } from './components/Eindscherm';
+import { SessieSamenvatting } from './components/SessieSamenvatting';
+import { AchievementNotificatie } from './components/AchievementNotificatie';
+import { Leeranalyse } from './components/Leeranalyse';
+import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
+import { DevPanel } from './components/DevPanel';
+
+// Hooks
+import { useAudio } from './hooks/useAudio';
+import { useWindowSize } from './hooks/useWindowSize';
+import { useSwipe } from './hooks/useSwipe';
+import { useGameEngine } from './hooks/useGameEngine';
+import { useSettings } from './context/SettingsContext';
+
+// Styles
+import './App.css';
+
+
+type Notificatie = {
+  zichtbaar: boolean;
+  bericht: string;
+  type: 'succes' | 'fout';
+}
+
+function App() {
+  // Refs
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const actieDashboardRef = useRef<HTMLDivElement>(null);
+
+  // Data hooks
+  const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData } = useOpdrachten('/opdrachten.xlsx');
+  
+  // Settings context
+  const {
+    gameMode,
+    setGameMode,
+    maxRondes,
+    isGeluidActief,
+    isTimerActief,
+    setIsTimerActief,
+    isEerlijkeSelectieActief,
+    isJokerSpinActief,
+    setIsJokerSpinActief,
+    isBonusOpdrachtenActief,
+    isSpinVergrendelingActief,
+    setIsSpinVergrendelingActief,
+    isAutomatischScorebordActief,
+    bonusKans,
+    forceerMobieleWeergave,
+    isSerieuzeLeerModusActief,
+    setIsSerieuzeLeerModusActief,
+    isLeerFeedbackActief,
+    setIsLeerFeedbackActief,
+    isLeitnerActief,
+    setIsLeitnerActief,
+  } = useSettings();
+
+  // Game engine hook
+  const {
+    spelers,
+    setSpelers,
+    huidigeSpeler,
+    setHuidigeSpeler,
+    gamePhase,
+    setGamePhase,
+    huidigeOpdracht,
+    setHuidigeOpdracht,
+    spinResultaat,
+    setSpinResultaat,
+    huidigeSpinAnalyse,
+    setHuidigeSpinAnalyse,
+    aantalBeurtenGespeeld,
+    setAantalBeurtenGespeeld,
+    isSpelGestart,
+    setIsSpelGestart,
+    verdiendeSpinsDezeBeurt,
+    setVerdiendeSpinsDezeBeurt,
+    analyseerSpin,
+    shuffle
+  } = useGameEngine();
+
+  // UI state
+  const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>([]);
+  const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
+  const [isUitlegOpen, setIsUitlegOpen] = useState(false);
+  const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [notificatie, setNotificatie] = useState<Notificatie>({ zichtbaar: false, bericht: '', type: 'succes' });
+  const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
+  const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
+
+  // File upload state
+  const [isVervangenActief, setIsVervangenActief] = useState(false);
+  const [geselecteerdBestand, setGeselecteerdBestand] = useState<File | null>(null);
+
+  // High score state
+  const [currentHighScore, setCurrentHighScore] = useState<HighScore | null>(null);
+  const [isNieuwRecord, setIsNieuwRecord] = useState(false);
+  const [currentPersonalBest, setCurrentPersonalBest] = useState<HighScore | null>(null);
+  const [isNieuwPersoonlijkRecord, setIsNieuwPersoonlijkRecord] = useState(false);
+
+  // Dev mode state
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [forceResult, setForceResult] = useState<(string | null)[]>([null, null, null]);
+
+  const { width } = useWindowSize();
+  const isMobieleWeergave = forceerMobieleWeergave || width <= 1280;
+
+  // Swipe functionaliteit voor mobiele weergave
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => {
+      if (isMobieleWeergave && isScoreLadeOpen) {
+        setIsScoreLadeOpen(false);
+      }
+    },
+    onSwipeRight: () => {
+      if (isMobieleWeergave && !isScoreLadeOpen) {
+        setIsScoreLadeOpen(true);
+      }
+    }
+  }, {
+    minSwipeDistance: 60, // Iets lager voor betere detectie
+    maxSwipeTime: 800 // Meer tijd voor comfort
+  });
+
+  // Effect om de spelerslijst te resetten bij het wisselen naar single-player
+  useEffect(() => {
+    // Als je van modus wisselt, begin je altijd met een schone lei.
+    if (spelers.length > 0) {
+      setSpelers([]); // Verwijder alle spelers
+    }
+  }, [gameMode]);
+
+  // Bepaal de effectieve max rondes gebaseerd op de game mode
+  const effectieveMaxRondes = gameMode === 'single' ? 10 : maxRondes;
+  
+  // Logica om de speler input uit te schakelen
+  const isSpelerInputDisabled = gameMode === 'single' && spelers.length >= 1;
+
+  // Helper functie om te controleren of er voldoende spelers zijn
+  const heeftVoldoendeSpelers = () => {
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      return true; // Geen spelers nodig in serieuze leermodus
+    }
+    if (gameMode === 'single') {
+      return spelers.length >= 1;
+    } else {
+      return spelers.length >= 2;
+    }
+  };
+
+  const huidigeRonde = spelers.length > 0 ? Math.ceil(aantalBeurtenGespeeld / spelers.length) || 1 : 1;
+
+  const [playSpinStart] = useAudio('/sounds/spin-start.mp3', isGeluidActief);
+  const [playJokerWin] = useAudio('/sounds/joker-win.mp3', isGeluidActief);
+  const [playGameEnd] = useAudio('/sounds/game-end.mp3', isGeluidActief);
+  const [playNewRecord] = useAudio('/sounds/new-record.mp3', isGeluidActief);
+  const [playMultiplayerEnd] = useAudio('/sounds/multiplayer-end.mp3', isGeluidActief);
+  const [playBonusStart] = useAudio('/sounds/bonus-start.mp3', isGeluidActief);
+  const [playPartnerChosen] = useAudio('/sounds/partner-chosen.mp3', isGeluidActief);
+
+
+  // State voor de 'eerlijke' selectie
+  const [spelerWachtrij, setSpelerWachtrij] = useState<Speler[]>([]);
+  const [recentGebruikteOpdrachten, setRecentGebruikteOpdrachten] = useState<Opdracht[]>([]);
+
+  // State voor de fruitautomaat animatie
+  const [isAanHetSpinnen, setIsAanHetSpinnen] = useState(false);
+  const [gekozenPartner, setGekozenPartner] = useState<Speler | null>(null);
+  const [puntenVoorVerdubbeling, setPuntenVoorVerdubbeling] = useState<number>(0);
+  const [huidigeBonusOpdracht, setHuidigeBonusOpdracht] = useState<{ opdracht: string, punten: number[] } | null>(null);
+  const [bonusOpdrachten, setBonusOpdrachten] = useState<typeof BONUS_OPDRACHTEN>(BONUS_OPDRACHTEN);
+  const [opgespaardeBonusPunten, setOpgespaardeBonusPunten] = useState<number>(0);
+
+  // Effect om serieuze leer-modus uit te schakelen bij wisselen naar multiplayer
+  useEffect(() => {
+    if (gameMode === 'multi' && isSerieuzeLeerModusActief) {
+      setIsSerieuzeLeerModusActief(false);
+      setIsLeerFeedbackActief(false);
+      // Reset spel state bij overschakelen naar multiplayer
+      setHuidigeSessieId(null);
+      setIsSpelGestart(false);
+    }
+  }, [gameMode, isSerieuzeLeerModusActief]);
+
+  // Effect om automatisch leerfeedback aan te zetten bij serieuze leer-modus
+  useEffect(() => {
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      setIsLeerFeedbackActief(true);
+    }
+  }, [isSerieuzeLeerModusActief, gameMode]);
+
+  // Effect om automatisch Leitner te activeren bij serieuze leer-modus
+  useEffect(() => {
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      setIsLeitnerActief(true);
+    }
+  }, [isSerieuzeLeerModusActief, gameMode]);
+
+  // Effect om spelverloop instellingen aan te passen bij serieuze leer-modus
+  useEffect(() => {
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      setIsTimerActief(false);
+      // Alleen standaard AAN zetten als er geen opgeslagen voorkeur is
+      const leerDataManager = getLeerDataManager();
+      const preferences = leerDataManager.loadPreferences();
+      // Veranderd naar een expliciete boolean check voor meer robuustheid
+      if (typeof preferences.spinVergrendelingActief !== 'boolean') {
+        setIsSpinVergrendelingActief(true); // Standaard AAN in leermodus
+      }
+      setIsJokerSpinActief(false);
+    }
+  }, [isSerieuzeLeerModusActief, gameMode]);
+
+  // Effect om spelverloop instellingen aan te zetten bij normale single player modus
+  useEffect(() => {
+    if (!isSerieuzeLeerModusActief && gameMode === 'single') {
+      setIsTimerActief(true);
+      setIsSpinVergrendelingActief(true);
+      setIsJokerSpinActief(true);
+    }
+  }, [isSerieuzeLeerModusActief, gameMode]);
+
+  // Effect om Leitner instelling te synchroniseren
+  useEffect(() => {
+    const leerDataManager = getLeerDataManager();
+    const leitnerData = leerDataManager.loadLeitnerData();
+    setIsLeitnerActief(leitnerData.isLeitnerActief);
+  }, []);
+
+  // Effect om preferences te laden
+  useEffect(() => {
+    const leerDataManager = getLeerDataManager();
+    const preferences = leerDataManager.loadPreferences();
+    
+    // Laad spin vergrendeling voorkeur als deze bestaat
+    if (preferences.spinVergrendelingActief !== undefined) {
+      setIsSpinVergrendelingActief(preferences.spinVergrendelingActief);
+    }
+  }, []);
+
+  // Effect om Leitner instelling op te slaan wanneer deze verandert
+  useEffect(() => {
+    const leerDataManager = getLeerDataManager();
+    const leitnerData = leerDataManager.loadLeitnerData();
+    if (leitnerData.isLeitnerActief !== isLeitnerActief) {
+      leitnerData.isLeitnerActief = isLeitnerActief;
+      leerDataManager.saveLeitnerData(leitnerData);
+    }
+  }, [isLeitnerActief]);
+
+  // Effect om spin vergrendeling voorkeur op te slaan wanneer deze verandert
+  useEffect(() => {
+    const leerDataManager = getLeerDataManager();
+    const preferences = leerDataManager.loadPreferences();
+    preferences.spinVergrendelingActief = isSpinVergrendelingActief;
+    leerDataManager.savePreferences(preferences);
+  }, [isSpinVergrendelingActief]);
+
+  // Leerdata tracking
+  const [huidigeSessieId, setHuidigeSessieId] = useState<string | null>(null);
+  const [opdrachtStartTijd, setOpdrachtStartTijd] = useState<number | null>(null);
+  
+  // Sessie controle
+  const [isSessieSamenvattingOpen, setIsSessieSamenvattingOpen] = useState(false);
+  const [eindigdeSessieData, setEindigdeSessieData] = useState<any>(null);
+  const [isLeeranalyseOpen, setIsLeeranalyseOpen] = useState(false);
+  const [openLeeranalyseToAchievements, setOpenLeeranalyseToAchievements] = useState(false);
+  const [nieuweAchievement, setNieuweAchievement] = useState<Achievement | null>(null);
+
+  const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+
+  // --- DEV PANEL FUNCTIES ---
+  const handleSimuleerVoltooiing = () => {
+    const leerDataManager = getLeerDataManager();
+    const nieuweAchievements = leerDataManager.updateHerhalingAchievements();
+    
+    nieuweAchievements.forEach((achievement, index) => {
+      setTimeout(() => setNieuweAchievement(achievement as unknown as Achievement), index * 1000);
+    });
+    
+    // Forceer een re-render om stats bij te werken
+    setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen));
+    
+    alert('Dagelijkse herhalingen voltooid en achievements gecontroleerd!');
+  };
+
+  const handleForcePromotie = (boxNummer: number) => {
+    const leerDataManager = getLeerDataManager();
+    // Deze functie is een placeholder. We moeten een manier vinden om een opdracht te promoten.
+    // Voor nu roepen we de check direct aan voor de demo.
+    const leitnerData = leerDataManager.loadLeitnerData();
+    const nieuweAchievement = leerDataManager['checkPromotieAchievement'](boxNummer, leitnerData);
+    
+    if (nieuweAchievement) {
+      setNieuweAchievement(nieuweAchievement as unknown as Achievement);
+      alert(`Achievement voor het bereiken van Box ${boxNummer} geforceerd!`);
+    } else {
+      alert(`Kon geen achievement forceren voor Box ${boxNummer}. Mogelijk al behaald.`);
+    }
+  };
+
+  const handleResetLeitner = () => {
+    const leerDataManager = getLeerDataManager();
+    localStorage.removeItem('fruitautomaat_leitner_' + leerDataManager.getSpelerId());
+    // Forceer re-render van stats
+    setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+    alert('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.');
+  };
+
+  const handleForceHerhalingen = (boxId: number, aantal: number) => {
+    // Stap 1: Forceer de data en krijg de relevante categorieën direct terug.
+    const leerDataManager = getLeerDataManager();
+    const { toegevoegd, categorieen } = leerDataManager.forceerHerhalingenInBox(opdrachten, aantal, boxId);
+
+    if (toegevoegd === 0) {
+      alert("Kon geen nieuwe opdrachten forceren. Mogelijk zijn alle opdrachten al in het leersysteem.");
+      return;
+    }
+
+    // Stap 2: Update de state met de ZEKER correcte categorieën.
+    setGeselecteerdeCategorieen(categorieen);
+    setGameMode('single');
+    setIsSerieuzeLeerModusActief(true);
+    setIsLeitnerActief(true);
+
+    // Stap 3: Forceer een handmatige, synchrone update van de teller.
+    // Dit omzeilt de asynchrone aard van useEffect voor een directe UI-update.
+    const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(categorieen);
+    setLeitnerStats(stats);
+    
+    alert(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. De app is nu in Leermodus en de juiste categorieën zijn geselecteerd. Start een opdracht om een herhaling te krijgen.`);
+  };
+  // --- EINDE DEV PANEL FUNCTIES ---
+
+
+
+  // Effect om de wachtrij te vullen/resetten als spelers veranderen
+  useEffect(() => {
+    if (spelers.length > 0) {
+      setSpelerWachtrij(shuffle(spelers));
+    } else {
+      setSpelerWachtrij([]);
+    }
+  }, [spelers.length]); // <-- DE WIJZIGING: reageer alleen op het AANTAL spelers
+
+  // Effect om de 'd' toets te detecteren voor dev mode
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'd') {
+          setIsDevMode(prev => !prev);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, []);
+
+  // Effect om leeranalyse te openen via custom event
+  useEffect(() => {
+    const handleOpenLeeranalyse = () => {
+      setIsLeeranalyseOpen(true);
+    };
+
+    window.addEventListener('openLeeranalyse', handleOpenLeeranalyse);
+    return () => window.removeEventListener('openLeeranalyse', handleOpenLeeranalyse);
+  }, []);
+
+  // Effect om te scrollen naar de beoordelingssectie na een spin
+  useEffect(() => {
+    const scrollStates: GamePhase[] = ['assessment', 'partner_choice', 'double_or_nothing', 'bonus_round'];
+
+    if (scrollStates.includes(gamePhase)) {
+      const timer = setTimeout(() => {
+        const element = actieDashboardRef.current;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          // Scroll alleen als het element niet volledig zichtbaar is.
+          const isVolledigZichtbaar = rect.top >= 0 && rect.bottom <= window.innerHeight;
+          if (!isVolledigZichtbaar) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 2000); // Wacht 2 seconden
+
+      return () => clearTimeout(timer);
+    }
+  }, [gamePhase]);
+
+  // Effect om te waarschuwen bij het verlaten van de pagina
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Toon alleen de waarschuwing als er spelers zijn of als de bonusopdrachten zijn aangepast
+      const heeftSpelers = spelers.length > 0;
+      const heeftAangepasteBonusOpdrachten = JSON.stringify(bonusOpdrachten) !== JSON.stringify(BONUS_OPDRACHTEN);
+
+      if (heeftSpelers || heeftAangepasteBonusOpdrachten) {
+        e.preventDefault();
+        e.returnValue = 'Ben je zeker dat je de pagina wil verlaten? Alle voortgang, zoals scores en aangepaste opdrachten, gaat verloren.';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [spelers, bonusOpdrachten]);
+
+  // Effect om de high score te laden wanneer categorieën veranderen in single player mode
+  useEffect(() => {
+    if (gameMode === 'single' && geselecteerdeCategorieen.length > 0) {
+      const score = getHighScore(geselecteerdeCategorieen);
+      setCurrentHighScore(score);
+    } else {
+      setCurrentHighScore(null);
+    }
+  }, [gameMode, geselecteerdeCategorieen]);
+
+  // Effect om Leitner statistieken te berekenen
+  useEffect(() => {
+    if (isLeitnerActief && isSerieuzeLeerModusActief) {
+      const leerDataManager = getLeerDataManager();
+      const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen);
+      setLeitnerStats(stats);
+    } else {
+      setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+    }
+  }, [isLeitnerActief, isSerieuzeLeerModusActief, geselecteerdeCategorieen, aantalBeurtenGespeeld]);
+
+  // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
+  useEffect(() => {
+    return () => {
+      // Cleanup: eindig sessie bij unmount of uitschakelen van serieuze leer-modus
+      if (huidigeSessieId && isSerieuzeLeerModusActief && gameMode === 'single') {
+        const leerDataManager = getLeerDataManager();
+        leerDataManager.endSessie(huidigeSessieId);
+      }
+    };
+  }, [huidigeSessieId, isSerieuzeLeerModusActief, gameMode]);
+
+  // Uitgebreide reset functie voor alle spel state
+  const resetSpelState = () => {
+    setIsSpelGestart(false);
+    setAantalBeurtenGespeeld(0);
+    setSpelers([]); // Spelers wissen voor volledige reset
+    setHuidigeSpeler(null);
+    setSpelerWachtrij([]);
+    setRecentGebruikteOpdrachten([]);
+    setIsAanHetSpinnen(false);
+    setSpinResultaat({
+      jackpot: [0, 0, 0],
+      categorie: -1,
+      opdracht: -1,
+      naam: -1,
+    });
+    setHuidigeSpinAnalyse(null);
+    setGekozenPartner(null);
+    setPuntenVoorVerdubbeling(0);
+    setHuidigeBonusOpdracht(null);
+    setOpgespaardeBonusPunten(0);
+    setHuidigeSessieId(null); // Wis sessie ID bij reset
+    setOpdrachtStartTijd(null);
+    setGamePhase('idle');
+  };
+
+  // Memoized unieke categorieën voor het filter
+  const uniekeCategorieen = useMemo(() => {
+    return [...new Set(opdrachten.map((o) => o.Categorie))];
+  }, [opdrachten]);
+
+  // Update de geselecteerde categorieën wanneer de opdrachten geladen zijn
+  useEffect(() => {
+    if (opdrachten.length > 0) {
+      setGeselecteerdeCategorieen([...new Set(opdrachten.map((o) => o.Categorie))]);
+    }
+  }, [opdrachten]);
+
+  const handleCategorieSelectie = (categorie: string) => {
+    setGeselecteerdeCategorieen((prev) =>
+      prev.includes(categorie)
+        ? prev.filter((c) => c !== categorie)
+        : [...prev, categorie]
+    );
+  };
+
+  // Filter opdrachten op basis van selectie
+  const gefilterdeOpdrachten = useMemo(() => {
+    // In multiplayer of als geen categorieën geselecteerd zijn, toon alle opdrachten
+    if (gameMode === 'multi' || geselecteerdeCategorieen.length === 0) {
+      return opdrachten;
+    }
+    // Anders filter op geselecteerde categorieën
+    return opdrachten.filter((opdracht) =>
+      geselecteerdeCategorieen.includes(opdracht.Categorie)
+    );
+  }, [opdrachten, geselecteerdeCategorieen, gameMode]);
+
+  const handleSpelerToevoegen = (naam: string) => {
+    if (spelers.find((speler) => speler.naam.toLowerCase() === naam.toLowerCase())) {
+      alert('Deze speler bestaat al.');
+      return;
+    }
+    const nieuweSpeler: Speler = { naam, score: 0, extraSpins: 0, beurten: 0 };
+    setSpelers([...spelers, nieuweSpeler]);
+  };
+
+  // Sessie controle functies
+  const handleEindigSessie = () => {
+    if (huidigeSessieId) {
+      const leerDataManager = getLeerDataManager();
+      leerDataManager.endSessie(huidigeSessieId);
+      
+      // Haal sessie data op voor samenvatting
+      const leerData = leerDataManager.loadLeerData();
+      const sessieData = leerData?.sessies[huidigeSessieId];
+      
+      if (sessieData) {
+        setEindigdeSessieData(sessieData);
+        setIsSessieSamenvattingOpen(true);
+      }
+      
+      // Reset spel state zodat gebruiker kan overschakelen naar multiplayer
+      setHuidigeSessieId(null);
+      setIsSpelGestart(false);
+    }
+  };
+
+  const handleOpenLeeranalyse = (openToAchievements = false) => {
+    setIsScoreLadeOpen(false);
+    setIsLeeranalyseOpen(true);
+    setOpenLeeranalyseToAchievements(openToAchievements);
+  };
+
+  // Maak de display items voor de fruit rollen
+  const fruitDisplayItems = SYMBOLEN.map(s => ({ 
+    symbool: s.symbool, 
+    img: s.img, 
+    className: s.className 
+  }));
+
+  const handleSpin = () => {
+    if (!isSpelGestart) {
+      setIsSpelGestart(true);
+      
+      // Toon sessie start melding bij eerste spin in serieuze leer-modus
+      if (isSerieuzeLeerModusActief && gameMode === 'single') {
+        setNotificatie({ 
+          zichtbaar: true, 
+          bericht: '📚 Sessie gestart! Vergeet niet je sessie te eindigen voor een samenvatting.', 
+          type: 'succes' 
+        });
+        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 5000);
+      }
+    }
+    
+    // Start nieuwe sessie als er geen actieve sessie is en we in serieuze leer-modus zijn
+    if (isSerieuzeLeerModusActief && gameMode === 'single' && !huidigeSessieId) {
+      const leerDataManager = getLeerDataManager();
+      const nieuweSessieId = leerDataManager.startSessie(true);
+      setHuidigeSessieId(nieuweSessieId);
+      
+      setNotificatie({ 
+        zichtbaar: true, 
+        bericht: '📚 Nieuwe sessie gestart!', 
+        type: 'succes' 
+      });
+      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 3000);
+    }
+    
+    if (isAanHetSpinnen || gefilterdeOpdrachten.length === 0 || !heeftVoldoendeSpelers()) return;
+
+    // 1. Kies speler
+    let gekozenSpeler: Speler;
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      // In serieuze leermodus: gebruik een virtuele speler
+      gekozenSpeler = { naam: "Jij", score: 0, extraSpins: 0, beurten: 0 };
+    } else {
+      if (isEerlijkeSelectieActief && spelers.length > 1) {
+        let wachtrij = [...spelerWachtrij];
+        if (wachtrij.length === 0) {
+          wachtrij = shuffle(spelers);
+        }
+        gekozenSpeler = wachtrij.shift()!;
+        setSpelerWachtrij(wachtrij);
+      } else {
+        const randomIndex = Math.floor(Math.random() * spelers.length);
+        gekozenSpeler = spelers[randomIndex];
+      }
+      
+      // Verhoog de beurtenteller voor de gekozen speler
+      setSpelers(prevSpelers =>
+        prevSpelers.map(p =>
+          p.naam === gekozenSpeler.naam ? { ...p, beurten: p.beurten + 1 } : p
+        )
+      );
+    }
+
+    voerSpinUit(gekozenSpeler);
+  };
+
+  const handleGebruikExtraSpin = () => {
+    if (!huidigeSpeler || huidigeSpeler.extraSpins <= 0) return;
+
+    const nieuweSpelersLijst = spelers.map(p => 
+      p.naam === huidigeSpeler.naam ? { ...p, extraSpins: p.extraSpins - 1 } : p
+    );
+    const bijgewerkteHuidigeSpeler = nieuweSpelersLijst.find(p => p.naam === huidigeSpeler.naam);
+
+    setSpelers(nieuweSpelersLijst);
+
+    // Voer een nieuwe spin uit voor dezelfde speler, met de bijgewerkte state
+    if (bijgewerkteHuidigeSpeler) {
+      setHuidigeSpeler(bijgewerkteHuidigeSpeler);
+      voerSpinUit(bijgewerkteHuidigeSpeler);
+      
+      // Scroll naar boven voor mobiele weergave
+      if (isMobieleWeergave) {
+        mainContentRef.current?.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      }
+    }
+  };
+
+  const voerSpinUit = (gekozenSpeler: Speler) => {
+    playSpinStart();
+    setIsAanHetSpinnen(true);
+    setGamePhase('spinning');
+
+    let gekozenOpdracht: Opdracht | null = null;
+    let opdrachtType: 'herhaling' | 'nieuw' | 'geen' = 'geen';
+    let boxNummer: number | undefined = undefined;
+
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      const leerDataManager = getLeerDataManager();
+      
+      // Filter de te herhalen opdrachten HIER met de meest up-to-date state
+      const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
+      const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
+        geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
+      );
+      
+      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
+      gekozenOpdracht = result.opdracht;
+      opdrachtType = result.type;
+      boxNummer = result.box;
+
+      if (!gekozenOpdracht) {
+        alert('Alle opdrachten (zowel nieuw als te herhalen) in de geselecteerde categorieën zijn voltooid. Selecteer andere categorieën om verder te gaan.');
+        setIsAanHetSpinnen(false);
+        setGamePhase('idle');
+        return;
+      }
+    } else {
+      // Standaard selectie voor multiplayer of niet-serieuze modus
+      const beschikbareOpdrachten = gefilterdeOpdrachten.filter(
+        op => !recentGebruikteOpdrachten.find(ruo => ruo.Opdracht === op.Opdracht)
+      );
+      const teKiezenLijst = beschikbareOpdrachten.length > 0 ? beschikbareOpdrachten : gefilterdeOpdrachten;
+      
+      gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
+      opdrachtType = 'nieuw';
+    }
+
+    setRecentGebruikteOpdrachten(prev => {
+      if (!gekozenOpdracht) return prev;
+      const updatedList = [gekozenOpdracht, ...prev];
+      return updatedList.slice(0, 10);
+    });
+
+    // Leerdata tracking - record opdracht start
+    if (isSerieuzeLeerModusActief && gameMode === 'single' && gekozenOpdracht) {
+      const leerDataManager = getLeerDataManager();
+      leerDataManager.recordOpdrachtStart(gekozenOpdracht);
+      setOpdrachtStartTijd(Date.now());
+    }
+
+    // 3. Kies Jackpot
+    const kansNiveaus = {
+      standaard: 0, // Geen extra kans, volgt de natuurlijke flow
+      verhoogd: 0.10, // 10% kans
+      fors_verhoogd: 0.25 // 25% kans
+    };
+
+    const moetBonusForceren = Math.random() < kansNiveaus[bonusKans];
+    
+    const jackpotSymbols = moetBonusForceren 
+      ? ['❓', '❓', '❓']
+      : [
+          forceResult[0] || SYMBOLEN[Math.floor(Math.random() * SYMBOLEN.length)].symbool,
+          forceResult[1] || SYMBOLEN[Math.floor(Math.random() * SYMBOLEN.length)].symbool,
+          forceResult[2] || SYMBOLEN[Math.floor(Math.random() * SYMBOLEN.length)].symbool,
+        ];
+
+    const nieuweJackpotIndices = jackpotSymbols.map(sym => SYMBOLEN.findIndex(s => s.symbool === sym));
+    
+    // Bepaal de indices voor de rollen
+    const categorieen = [...new Set(opdrachten.map(o => o.Categorie))];
+    const opdrachtTeksten = opdrachten.map(o => o.Opdracht);
+    
+    // Bepaal speler naam index
+    let spelerNaamIndex: number;
+    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+      spelerNaamIndex = 0; // "Jij" is altijd index 0 in de rol
+    } else {
+      const spelerNamen = spelers.map(s => s.naam);
+      spelerNaamIndex = spelerNamen.indexOf(gekozenSpeler.naam);
+    }
+
+    setSpinResultaat({
+      jackpot: nieuweJackpotIndices,
+      categorie: categorieen.indexOf(gekozenOpdracht.Categorie),
+      opdracht: opdrachtTeksten.indexOf(gekozenOpdracht.Opdracht),
+      naam: spelerNaamIndex,
+    });
+
+    // Wacht tot de animatie klaar is en update dan de state
+    setTimeout(() => {
+      setHuidigeOpdracht({ opdracht: gekozenOpdracht!, type: opdrachtType, box: boxNummer });
+      setHuidigeSpeler(gekozenSpeler);
+      const jackpotSymbols = nieuweJackpotIndices.map(i => SYMBOLEN[i].symbool);
+      
+      // Gebruik de juiste speler array voor analyse
+      const spelerArrayVoorAnalyse = isSerieuzeLeerModusActief && gameMode === 'single' 
+        ? [gekozenSpeler] // Gebruik alleen de virtuele speler
+        : spelers; // Gebruik normale speler array
+      
+      const analyse = analyseerSpin(jackpotSymbols, spelerArrayVoorAnalyse, gameMode, isSerieuzeLeerModusActief, isBonusOpdrachtenActief);
+      setHuidigeSpinAnalyse(analyse);
+      setIsAanHetSpinnen(false);
+
+      // Toon leerfeedback in serieuze leer-modus bij combinaties
+      if (gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
+        setNotificatie({ 
+          zichtbaar: true, 
+          bericht: analyse.beschrijving, 
+          type: 'succes' 
+        });
+        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+      }
+
+      if (isJokerSpinActief && analyse.verdiendeSpins > 0) {
+        playJokerWin(); // Speel joker win geluid
+        setVerdiendeSpinsDezeBeurt(analyse.verdiendeSpins); // Sla op in tijdelijke state
+        setNotificatie({ 
+          zichtbaar: true, 
+          bericht: `${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 
+          type: 'succes' 
+        });
+        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+      }
+
+      if (analyse.actie === 'bonus_opdracht' && isBonusOpdrachtenActief) {
+        playBonusStart(); // Speel bonus start geluid
+        const bonusOpdracht = bonusOpdrachten[Math.floor(Math.random() * bonusOpdrachten.length)];
+        setHuidigeBonusOpdracht(bonusOpdracht);
+        setGamePhase('bonus_round');
+      } else if (analyse.actie === 'partner_kiezen') {
+        setGamePhase('partner_choice');
+      } else {
+        setGamePhase('assessment');
+      }
+      if (isSpinVergrendelingActief) {
+        setIsAntwoordVergrendeld(true);
+      }
+    }, 3600); // Net iets langer dan de langste rol animatie
+  };
+
+
+  const handlePartnerKies = useCallback((partnerNaam: string) => {
+    const partner = spelers.find(p => p.naam === partnerNaam);
+    if (partner) {
+      playPartnerChosen(); // Speel partner gekozen geluid
+      setGekozenPartner(partner);
+      setGamePhase('assessment'); // Ga nu naar de beoordelingsfase
+    }
+  }, [spelers, playPartnerChosen]);
+
+  useEffect(() => {
+    if (gameMode === 'single' && geselecteerdeCategorieen.length > 0 && spelers.length === 1) {
+      const spelerNaam = spelers[0].naam;
+      const pb = getPersonalBest(geselecteerdeCategorieen, spelerNaam);
+      setCurrentPersonalBest(pb);
+    } else {
+      setCurrentPersonalBest(null);
+    }
+  }, [gameMode, geselecteerdeCategorieen, spelers]);
+
+  const checkSpelEinde = useCallback((speler?: Speler) => {
+    if (gameMode === 'single' && speler) {
+      const wasNieuwRecord = saveHighScore(geselecteerdeCategorieen, speler.score, speler.naam);
+      const wasNieuwPb = savePersonalBest(geselecteerdeCategorieen, speler.score, speler.naam);
+      setIsNieuwRecord(wasNieuwRecord);
+      setIsNieuwPersoonlijkRecord(wasNieuwPb);
+      
+      // Speel geluid op basis van resultaat
+      if (wasNieuwRecord) {
+        playNewRecord(); // Nieuw record geluid
+      } else {
+        playGameEnd(); // Normaal einde geluid
+      }
+    } else {
+      // Multiplayer einde
+      playMultiplayerEnd(); // Feestelijk einde geluid
+    }
+    setGamePhase('ended');
+  }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd]);
+
+  const handleBeoordeling = useCallback((prestatie: 'Heel Goed' | 'Redelijk' | 'Niet Goed') => {
+    if (!huidigeOpdracht || !huidigeSpeler || !huidigeSpinAnalyse) {
+      setGamePhase('idle');
+      return;
+    }
+
+    // Leerdata tracking - record opdracht voltooid
+    if (isSerieuzeLeerModusActief && gameMode === 'single' && huidigeOpdracht) {
+      const leerDataManager = getLeerDataManager();
+      const score = prestatie === 'Heel Goed' ? 5 : prestatie === 'Redelijk' ? 3 : 1;
+      const tijdGenomen = opdrachtStartTijd ? Math.round((Date.now() - opdrachtStartTijd) / 1000) : undefined;
+      
+      const nieuweAchievements = leerDataManager.recordOpdrachtVoltooid(
+        huidigeOpdracht.opdracht,
+        score,
+        prestatie,
+        huidigeSessieId || undefined,
+        tijdGenomen,
+        isSerieuzeLeerModusActief
+      );
+      
+      // Toon notificatie voor nieuwe achievements
+      if (nieuweAchievements.length > 0) {
+        setNieuweAchievement(nieuweAchievements[0]); // Toon de eerste nieuwe achievement
+      }
+
+      // Forceer een re-render om stats bij te werken
+      setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen));
+      
+      setOpdrachtStartTijd(null);
+    }
+
+    // In serieuze leer-modus worden geen punten gegeven
+    if (gameMode === 'single' && isSerieuzeLeerModusActief) {
+      // Ga direct naar volgende beurt zonder punten
+      const volgendeBeurtNummer = aantalBeurtenGespeeld + 1;
+      setAantalBeurtenGespeeld(volgendeBeurtNummer);
+      
+      setGamePhase('idle');
+      setIsAntwoordVergrendeld(false);
+
+      mainContentRef.current?.scrollTo(0, 0);
+      window.scrollTo(0, 0);
+      
+      return;
+    }
+
+    // Normale modus met punten
+    if (prestatie !== 'Niet Goed') {
+      const standaardPunt = 1;
+      const extraPunten = Math.min(Number(huidigeOpdracht.opdracht.Extra_Punten) || 0, 2);
+      const maximalePunten = standaardPunt + extraPunten;
+      
+      let opdrachtPunten: number;
+      if (prestatie === 'Heel Goed') {
+        opdrachtPunten = maximalePunten; // 100% van de punten
+      } else if (prestatie === 'Redelijk') {
+        opdrachtPunten = maximalePunten * 0.5; // 50% van de punten
+      } else {
+        opdrachtPunten = 0; // Niet Goed
+      }
+
+      if (huidigeSpinAnalyse.actie === 'kop_of_munt') {
+        setPuntenVoorVerdubbeling(opdrachtPunten);
+        setGamePhase('double_or_nothing');
+        return;
+      }
+
+      const totaalGewonnenPunten = opdrachtPunten + huidigeSpinAnalyse.bonusPunten + opgespaardeBonusPunten;
+
+      setSpelers(spelers.map(speler => {
+        if (speler.naam === huidigeSpeler.naam || (gekozenPartner && speler.naam === gekozenPartner.naam)) {
+          return { ...speler, score: speler.score + totaalGewonnenPunten };
+        }
+        return speler;
+      }));
+    }
+
+    // Voeg verdiende spins van DEZE beurt toe aan het totaal voor de VOLGENDE beurt.
+    if (verdiendeSpinsDezeBeurt > 0 && huidigeSpeler) {
+      setSpelers(prevSpelers => prevSpelers.map(p => 
+        p.naam === huidigeSpeler.naam 
+          ? { ...p, extraSpins: p.extraSpins + verdiendeSpinsDezeBeurt }
+          : p
+      ));
+    }
+    setVerdiendeSpinsDezeBeurt(0); // Reset de tijdelijke state
+
+    // Verhoog de algemene beurtenteller pas NADAT de beurt is afgerond.
+    const volgendeBeurtNummer = aantalBeurtenGespeeld + 1;
+    setAantalBeurtenGespeeld(volgendeBeurtNummer);
+
+    const huidigeSpelerVoorUpdate = huidigeSpeler; // Sla de huidige speler op
+
+    // Algemene afronding
+    setGekozenPartner(null);
+    setOpgespaardeBonusPunten(0);
+    
+    // Controleer einde met het VOLGENDE beurtnummer en de huidige spelerslengte
+    const isEinde = effectieveMaxRondes > 0 && volgendeBeurtNummer >= effectieveMaxRondes * spelers.length;
+    
+    // Toon scorebord update alleen als het spel nog niet is afgelopen
+    if (isMobieleWeergave && isAutomatischScorebordActief && !isEinde) {
+      setIsScoreLadeOpen(true);
+      setTimeout(() => setIsScoreLadeOpen(false), 3000);
+    }
+    
+    if (isEinde) {
+      // Roep checkSpelEinde aan met de juiste spelergegevens
+      if (gameMode === 'single' && huidigeSpelerVoorUpdate) {
+        const speler = spelers.find(p => p.naam === huidigeSpelerVoorUpdate.naam)!;
+        checkSpelEinde(speler);
+      } else {
+        // Multiplayer einde zonder specifieke speler
+        playMultiplayerEnd();
+        setGamePhase('ended');
+      }
+    } else {
+      setGamePhase('idle');
+      setIsAntwoordVergrendeld(false);
+    }
+
+    mainContentRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+  }, [huidigeOpdracht, huidigeSpeler, huidigeSpinAnalyse, spelers, gekozenPartner, isMobieleWeergave, opgespaardeBonusPunten, effectieveMaxRondes, huidigeRonde, aantalBeurtenGespeeld, verdiendeSpinsDezeBeurt, gameMode, checkSpelEinde, playMultiplayerEnd, isAutomatischScorebordActief, isSerieuzeLeerModusActief, huidigeSessieId, opdrachtStartTijd]);
+
+  const handleFileSelected = (file: File) => {
+    setGeselecteerdBestand(file);
+  };
+
+  const handleAnnuleerUpload = () => {
+    setGeselecteerdBestand(null);
+  };
+
+  const handleVerwerkBestand = () => {
+    if (!geselecteerdBestand) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        const nieuweOpdrachten = parseExcelData(arrayBuffer);
+        laadNieuweOpdrachten(nieuweOpdrachten, isVervangenActief);
+        alert(`${nieuweOpdrachten.length} opdrachten succesvol geladen!`);
+        setGeselecteerdBestand(null); // Reset na succes
+        setIsInstellingenOpen(false); // Sluit de instellingen na een succesvolle upload
+      } catch (err) {
+        alert('Fout bij het verwerken van het Excel-bestand. Controleer of het format correct is.');
+        setGeselecteerdBestand(null); // Reset ook bij fout
+      }
+    };
+    reader.onerror = () => {
+      alert('Fout bij het lezen van het bestand.');
+      setGeselecteerdBestand(null); // Reset bij leesfout
+    };
+    reader.readAsArrayBuffer(geselecteerdBestand);
+  };
+
+  const handleKopOfMunt = (keuze: 'kop' | 'munt'): { uitkomst: 'kop' | 'munt'; gewonnen: boolean } => {
+    const uitkomst = Math.random() < 0.5 ? 'kop' : 'munt';
+    const gewonnen = keuze === uitkomst;
+
+    if (huidigeSpeler) {
+      if (gewonnen) {
+        const gewonnenPunten = puntenVoorVerdubbeling * 2;
+        setNotificatie({
+          zichtbaar: true,
+          bericht: `Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`,
+          type: 'succes',
+        });
+        setSpelers(spelers.map(speler =>
+          speler.naam === huidigeSpeler.naam
+            ? { ...speler, score: speler.score + gewonnenPunten }
+            : speler
+        ));
+      } else {
+        setNotificatie({
+          zichtbaar: true,
+          bericht: `Het is ${uitkomst}! Helaas, geen extra punten.`,
+          type: 'fout',
+        });
+      }
+      
+      // Scroll naar boven om de notificatie zichtbaar te maken op mobiel
+      setTimeout(() => {
+        mainContentRef.current?.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      }, 100); // Korte vertraging om de notificatie eerst te tonen
+    }
+    return { uitkomst, gewonnen };
+  };
+
+  const handleKopOfMuntVoltooid = () => {
+    setTimeout(() => {
+      setNotificatie(prev => ({ ...prev, zichtbaar: false }));
+      setPuntenVoorVerdubbeling(0);
+      
+      // Ga terug naar idle state in plaats van spel beëindigen
+      setGamePhase('idle');
+      setIsAntwoordVergrendeld(false);
+      
+      // Open de score lade op mobiel om de update te tonen
+      if (isMobieleWeergave && isAutomatischScorebordActief && gamePhase !== 'ended') {
+        setIsScoreLadeOpen(true);
+        setTimeout(() => setIsScoreLadeOpen(false), 3000); // Sluit na 3 seconden
+      }
+      mainContentRef.current?.scrollTo(0, 0);
+      window.scrollTo(0, 0); // Extra scroll voor mobiele browsers
+    }, 2500); // Wachttijd om de notificatie te lezen
+  };
+
+  const handleBonusRondeVoltooid = useCallback((geslaagd: boolean) => {
+    if (!huidigeSpeler || !huidigeBonusOpdracht) return;
+
+    if (geslaagd) {
+      const { punten } = huidigeBonusOpdracht;
+      const gewonnenPunten = punten[Math.floor(Math.random() * punten.length)];
+      setNotificatie({ 
+        zichtbaar: true, 
+        bericht: `Goed gedaan! Je kunt ${gewonnenPunten} extra punt(en) verdienen met de hoofdopdracht.`, 
+        type: 'succes' 
+      });
+      setOpgespaardeBonusPunten(gewonnenPunten);
+    } else {
+      setNotificatie({ 
+        zichtbaar: true, 
+        bericht: 'Helaas, geen extra punten deze keer.', 
+        type: 'fout' 
+      });
+    }
+
+    setTimeout(() => {
+      setNotificatie(prev => ({ ...prev, zichtbaar: false }));
+      setHuidigeBonusOpdracht(null);
+      setGamePhase('assessment'); // Ga nu door naar de hoofdopdracht
+      mainContentRef.current?.scrollTo(0, 0);
+      window.scrollTo(0, 0); // Extra scroll voor mobiele browsers
+    }, 3000);
+
+}, [huidigeSpeler, huidigeBonusOpdracht]);
+
+  const handleHerstart = () => {
+    setSpelers(spelers.map(speler => ({ ...speler, score: 0, extraSpins: 0, beurten: 0 })));
+    setAantalBeurtenGespeeld(0);
+    setHuidigeOpdracht(null);
+    setHuidigeSpeler(null);
+    setGekozenPartner(null);
+    setHuidigeSpinAnalyse(null);
+    setIsAntwoordVergrendeld(false);
+    setGamePhase('idle');
+    setIsSpelGestart(false);
+    setIsNieuwRecord(false);
+    setVerdiendeSpinsDezeBeurt(0);
+    setIsNieuwPersoonlijkRecord(false);
+  };
+
+  const handleEindigSpel = () => {
+    // Vraag om bevestiging voordat het spel wordt beëindigd
+    const bevestiging = window.confirm(
+      'Weet je zeker dat je het huidige spel wilt beëindigen? Alle scores en voortgang gaan verloren.'
+    );
+
+    if (bevestiging) {
+      resetSpelState(); // Gebruik de uitgebreide reset functie
+    }
+  };
+
+  const handleOpenInstellingen = () => {
+    setIsScoreLadeOpen(false);
+    setIsInstellingenOpen(true);
+  };
+
+  const handleOpenLeitnerCategorieBeheer = () => {
+    setIsScoreLadeOpen(false);
+    setIsCategorieBeheerOpen(true);
+  }
+
+  const handleOpenUitleg = () => {
+    setIsScoreLadeOpen(false);
+    setIsUitlegOpen(true);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    }
+  };
+
+  const handleStartFocusSessie = (categorie: string) => {
+    setGeselecteerdeCategorieen([categorie]);
+    setIsLeeranalyseOpen(false);
+    // Optioneel: toon een notificatie
+    setNotificatie({
+      zichtbaar: true,
+      bericht: `Focus modus gestart voor: ${categorie}`,
+      type: 'succes',
+    });
+    setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 4000);
+  };
+
+  if (loading) {
+    return <div>Laden...</div>;
+  }
+
+  return (
+    <div className={`app-container ${isMobieleWeergave ? 'mobile-view-active' : ''}`}>
+      {gamePhase === 'ended' && (
+        <Eindscherm
+          spelers={spelers}
+          onHerstart={handleHerstart}
+          gameMode={gameMode}
+          isNieuwRecord={isNieuwRecord}
+          highScore={currentHighScore}
+          personalBest={currentPersonalBest}
+          isNieuwPersoonlijkRecord={isNieuwPersoonlijkRecord}
+        />
+      )}
+      <AchievementNotificatie 
+        achievement={nieuweAchievement}
+        onClose={() => setNieuweAchievement(null)}
+        onOpenLeeranalyse={() => handleOpenLeeranalyse(true)}
+      />
+      <OrientatieMelding isMobiel={isMobieleWeergave} />
+      {/* De instellingen modal staat buiten de hoofdlayout voor een correcte weergave */}
+      {isInstellingenOpen && (
+        <Instellingen
+          isOpen={isInstellingenOpen}
+          onClose={() => setIsInstellingenOpen(false)}
+          // Geavanceerd
+          bonusOpdrachten={bonusOpdrachten}
+          setBonusOpdrachten={setBonusOpdrachten}
+          basisBonusOpdrachten={BONUS_OPDRACHTEN}
+          isSpelGestart={isSpelGestart}
+          onSpelReset={resetSpelState}
+          // Categorie beheer
+          onOpenCategorieBeheer={handleOpenLeitnerCategorieBeheer}
+        >
+          {/* Opdrachtenbeheer Content */}
+          <BestandsUploader
+            onFileSelected={handleFileSelected}
+            onAnnuleer={handleAnnuleerUpload}
+            onVerwerk={handleVerwerkBestand}
+            geselecteerdBestand={geselecteerdBestand}
+            isVervangenActief={isVervangenActief}
+            setIsVervangenActief={setIsVervangenActief}
+          />
+          <p className="setting-description" style={{ marginLeft: 0, marginTop: '20px', marginBottom: '15px' }}>
+              <strong>Categorieën selectie:</strong> Onderstaand selecteer je welke categorieën je wilt gebruiken tijdens het spel. 
+              Standaard zijn alle categorieën aangevinkt.
+          </p>
+          <CategorieFilter
+            categorieen={uniekeCategorieen}
+            geselecteerdeCategorieen={geselecteerdeCategorieen}
+            onCategorieSelectie={handleCategorieSelectie}
+            gameMode={gameMode}
+            highScoreLibrary={getHighScoreLibrary()}
+            onHighScoreSelect={setGeselecteerdeCategorieen}
+          />
+        </Instellingen>
+      )}
+      
+      <Uitleg isOpen={isUitlegOpen} onClose={() => setIsUitlegOpen(false)} />
+      
+      {/* Sessie samenvatting modal */}
+      <SessieSamenvatting
+        isOpen={isSessieSamenvattingOpen}
+        onClose={() => setIsSessieSamenvattingOpen(false)}
+        sessieData={eindigdeSessieData}
+        onOpenLeeranalyse={handleOpenLeeranalyse}
+      />
+      
+      {/* Leeranalyse modal */}
+      <Leeranalyse
+        isOpen={isLeeranalyseOpen}
+        onClose={() => {
+          setIsLeeranalyseOpen(false);
+          setOpenLeeranalyseToAchievements(false);
+        }}
+        key={isLeeranalyseOpen ? 'open' : 'closed'}
+        onStartFocusSessie={handleStartFocusSessie}
+        openToAchievements={openLeeranalyseToAchievements}
+      />
+
+      {isCategorieBeheerOpen && (
+        <LeitnerCategorieBeheer
+          isOpen={isCategorieBeheerOpen}
+          onClose={() => setIsCategorieBeheerOpen(false)}
+          geselecteerdeCategorieen={geselecteerdeCategorieen}
+          setGeselecteerdeCategorieen={setGeselecteerdeCategorieen}
+          alleCategorieen={uniekeCategorieen}
+          alleOpdrachten={opdrachten}
+        />
+      )}
+
+      {isMobieleWeergave && (
+        <>
+          <button className="score-lade-knop" onClick={() => setIsScoreLadeOpen(prev => !prev)}>
+            &#x1F3C6; {/* Trofee-icoon */}
+          </button>
+          <button className="fullscreen-knop" onClick={toggleFullscreen}>
+            {isFullscreen ? '⛶' : '⛶'} {/* Fullscreen iconen */}
+          </button>
+          <div 
+            className={`score-lade-overlay ${isScoreLadeOpen ? 'open' : ''}`} 
+            onClick={() => setIsScoreLadeOpen(false)}
+          ></div>
+        </>
+      )}
+
+      <div className="main-layout" {...swipeHandlers}>
+        <aside className={`left-panel ${isScoreLadeOpen ? 'open' : ''}`}>
+          {/* Setup knoppen - alleen zichtbaar als spel niet gestart is */}
+          {!isSpelGestart && (
+            <>
+              <SpelerInput 
+                onSpelerToevoegen={handleSpelerToevoegen}
+                gameMode={gameMode}
+                setGameMode={setGameMode}
+                isSpelerInputDisabled={isSpelerInputDisabled}
+                isSpelGestart={isSpelGestart}
+                isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+                setIsSerieuzeLeerModusActief={setIsSerieuzeLeerModusActief}
+                onSpelReset={resetSpelState}
+              />
+            </>
+          )}
+
+          {/* Scorebord - altijd zichtbaar */}
+          <Scorebord
+            spelers={spelers}
+            huidigeSpeler={huidigeSpeler}
+            huidigeRonde={huidigeRonde}
+            maxRondes={effectieveMaxRondes}
+            gameMode={gameMode}
+            highScore={currentHighScore}
+            personalBest={currentPersonalBest}
+            isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+            aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+          />
+
+          {/* Leitner informatie - alleen zichtbaar in leermodus */}
+          {gameMode === 'single' && isSerieuzeLeerModusActief && (
+            <div className="serieuze-leermodus-uitleg">
+              <div className="leitner-sectie">
+                <div className="leitner-header">
+                  <h5>🔄 Leitner Modus</h5>
+                  {setIsLeitnerActief && (
+                    <label className="leitner-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={isLeitnerActief}
+                        onChange={(e) => setIsLeitnerActief(e.target.checked)}
+                        disabled={isSpelGestart}
+                      />
+                      <span>Actief</span>
+                    </label>
+                  )}
+                </div>
+                
+                {isLeitnerActief && (
+                  <div className="leitner-stats">
+                    <button 
+                      onClick={handleOpenLeitnerCategorieBeheer}
+                      className="categorie-beheer-knop"
+                    >
+                      📊 Pas te leren categorieën aan ({geselecteerdeCategorieen.length} van {uniekeCategorieen.length} geselecteerd)
+                    </button>
+                    <div className="leitner-stats-info">
+                      <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
+                    </div>
+                    {leitnerStats.vandaagBeschikbaar > 0 && (
+                      <p className="leitner-priority">
+                        ⭐ Prioriteit voor herhaling wordt gegeven aan opdrachten die vandaag herhaald moeten worden.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sessie beëindigen knop - alleen in leermodus tijdens actief spel */}
+          {isSpelGestart && gameMode === 'single' && isSerieuzeLeerModusActief && (
+            <div className="spel-controle-knoppen">
+              <button className="eindig-knop" onClick={handleEindigSessie}>
+                🏁 Sessie Beëindigen
+              </button>
+              <p className="sessie-controle-tekst">
+                Sluit je leersessie af voor een samenvatting.
+              </p>
+            </div>
+          )}
+
+          {/* Spel beëindigen knop - voor highscore en multiplayer tijdens actief spel */}
+          {isSpelGestart && !isSerieuzeLeerModusActief && (
+            <div className="spel-controle-knoppen">
+              <button className="eindig-knop" onClick={handleEindigSpel}>
+                🛑 Spel Beëindigen
+              </button>
+              <p className="sessie-controle-tekst">
+                Hiermee reset je het spel en de scores.
+              </p>
+            </div>
+          )}
+
+          {/* Instellingen knoppen - altijd zichtbaar */}
+          <div className="instellingen-knoppen">
+            <button className="instellingen-knop" onClick={handleOpenInstellingen}>⚙️ Instellingen</button>
+            <button onClick={handleOpenUitleg}>Uitleg</button>
+          </div>
+
+          {/* HAN Logo - altijd zichtbaar */}
+          <div className="han-logo-container">
+            <img src="/images/Logo-HAN.webp" alt="Logo Hogeschool van Arnhem en Nijmegen" className="han-logo" />
+            <p>Ontwikkeld door de opleiding Fysiotherapie van de Hogeschool van Arnhem en Nijmegen.</p>
+          </div>
+        </aside>
+
+        <main className="right-panel" ref={mainContentRef}>
+          <div className={`notificatie-popup ${notificatie.zichtbaar ? 'zichtbaar' : ''} ${notificatie.type}`}>
+            {notificatie.bericht}
+          </div>
+          {isDevMode && import.meta.env.DEV && <DevPanel
+            forceResult={forceResult}
+            setForceResult={setForceResult}
+            simuleerVoltooiing={handleSimuleerVoltooiing}
+            forcePromotie={handleForcePromotie}
+            resetLeitner={handleResetLeitner}
+            forceHerhalingen={handleForceHerhalingen}
+          />}
+          {warning && <div className="app-warning">{warning}</div>}
+          
+          <Fruitautomaat
+            titel="Return2Performance"
+            key={opdrachten.length}
+            opdrachten={opdrachten}
+            spelers={spelers}
+            isSpinning={isAanHetSpinnen}
+            resultaat={spinResultaat}
+            fruitDisplayItems={fruitDisplayItems}
+            onSpin={handleSpin}
+            isSpinButtonDisabled={isAanHetSpinnen || gefilterdeOpdrachten.length === 0 || !heeftVoldoendeSpelers() || isAntwoordVergrendeld}
+            spinAnalyse={huidigeSpinAnalyse}
+            isGeluidActief={isGeluidActief}
+            gamePhase={gamePhase}
+            welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && (
+              <div className="welkomst-bericht">
+                <h3>Welkom!</h3>
+                {isSerieuzeLeerModusActief && gameMode === 'single' ? (
+                  <>
+                    <p>
+                      <strong>📚 Leer Modus</strong>
+                    </p>
+                    <p>Je leerdata wordt automatisch opgeslagen op dit device.</p>
+                    <p>Geen naam vereist - focus op leren!</p>
+                    <p><strong>Stap 1:</strong> Pas in "Instellingen" de spelregels, opdrachten en categorieën aan.</p>
+                    <p><strong>Tip:</strong> Gebruik de knop rechtsboven voor een volledige schermweergave.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Stap 1:</strong>{' '}
+                      {isMobieleWeergave
+                        ? 'Open het menu (🏆) en voeg spelers toe.'
+                        : 'Voeg links in het menu spelers toe.'
+                      }
+                      {gameMode === 'multi' && spelers.length === 1 && (
+                        <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
+                          {' '}(Minimaal 2 spelers vereist voor multiplayer)
+                        </span>
+                      )}
+                    </p>
+                    <p><strong>Stap 2:</strong> Pas in "Instellingen" de spelregels, opdrachten en categorieën aan.</p>
+                    <p><strong>Tip:</strong> Gebruik de knop rechtsboven voor een volledige schermweergave.</p>
+                  </>
+                )}
+              </div>
+            )}
+          >
+            {gamePhase !== 'idle' && gamePhase !== 'spinning' && huidigeOpdracht && huidigeSpinAnalyse && (
+              <ActieDashboard
+                ref={actieDashboardRef}
+                huidigeOpdracht={huidigeOpdracht}
+                spinAnalyse={huidigeSpinAnalyse}
+                handleBeoordeling={handleBeoordeling}
+                isTimerActief={gamePhase === 'assessment' && isTimerActief}
+                gamePhase={gamePhase}
+                spelers={spelers}
+                huidigeSpeler={huidigeSpeler}
+                onPartnerKies={handlePartnerKies}
+                onGebruikExtraSpin={handleGebruikExtraSpin}
+                isJokerSpinActief={isJokerSpinActief}
+                puntenVoorVerdubbeling={puntenVoorVerdubbeling}
+                onKopOfMunt={handleKopOfMunt}
+                huidigeBonusOpdracht={huidigeBonusOpdracht}
+                opgespaardeBonusPunten={opgespaardeBonusPunten}
+                onBonusRondeVoltooid={handleBonusRondeVoltooid}
+                onKopOfMuntVoltooid={handleKopOfMuntVoltooid}
+                isGeluidActief={isGeluidActief}
+                isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+                aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+              />
+            )}
+          </Fruitautomaat>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default App;

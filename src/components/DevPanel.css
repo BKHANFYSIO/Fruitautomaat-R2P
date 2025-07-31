@@ -1,0 +1,67 @@
+.dev-panel {
+  background-color: #2d3748;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #4a5568;
+  color: #e2e8f0;
+}
+
+.dev-panel h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #cbd5e0;
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 10px;
+}
+
+.dev-section {
+  margin-bottom: 15px;
+}
+
+.dev-section:last-child {
+  margin-bottom: 0;
+}
+
+.dev-section h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #a0aec0;
+  font-size: 0.9em;
+}
+
+.dev-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dev-controls select,
+.dev-controls button {
+  background-color: #4a5568;
+  color: #e2e8f0;
+  border: 1px solid #718096;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.dev-controls button:hover {
+  background-color: #718096;
+}
+
+.dev-controls button:active {
+  transform: scale(0.98);
+}
+
+.dev-controls .danger-button {
+  background-color: #c53030;
+  border-color: #9b2c2c;
+}
+
+.dev-controls .danger-button:hover {
+  background-color: #e53e3e;
+} 

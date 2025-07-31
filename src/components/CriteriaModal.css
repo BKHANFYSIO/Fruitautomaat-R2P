@@ -1,0 +1,49 @@
+.criteria-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.criteria-intro {
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #ccc;
+  font-weight: 300;
+  margin-top: 5px;
+  margin-bottom: 0;
+}
+
+.criteria-sectie {
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.criteria-sectie h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #a0cff1; /* Lichtblauw, passend bij het thema */
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+.criteria-sectie ul {
+  list-style-type: '✓  '; /* Gebruik een vinkje als bullet point */
+  padding-left: 20px;
+  margin: 0;
+}
+
+.criteria-sectie li {
+  margin-bottom: 8px;
+}
+
+@media (min-width: 1024px) {
+  .criteria-content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .criteria-sectie {
+    flex: 1;
+  }
+} 

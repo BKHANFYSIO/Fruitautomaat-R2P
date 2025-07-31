@@ -1,0 +1,95 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: #2c2c2c;
+  color: #e0e0e0;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 90%;
+  max-width: 600px;
+  border: 1px solid #444;
+  max-height: 80vh; /* Maximale hoogte van 80% van de viewport hoogte */
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #555;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 300;
+  width: 100%;
+  text-align: center;
+}
+
+.modal-close-button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 10px;
+  line-height: 1;
+  position: absolute; /* Absolute positionering */
+  right: 25px;      /* Rechts uitlijnen, met wat padding van de rand */
+  top: 50%;         /* Verticaal centreren in de header */
+  transform: translateY(-50%); /* Correctie voor centreren */
+}
+
+.modal-close-button:hover {
+  color: #bbb;
+}
+
+.modal-body {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  white-space: pre-wrap; /* Zorgt dat witruimte en nieuwe regels behouden blijven */
+  overflow-y: auto; /* Voegt een scrollbalk toe als de inhoud te hoog is */
+}
+
+.antwoord-sectie {
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.antwoord-sectie:last-child {
+  margin-bottom: 0;
+}
+
+.antwoord-sectie h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #a0cff1; /* Lichtblauw, passend bij het thema */
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+@media (min-width: 1024px) {
+  .modal-content {
+    max-width: 1200px;
+  }
+} 

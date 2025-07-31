@@ -1,0 +1,55 @@
+.beoordeling-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.beoordeling-knoppen {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.beoordeling-knoppen .beoordeling-knop {
+  flex: 1;
+}
+
+.beoordeling-knop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.beoordeling-knop .percentage {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.beoordeling-knop.niet-goed {
+  background-color: #c53030; /* Donkerrood */
+  border-color: #e53e3e;
+}
+.beoordeling-knop.niet-goed:hover {
+  background-color: #e53e3e; /* Lichter rood */
+}
+
+.beoordeling-knop.redelijk {
+  background-color: #dd6b20; /* Donkeroranje */
+  border-color: #ed8936;
+}
+.beoordeling-knop.redelijk:hover {
+  background-color: #ed8936; /* Lichter oranje */
+}
+
+.beoordeling-knop.heel-goed {
+  background-color: #2f855a; /* Donkergroen */
+  border-color: #38a169;
+}
+.beoordeling-knop.heel-goed:hover {
+  background-color: #38a169; /* Lichter groen */
+} 

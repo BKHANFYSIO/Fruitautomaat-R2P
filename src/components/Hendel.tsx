@@ -1,0 +1,37 @@
+import { useState } from 'react';
+import './Hendel.css';
+
+interface HendelProps {
+  onSpin: () => void;
+  disabled: boolean;
+}
+
+export const Hendel = ({ onSpin, disabled }: HendelProps) => {
+  const [isPulled, setIsPulled] = useState(false);
+
+  const handlePull = () => {
+    if (disabled) return;
+
+    setIsPulled(true);
+    onSpin();
+
+    // Reset de animatie na een korte vertraging
+    setTimeout(() => {
+      setIsPulled(false);
+    }, 500); // Duur van de animatie
+  };
+
+  return (
+    <div 
+      className="hendel-container"
+      title={disabled ? "Beoordeel eerst de prestatie voordat je opnieuw kunt draaien." : "Trek aan de hendel om te spinnen!"}
+    >
+      <div 
+        className={`hendel-arm ${isPulled ? 'pulled' : ''} ${disabled ? 'disabled' : ''}`}
+        onClick={handlePull}
+      >
+        <div className="hendel-knop"></div>
+      </div>
+    </div>
+  );
+}; 

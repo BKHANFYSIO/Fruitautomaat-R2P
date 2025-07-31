@@ -1,0 +1,33 @@
+.hendel-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 20px; /* Ruimte tussen automaat en hendel */
+}
+
+.hendel-arm {
+  width: 12px;
+  height: 150px;
+  background-color: #a0aec0; /* Grijs metaal */
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  transform-origin: bottom center;
+  transition: transform 0.25s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.hendel-arm.pulled {
+  transform: rotate(45deg);
+}
+
+.hendel-knop {
+  width: 40px;
+  height: 40px;
+  background-color: #e53e3e; /* Rood */
+  border-radius: 50%;
+  border: 3px solid #c53030;
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+} 

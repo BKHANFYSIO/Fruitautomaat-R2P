@@ -1,0 +1,57 @@
+.spel-acties-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Was 10px */
+  padding: 5px; /* Was 10px */
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.spel-acties-container h4 {
+  margin: 0; /* Was 0 0 5px 0 */
+}
+
+.antwoordsleutel {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 5px; /* Was 10px */
+  font-style: italic;
+}
+
+.timer-en-knoppen-container {
+  display: grid;
+  grid-template-columns: 1fr auto; /* Verdeelt in 2 kolommen */
+  align-items: center;
+  gap: 20px; /* Wat meer ruimte tussen timer en knoppen */
+}
+
+.actie-knoppen button {
+  padding: 8px 12px; /* Iets meer verticale padding voor balans */
+  flex: 1; /* Zorgt dat de knoppen de ruimte vullen */
+  font-size: 0.9rem; /* Zelfde als beoordelingsknoppen */
+  white-space: nowrap; /* Voorkomt ongewenste tekst-wrapping */
+}
+
+.actie-knoppen {
+  display: flex;
+  gap: 10px;
+  margin-top: 0; /* Was 5px */
+}
+
+.spel-acties .actie-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spel-acties .actie-knoppen button {
+  flex: 1 1 auto; /* Sta knoppen toe om te groeien en krimpen */
+  padding: 8px 10px;
+  min-width: 120px; /* Minimale breedte voor leesbaarheid */
+  word-break: break-word; /* Breek lange woorden af */
+  white-space: normal;
+  line-height: 1.2;
+}
+
+ 

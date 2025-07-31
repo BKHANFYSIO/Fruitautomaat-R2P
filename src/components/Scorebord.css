@@ -1,0 +1,261 @@
+.scorebord-container {
+  background-color: #2c3e50;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  color: #ecf0f1;
+}
+
+.scorebord-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #34495e;
+  padding-bottom: 10px;
+}
+
+.scorebord-container h2 {
+  margin: 0;
+  color: #3498db;
+  font-size: 1.5rem;
+}
+
+.ronde-teller {
+  background-color: #34495e;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.highscore-display {
+  background-color: #1c2a38;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.highscore-display p {
+  margin: 2px 0;
+  font-size: 1rem;
+  font-weight: normal;
+  color: #ecf0f1;
+}
+
+.highscore-display .record-label {
+  font-weight: bold;
+  color: #3498db;
+  margin-right: 8px;
+}
+
+.scorebord-container p {
+  text-align: center;
+  color: #95a5a6;
+}
+
+.scorelijst {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.speler-rang {
+  font-weight: bold;
+  font-family: 'Bungee', cursive;
+  min-width: 30px;
+}
+
+.speler-naam {
+  flex-grow: 1;
+  text-align: left;
+  margin-left: 15px;
+}
+
+.speler-info {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Meer ruimte tussen de kolommen */
+  margin-left: auto; /* Duwt de info naar rechts */
+}
+
+.speler-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Lijn de stats links uit */
+  gap: 2px;
+}
+
+.speler-beurten-teller, .extra-spins-teller {
+  font-size: 0.8rem;
+  color: #bdc3c7;
+}
+
+.extra-spins-teller {
+  background-color: #f1c40f;
+  color: #2c3e50;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.joker-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.speler-score {
+  font-weight: bold;
+  font-size: 1.2rem; /* Iets groter voor duidelijkheid */
+  min-width: 50px;
+  text-align: right;
+}
+
+.indicator {
+  color: #63b3ed;
+  margin-left: 5px;
+}
+
+.actieve-speler {
+  background-color: #4c51bf;
+  border-color: #63b3ed;
+  box-shadow: 0 0 10px #63b3ed;
+}
+
+.podium-goud {
+  background-color: rgba(255, 215, 0, 0.2);
+  border-left: 5px solid #ffd700;
+}
+
+.podium-zilver {
+  background-color: rgba(192, 192, 192, 0.2);
+  border-left: 5px solid #c0c0c0;
+}
+
+.podium-brons {
+  background-color: rgba(205, 127, 50, 0.2);
+  border-left: 5px solid #cd7f32;
+} 
+
+/* Achievement icoontjes voor serieuze leer-modus */
+.achievements-indicator {
+  display: flex;
+  gap: 2px;
+  margin-left: 8px;
+}
+
+.achievement-icon-small {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.achievement-icon-small:hover {
+  opacity: 1;
+}
+
+.latest-achievement {
+  font-size: 1.1rem;
+  animation: heartbeat 2s ease-in-out infinite;
+  opacity: 1;
+}
+
+/* Nieuwe beurten info styling */
+.beurten-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sessie-beurten {
+  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.totaal-beurten {
+  font-size: 0.75rem;
+  color: #b0b0b0;
+  font-style: italic;
+}
+
+.achievement-score {
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 8px;
+  border: 2px solid transparent;
+}
+
+.achievement-score:hover {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.laatste-achievement {
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 12px;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(102, 126, 234, 0.15);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.laatste-achievement:hover {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.1);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(1);
+  }
+} 

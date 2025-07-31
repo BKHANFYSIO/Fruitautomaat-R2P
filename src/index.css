@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto&display=swap');
+
+body {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background-color: #1a1a1a; /* Matcht App.css */
+  color: #e2e8f0; /* Lichtgrijs */
+  margin: 0;
+  padding: 0; /* Geen padding meer */
+}
+
+#root {
+  /* Geen styling meer nodig hier, wordt in App.css gedaan */
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Bungee', cursive;
+  color: #63b3ed; /* Neon-achtig blauw */
+  text-shadow: 0 0 5px rgba(99, 179, 237, 0.5);
+}
+
+button {
+  background-color: #4c51bf; /* Indigo */
+  color: white;
+  border: 1px solid #667eea;
+  padding: 10px 15px;
+  margin: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
+  transition: all 0.2s;
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+}
+
+button:hover {
+  background-color: #667eea;
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.8);
+}
+
+button:disabled {
+  background-color: #4a5568;
+  color: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+  border-color: #718096;
+}
+
+input[type="text"] {
+  padding: 10px;
+  margin-right: 10px;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #4a5568;
+  margin: 20px 0;
+} 
