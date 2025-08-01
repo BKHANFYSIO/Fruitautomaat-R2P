@@ -53,6 +53,7 @@ export const CategorieSelectieModal = ({
 }: CategorieSelectieModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialActiveTab || 'normaal');
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
+  const [opgeslagenVrijeLeermodusSelecties, setOpgeslagenVrijeLeermodusSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
@@ -69,6 +70,11 @@ export const CategorieSelectieModal = ({
     const opgeslagen = localStorage.getItem('multiplayer_categorie_selecties');
     if (opgeslagen) {
       setOpgeslagenSelecties(JSON.parse(opgeslagen));
+    }
+    
+    const opgeslagenVrijeLeermodus = localStorage.getItem('vrije_leermodus_categorie_selecties');
+    if (opgeslagenVrijeLeermodus) {
+      setOpgeslagenVrijeLeermodusSelecties(JSON.parse(opgeslagenVrijeLeermodus));
     }
   }, []);
 
@@ -226,7 +232,10 @@ export const CategorieSelectieModal = ({
 
   // Multiplayer selectie opslaan functionaliteit
   const handleOpslaanSelectie = () => {
-    if (opgeslagenSelecties.length >= 5) {
+    const maxSelecties = 5;
+    const huidigeSelecties = activeTab === 'multiplayer' ? opgeslagenSelecties : opgeslagenVrijeLeermodusSelecties;
+    
+    if (huidigeSelecties.length >= maxSelecties) {
       alert('Je kunt maximaal 5 opgeslagen selecties hebben. Verwijder eerst een oude selectie.');
       return;
     }
@@ -246,24 +255,40 @@ export const CategorieSelectieModal = ({
       datum: new Date().toISOString()
     };
 
-    const nieuweSelecties = [...opgeslagenSelecties, nieuweSelectie];
-    setOpgeslagenSelecties(nieuweSelecties);
-    localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+    if (activeTab === 'multiplayer') {
+      const nieuweSelecties = [...opgeslagenSelecties, nieuweSelectie];
+      setOpgeslagenSelecties(nieuweSelecties);
+      localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+    } else if (activeTab === 'normaal') {
+      const nieuweSelecties = [...opgeslagenVrijeLeermodusSelecties, nieuweSelectie];
+      setOpgeslagenVrijeLeermodusSelecties(nieuweSelecties);
+      localStorage.setItem('vrije_leermodus_categorie_selecties', JSON.stringify(nieuweSelecties));
+    }
     
     setNieuweSelectieNaam('');
     setToonOpslaanModal(false);
   };
 
   const handleLaadSelectie = (selectie: OpgeslagenCategorieSelectie) => {
-    if (setGeselecteerdeMultiplayerCategorieen) {
+    if (activeTab === 'multiplayer' && setGeselecteerdeMultiplayerCategorieen) {
       setGeselecteerdeMultiplayerCategorieen([...selectie.categorieen]);
+    } else if (activeTab === 'normaal' && onBulkCategorieSelectie) {
+      // Voor vrije leermodus gebruiken we de normale categorie selectie
+      onBulkCategorieSelectie(alleCategorieen, 'deselect');
+      onBulkCategorieSelectie(selectie.categorieen, 'select');
     }
   };
 
   const handleVerwijderSelectie = (id: string) => {
-    const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
-    setOpgeslagenSelecties(nieuweSelecties);
-    localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+    if (activeTab === 'multiplayer') {
+      const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
+      setOpgeslagenSelecties(nieuweSelecties);
+      localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+    } else if (activeTab === 'normaal') {
+      const nieuweSelecties = opgeslagenVrijeLeermodusSelecties.filter(s => s.id !== id);
+      setOpgeslagenVrijeLeermodusSelecties(nieuweSelecties);
+      localStorage.setItem('vrije_leermodus_categorie_selecties', JSON.stringify(nieuweSelecties));
+    }
   };
 
   const handleHighScoreSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -350,6 +375,53 @@ export const CategorieSelectieModal = ({
               </div>
             ))}
             {opgeslagenSelecties.length < 5 && (
+              <button 
+                onClick={handleOpslaanSelectie}
+                className="opslaan-selectie-knop"
+                disabled={actieveCategorieSelectie.length === 0}
+              >
+                💾 Huidige Selectie Opslaan
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Vrije Leermodus opgeslagen selecties */}
+      {activeTab === 'normaal' && (
+        <div className="opgeslagen-selecties">
+          <h4>Opgeslagen Selecties</h4>
+          <div className="opgeslagen-selecties-lijst">
+            {opgeslagenVrijeLeermodusSelecties.map(selectie => (
+              <div key={selectie.id} className="opgeslagen-selectie-item">
+                <div className="selectie-info">
+                  <span className="selectie-naam">{selectie.naam}</span>
+                  <span className="selectie-datum">
+                    {new Date(selectie.datum).toLocaleDateString()}
+                  </span>
+                  <span className="selectie-aantal">
+                    {selectie.categorieen.length} categorieën
+                  </span>
+                </div>
+                <div className="selectie-acties">
+                  <button 
+                    onClick={() => handleLaadSelectie(selectie)}
+                    className="laad-selectie-knop"
+                    title="Laad deze selectie"
+                  >
+                    📂
+                  </button>
+                  <button 
+                    onClick={() => handleVerwijderSelectie(selectie.id)}
+                    className="verwijder-selectie-knop"
+                    title="Verwijder deze selectie"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+            {opgeslagenVrijeLeermodusSelecties.length < 5 && (
               <button 
                 onClick={handleOpslaanSelectie}
                 className="opslaan-selectie-knop"
