@@ -1221,3 +1221,78 @@
     padding: 20px;
   }
 }
+
+/* Hoofdcategorie styling */
+.hoofd-categorie-rij {
+  margin-bottom: 10px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hoofd-categorie-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background-color: #2a2a2a;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.hoofd-categorie-header:hover {
+  background-color: #333;
+}
+
+.hoofd-categorie-header input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.1);
+}
+
+.hoofd-categorie-naam {
+  font-weight: 600;
+  color: #e0e0e0;
+  flex: 1;
+  font-size: 1rem;
+}
+
+.pijl {
+  font-size: 0.8rem;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.pijl.open {
+  transform: rotate(90deg);
+}
+
+.sub-categorie-lijst {
+  background-color: #1f1f1f;
+  padding: 10px;
+  border-top: 1px solid #444;
+}
+
+.sub-categorie-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.sub-categorie-label:hover {
+  background-color: #2a2a2a;
+}
+
+.sub-categorie-label input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.0);
+}
+
+.sub-categorie-label:last-child {
+  margin-bottom: 0;
+}

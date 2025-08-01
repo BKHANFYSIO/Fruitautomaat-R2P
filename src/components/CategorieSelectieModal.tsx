@@ -55,6 +55,7 @@ export const CategorieSelectieModal = ({
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
+  const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
 
   // Effect om activeTab bij te werken wanneer initialActiveTab verandert
   useEffect(() => {
@@ -170,6 +171,24 @@ export const CategorieSelectieModal = ({
   const actieveCategorieHandler = getActieveCategorieHandler();
   const actieveBulkHandler = getActieveBulkHandler();
 
+  // Groepeer categorieën per hoofdcategorie
+  const gegroepeerdeCategorieen = useMemo(() => {
+    const groepen: Record<string, string[]> = { 'Overig': [] };
+    opdrachten.forEach(opdracht => {
+      const hoofdCat = opdracht.Hoofdcategorie || 'Overig';
+      if (!groepen[hoofdCat]) {
+        groepen[hoofdCat] = [];
+      }
+      if (!groepen[hoofdCat].includes(opdracht.Categorie)) {
+        groepen[hoofdCat].push(opdracht.Categorie);
+      }
+    });
+    if (groepen['Overig'].length === 0) {
+      delete groepen['Overig'];
+    }
+    return groepen;
+  }, [opdrachten]);
+
   // Alle unieke categorieën uit de opdrachten
   const alleCategorieen = useMemo(() => {
     const categorieen = new Set<string>();
@@ -181,19 +200,19 @@ export const CategorieSelectieModal = ({
     return Array.from(categorieen).sort();
   }, [opdrachten]);
 
-  // Groepeer opdrachten per categorie
-  const opdrachtenPerCategorie = useMemo(() => {
-    const groepen: { [key: string]: Opdracht[] } = {};
-    opdrachten.forEach(opdracht => {
-      if (opdracht.Categorie) {
-        if (!groepen[opdracht.Categorie]) {
-          groepen[opdracht.Categorie] = [];
-        }
-        groepen[opdracht.Categorie].push(opdracht);
-      }
-    });
-    return groepen;
-  }, [opdrachten]);
+
+
+  const toggleHoofdCategorie = (hoofd: string) => {
+    setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
+  };
+
+  const handleHoofdCategorieSelectie = (subcategorieen: string[], isGeselecteerd: boolean) => {
+    if (isGeselecteerd) {
+      actieveBulkHandler(subcategorieen, 'select');
+    } else {
+      actieveBulkHandler(subcategorieen, 'deselect');
+    }
+  };
 
   // Herstel laatste selectie functionaliteit
   const handleHerstelLaatste = () => {
@@ -275,10 +294,6 @@ export const CategorieSelectieModal = ({
 
   const handleSelectAll = () => actieveBulkHandler(alleCategorieen, 'select');
   const handleDeselectAll = () => actieveBulkHandler(alleCategorieen, 'deselect');
-
-
-
-
 
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
@@ -362,24 +377,39 @@ export const CategorieSelectieModal = ({
         </div>
       )}
 
-      {/* Categorie lijst */}
+      {/* Categorie lijst met hoofdcategorieën */}
       <div className="categorie-lijst">
         <h4>Categorieën</h4>
-        {alleCategorieen.map(categorie => {
-          const opdrachtenInCategorie = opdrachtenPerCategorie[categorie] || [];
-          const isGeselecteerd = actieveCategorieSelectie.includes(categorie);
-          
+        {Object.entries(gegroepeerdeCategorieen).map(([hoofd, subs]) => {
+          const isAllesGeselecteerd = subs.every(sub => actieveCategorieSelectie.includes(sub));
+          const isDeelsGeselecteerd = subs.some(sub => actieveCategorieSelectie.includes(sub)) && !isAllesGeselecteerd;
           return (
-            <div key={categorie} className="categorie-item">
-              <label className="categorie-label">
+            <div key={hoofd} className="hoofd-categorie-rij">
+              <div className="hoofd-categorie-header" onClick={() => toggleHoofdCategorie(hoofd)}>
                 <input
                   type="checkbox"
-                  checked={isGeselecteerd}
-                  onChange={() => actieveCategorieHandler(categorie)}
+                  checked={isAllesGeselecteerd}
+                  ref={input => { if (input) input.indeterminate = isDeelsGeselecteerd; }}
+                  onChange={() => handleHoofdCategorieSelectie(subs, isAllesGeselecteerd)}
+                  onClick={(e) => e.stopPropagation()}
                 />
-                <span className="categorie-naam">{categorie}</span>
-                <span className="categorie-aantal">({opdrachtenInCategorie.length})</span>
-              </label>
+                <span className="hoofd-categorie-naam">{hoofd}</span>
+                <span className={`pijl ${openHoofdCategorieen[hoofd] ? 'open' : ''}`}>▶</span>
+              </div>
+              {openHoofdCategorieen[hoofd] && (
+                <div className="sub-categorie-lijst">
+                  {subs.map(sub => (
+                    <label key={sub} className="sub-categorie-label">
+                      <input
+                        type="checkbox"
+                        checked={actieveCategorieSelectie.includes(sub)}
+                        onChange={() => actieveCategorieHandler(sub)}
+                      />
+                      {sub}
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
