@@ -3,6 +3,13 @@ import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css';
 
+interface OpgeslagenLeitnerSelectie {
+  id: string;
+  naam: string;
+  categorieen: string[];
+  datum: string;
+}
+
 const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
   <div className="box-uitleg-popup-overlay" onClick={onClose}>
     <div className="box-uitleg-popup-content" onClick={(e) => e.stopPropagation()}>
@@ -65,6 +72,17 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'naam', direction: 'ascending' });
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
+  const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenLeitnerSelectie[]>([]);
+  const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
+  const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
+
+  // Laad opgeslagen selecties bij component mount
+  useEffect(() => {
+    const opgeslagen = localStorage.getItem('leitner_categorie_selecties');
+    if (opgeslagen) {
+      setOpgeslagenSelecties(JSON.parse(opgeslagen));
+    }
+  }, []);
 
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
@@ -200,6 +218,46 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
   const handleDeselectAll = () => setGeselecteerdeCategorieen([]);
 
+  // Leitner selectie opslaan functionaliteit
+  const handleOpslaanSelectie = () => {
+    if (opgeslagenSelecties.length >= 5) {
+      alert('Je kunt maximaal 5 opgeslagen selecties hebben. Verwijder eerst een oude selectie.');
+      return;
+    }
+    setToonOpslaanModal(true);
+  };
+
+  const handleBevestigOpslaan = () => {
+    if (!nieuweSelectieNaam.trim()) {
+      alert('Geef een naam op voor je selectie.');
+      return;
+    }
+
+    const nieuweSelectie: OpgeslagenLeitnerSelectie = {
+      id: Date.now().toString(),
+      naam: nieuweSelectieNaam.trim(),
+      categorieen: [...geselecteerdeCategorieen],
+      datum: new Date().toISOString()
+    };
+
+    const nieuweSelecties = [...opgeslagenSelecties, nieuweSelectie];
+    setOpgeslagenSelecties(nieuweSelecties);
+    localStorage.setItem('leitner_categorie_selecties', JSON.stringify(nieuweSelecties));
+    
+    setNieuweSelectieNaam('');
+    setToonOpslaanModal(false);
+  };
+
+  const handleLaadSelectie = (selectie: OpgeslagenLeitnerSelectie) => {
+    setGeselecteerdeCategorieen([...selectie.categorieen]);
+  };
+
+  const handleVerwijderSelectie = (id: string) => {
+    const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
+    setOpgeslagenSelecties(nieuweSelecties);
+    localStorage.setItem('leitner_categorie_selecties', JSON.stringify(nieuweSelecties));
+  };
+
   const handleHoofdCategorieSelectie = (hoofdStat: CategorieStatistiek) => {
     const subNamen = hoofdStat.subCategorieen?.map(s => s.naam) || [];
     const zijnAllemaalGeselecteerd = subNamen.every(naam => geselecteerdeCategorieen.includes(naam));
@@ -273,7 +331,55 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           <div className="controls">
             <button onClick={handleSelectAll}>Selecteer Alles</button>
             <button onClick={handleDeselectAll}>Selecteer Niets</button>
+            {opgeslagenSelecties.length < 5 && (
+              <button 
+                onClick={handleOpslaanSelectie}
+                disabled={geselecteerdeCategorieen.length === 0}
+                className="opslaan-knop"
+              >
+                💾 Opslaan Selectie
+              </button>
+            )}
           </div>
+
+          {/* Opgeslagen selecties sectie */}
+          {opgeslagenSelecties.length > 0 && (
+            <div className="opgeslagen-selecties-sectie">
+              <h4>📚 Opgeslagen Leitner Selecties</h4>
+              <div className="opgeslagen-selecties-lijst">
+                {opgeslagenSelecties.map(selectie => (
+                  <div key={selectie.id} className="opgeslagen-selectie-item">
+                    <div className="selectie-info">
+                      <span className="selectie-naam">{selectie.naam}</span>
+                      <span className="selectie-datum">
+                        {new Date(selectie.datum).toLocaleDateString()}
+                      </span>
+                      <span className="selectie-aantal">
+                        {selectie.categorieen.length} categorieën
+                      </span>
+                    </div>
+                    <div className="selectie-acties">
+                      <button 
+                        onClick={() => handleLaadSelectie(selectie)}
+                        className="laad-selectie-knop"
+                        title="Laad deze selectie"
+                      >
+                        📂
+                      </button>
+                      <button 
+                        onClick={() => handleVerwijderSelectie(selectie.id)}
+                        className="verwijder-selectie-knop"
+                        title="Verwijder deze selectie"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <p>Statistieken laden...</p>
           ) : (
@@ -311,6 +417,32 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         </div>
       </div>
       {isUitlegOpen && <BoxUitlegPopup onClose={() => setIsUitlegOpen(false)} />}
+      
+      {/* Opslaan modal */}
+      {toonOpslaanModal && (
+        <div className="opslaan-modal-overlay" onClick={() => setToonOpslaanModal(false)}>
+          <div className="opslaan-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>💾 Leitner Selectie Opslaan</h4>
+            <p>Geef een naam op voor je Leitner categorie selectie:</p>
+            <input
+              type="text"
+              value={nieuweSelectieNaam}
+              onChange={(e) => setNieuweSelectieNaam(e.target.value)}
+              placeholder="Bijv. 'Anatomie Focus'"
+              className="selectie-naam-input"
+              maxLength={30}
+            />
+            <div className="opslaan-modal-acties">
+              <button onClick={() => setToonOpslaanModal(false)} className="annuleer-knop">
+                Annuleren
+              </button>
+              <button onClick={handleBevestigOpslaan} className="bevestig-knop">
+                Opslaan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 
