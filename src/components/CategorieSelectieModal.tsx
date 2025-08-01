@@ -4,6 +4,13 @@ import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 
 type TabType = 'leitner' | 'highscore' | 'multiplayer' | 'normaal';
 
+interface OpgeslagenCategorieSelectie {
+  id: string;
+  naam: string;
+  categorieen: string[];
+  datum: string;
+}
+
 interface CategorieSelectieModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,7 +18,6 @@ interface CategorieSelectieModalProps {
   geselecteerdeCategorieen: string[];
   onCategorieSelectie: (categorie: string) => void;
   onBulkCategorieSelectie: (categorieen: string[], type: 'select' | 'deselect') => void;
-  gameMode?: 'single' | 'multi';
   highScoreLibrary?: { [key: string]: { score: number; spelerNaam: string } };
   onHighScoreSelect?: (categories: string[]) => void;
   // Nieuwe props voor Leitner
@@ -34,7 +40,7 @@ export const CategorieSelectieModal = ({
   geselecteerdeCategorieen,
   onCategorieSelectie,
   onBulkCategorieSelectie,
-  gameMode,
+
   highScoreLibrary,
   onHighScoreSelect,
   geselecteerdeLeitnerCategorieen = [],
@@ -46,6 +52,9 @@ export const CategorieSelectieModal = ({
   initialActiveTab,
 }: CategorieSelectieModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialActiveTab || 'normaal');
+  const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
+  const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
+  const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
 
   // Effect om activeTab bij te werken wanneer initialActiveTab verandert
   useEffect(() => {
@@ -54,11 +63,19 @@ export const CategorieSelectieModal = ({
     }
   }, [initialActiveTab]);
 
+  // Laad opgeslagen selecties bij component mount
+  useEffect(() => {
+    const opgeslagen = localStorage.getItem('multiplayer_categorie_selecties');
+    if (opgeslagen) {
+      setOpgeslagenSelecties(JSON.parse(opgeslagen));
+    }
+  }, []);
+
   // Bepaal welke categorie selectie actief is voor de huidige tab
   const getActieveCategorieSelectie = () => {
     switch (activeTab) {
       case 'leitner': return geselecteerdeLeitnerCategorieen;
-      case 'highscore': return geselecteerdeHighscoreCategorieen; // ✅ Nieuwe aparte state
+      case 'highscore': return geselecteerdeHighscoreCategorieen;
       case 'multiplayer': return geselecteerdeMultiplayerCategorieen;
       case 'normaal': return geselecteerdeCategorieen;
       default: return geselecteerdeCategorieen;
@@ -100,6 +117,8 @@ export const CategorieSelectieModal = ({
             );
           }
         };
+      case 'normaal':
+        return onCategorieSelectie;
       default:
         return onCategorieSelectie;
     }
@@ -111,41 +130,37 @@ export const CategorieSelectieModal = ({
         return (categorieen: string[], type: 'select' | 'deselect') => {
           if (setGeselecteerdeLeitnerCategorieen) {
             const prev = geselecteerdeLeitnerCategorieen;
-            const categorieenSet = new Set(prev);
             if (type === 'select') {
-              categorieen.forEach(cat => categorieenSet.add(cat));
+              setGeselecteerdeLeitnerCategorieen([...new Set([...prev, ...categorieen])]);
             } else {
-              categorieen.forEach(cat => categorieenSet.delete(cat));
+              setGeselecteerdeLeitnerCategorieen(prev.filter(c => !categorieen.includes(c)));
             }
-            setGeselecteerdeLeitnerCategorieen(Array.from(categorieenSet));
           }
         };
       case 'multiplayer':
         return (categorieen: string[], type: 'select' | 'deselect') => {
           if (setGeselecteerdeMultiplayerCategorieen) {
             const prev = geselecteerdeMultiplayerCategorieen;
-            const categorieenSet = new Set(prev);
             if (type === 'select') {
-              categorieen.forEach(cat => categorieenSet.add(cat));
+              setGeselecteerdeMultiplayerCategorieen([...new Set([...prev, ...categorieen])]);
             } else {
-              categorieen.forEach(cat => categorieenSet.delete(cat));
+              setGeselecteerdeMultiplayerCategorieen(prev.filter(c => !categorieen.includes(c)));
             }
-            setGeselecteerdeMultiplayerCategorieen(Array.from(categorieenSet));
           }
         };
       case 'highscore':
         return (categorieen: string[], type: 'select' | 'deselect') => {
           if (setGeselecteerdeHighscoreCategorieen) {
             const prev = geselecteerdeHighscoreCategorieen;
-            const categorieenSet = new Set(prev);
             if (type === 'select') {
-              categorieen.forEach(cat => categorieenSet.add(cat));
+              setGeselecteerdeHighscoreCategorieen([...new Set([...prev, ...categorieen])]);
             } else {
-              categorieen.forEach(cat => categorieenSet.delete(cat));
+              setGeselecteerdeHighscoreCategorieen(prev.filter(c => !categorieen.includes(c)));
             }
-            setGeselecteerdeHighscoreCategorieen(Array.from(categorieenSet));
           }
         };
+      case 'normaal':
+        return onBulkCategorieSelectie;
       default:
         return onBulkCategorieSelectie;
     }
@@ -155,57 +170,88 @@ export const CategorieSelectieModal = ({
   const actieveCategorieHandler = getActieveCategorieHandler();
   const actieveBulkHandler = getActieveBulkHandler();
 
-  const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
-
-  const gegroepeerdeCategorieen = useMemo(() => {
-    const groepen: Record<string, string[]> = { 'Overig': [] };
+  // Alle unieke categorieën uit de opdrachten
+  const alleCategorieen = useMemo(() => {
+    const categorieen = new Set<string>();
     opdrachten.forEach(opdracht => {
-      const hoofdCat = opdracht.Hoofdcategorie || 'Overig';
-      if (!groepen[hoofdCat]) {
-        groepen[hoofdCat] = [];
-      }
-      if (!groepen[hoofdCat].includes(opdracht.Categorie)) {
-        groepen[hoofdCat].push(opdracht.Categorie);
+      if (opdracht.Categorie) {
+        categorieen.add(opdracht.Categorie);
       }
     });
-    if (groepen['Overig'].length === 0) {
-      delete groepen['Overig'];
-    }
+    return Array.from(categorieen).sort();
+  }, [opdrachten]);
+
+  // Groepeer opdrachten per categorie
+  const opdrachtenPerCategorie = useMemo(() => {
+    const groepen: { [key: string]: Opdracht[] } = {};
+    opdrachten.forEach(opdracht => {
+      if (opdracht.Categorie) {
+        if (!groepen[opdracht.Categorie]) {
+          groepen[opdracht.Categorie] = [];
+        }
+        groepen[opdracht.Categorie].push(opdracht);
+      }
+    });
     return groepen;
   }, [opdrachten]);
 
-  const toggleHoofdCategorie = (hoofd: string) => {
-    setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
-  };
-
-  const handleHoofdCategorieSelectie = (subcategorieen: string[], isGeselecteerd: boolean) => {
-    actieveBulkHandler(subcategorieen, isGeselecteerd ? 'deselect' : 'select');
-  };
-
-  const alleCategorieen = useMemo(() => {
-    return [...new Set(opdrachten.map(o => o.Categorie))];
-  }, [opdrachten]);
-
-  const handleSelectAll = () => actieveBulkHandler(alleCategorieen, 'select');
-  const handleDeselectAll = () => actieveBulkHandler(alleCategorieen, 'deselect');
-  
-  const handleHighScoreSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedKey = e.target.value;
-    if (selectedKey && setGeselecteerdeHighscoreCategorieen) {
-      // Herstel naar highscore categorieën
-      setGeselecteerdeHighscoreCategorieen(selectedKey.split(','));
-    } else if (onHighScoreSelect) {
-      // Fallback naar oude methode
-      onHighScoreSelect(selectedKey ? selectedKey.split(',') : alleCategorieen);
+  // Herstel laatste selectie functionaliteit
+  const handleHerstelLaatste = () => {
+    const opgeslagenSelectie = localStorage.getItem('geselecteerdeCategorieen_normaal');
+    if (opgeslagenSelectie) {
+      const categorieen = JSON.parse(opgeslagenSelectie);
+      actieveBulkHandler(alleCategorieen, 'deselect');
+      actieveBulkHandler(categorieen, 'select');
     }
   };
 
-  const highScoresExist = highScoreLibrary && Object.keys(highScoreLibrary).length > 0;
+  // Multiplayer selectie opslaan functionaliteit
+  const handleOpslaanSelectie = () => {
+    if (opgeslagenSelecties.length >= 5) {
+      alert('Je kunt maximaal 5 opgeslagen selecties hebben. Verwijder eerst een oude selectie.');
+      return;
+    }
+    setToonOpslaanModal(true);
+  };
 
-  const handleHerstelLaatste = () => {
-    const opgeslagenSelectie = localStorage.getItem('geselecteerdeCategorieen_normaal');
-    if (opgeslagenSelectie && onHighScoreSelect) {
-      onHighScoreSelect(JSON.parse(opgeslagenSelectie));
+  const handleBevestigOpslaan = () => {
+    if (!nieuweSelectieNaam.trim()) {
+      alert('Geef een naam op voor je selectie.');
+      return;
+    }
+
+    const nieuweSelectie: OpgeslagenCategorieSelectie = {
+      id: Date.now().toString(),
+      naam: nieuweSelectieNaam.trim(),
+      categorieen: [...actieveCategorieSelectie],
+      datum: new Date().toISOString()
+    };
+
+    const nieuweSelecties = [...opgeslagenSelecties, nieuweSelectie];
+    setOpgeslagenSelecties(nieuweSelecties);
+    localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+    
+    setNieuweSelectieNaam('');
+    setToonOpslaanModal(false);
+  };
+
+  const handleLaadSelectie = (selectie: OpgeslagenCategorieSelectie) => {
+    if (setGeselecteerdeMultiplayerCategorieen) {
+      setGeselecteerdeMultiplayerCategorieen([...selectie.categorieen]);
+    }
+  };
+
+  const handleVerwijderSelectie = (id: string) => {
+    const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
+    setOpgeslagenSelecties(nieuweSelecties);
+    localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
+  };
+
+  const handleHighScoreSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = e.target.value;
+    if (selectedValue && onHighScoreSelect) {
+      const categories = selectedValue.split(',');
+      onHighScoreSelect(categories);
     }
   };
 
@@ -227,98 +273,155 @@ export const CategorieSelectieModal = ({
     }
   };
 
-  // Render de basis categorie selectie (voor alle tabs behalve Leitner)
-  const renderBasisCategorieSelectie = () => (
-    <>
-      <div className="controls">
-        <button onClick={handleSelectAll}>Selecteer Alles</button>
-        <button onClick={handleDeselectAll}>Deselecteer Alles</button>
-      </div>
-      
-      <div className="categorie-lijst">
-        {Object.entries(gegroepeerdeCategorieen).map(([hoofd, subs]) => {
-            const isAllesGeselecteerd = subs.every(sub => actieveCategorieSelectie.includes(sub));
-            const isDeelsGeselecteerd = subs.some(sub => actieveCategorieSelectie.includes(sub)) && !isAllesGeselecteerd;
-            return (
-                <div key={hoofd} className="hoofd-categorie-rij">
-                    <div className="hoofd-categorie-header" onClick={() => toggleHoofdCategorie(hoofd)}>
-                        <input
-                            type="checkbox"
-                            checked={isAllesGeselecteerd}
-                            ref={input => { if (input) input.indeterminate = isDeelsGeselecteerd; }}
-                            onChange={() => handleHoofdCategorieSelectie(subs, isAllesGeselecteerd)}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <span className="hoofd-categorie-naam">{hoofd}</span>
-                        <span className={`pijl ${openHoofdCategorieen[hoofd] ? 'open' : ''}`}>▶</span>
-                    </div>
-                    {openHoofdCategorieen[hoofd] && (
-                        <div className="sub-categorie-lijst">
-                        {subs.map(sub => (
-                            <label key={sub} className="sub-categorie-label">
-                            <input
-                                type="checkbox"
-                                checked={actieveCategorieSelectie.includes(sub)}
-                                onChange={() => actieveCategorieHandler(sub)}
-                            />
-                            {sub}
-                            </label>
-                        ))}
-                        </div>
-                    )}
-                </div>
-            );
-        })}
-      </div>
-    </>
-  );
+  const handleSelectAll = () => actieveBulkHandler(alleCategorieen, 'select');
+  const handleDeselectAll = () => actieveBulkHandler(alleCategorieen, 'deselect');
 
-  // Render de Leitner redirect (alleen voor Leitner tab)
-  const renderLeitnerRedirect = () => {
-    return (
-      <div className="leitner-redirect">
-        <div className="leitner-info">
-          <h3>📚 Leitner Categorie Beheer</h3>
-          <p>Voor de volledige Leitner functionaliteit met statistieken, box verdeling en gedetailleerde informatie, gebruik de "Pas te leren categorieën aan" knop in het menu.</p>
-          <p>Deze knop opent de volledige Leitner interface met:</p>
-          <ul>
-            <li>📊 Gedetailleerde statistieken per categorie</li>
-            <li>📦 Box verdeling (B0-B6)</li>
-            <li>🔄 Aantal pogingen en herhalingen</li>
-            <li>⏰ Klaar voor herhaling indicatoren</li>
-            <li>📈 Sorteerbare tabellen</li>
-          </ul>
-          <button 
-            className="leitner-redirect-button"
-            onClick={() => {
-              onClose(); // Sluit deze modal
-              // Open de LeitnerCategorieBeheer modal via een custom event
-              window.dispatchEvent(new CustomEvent('openLeitnerCategorieBeheer'));
-            }}
-          >
-            🔗 Open Volledige Leitner Interface
+
+
+
+
+  const renderBasisCategorieSelectie = () => (
+    <div className="categorie-selectie-container">
+      {/* Snelle selecties */}
+      <div className="snelle-selecties">
+        <h4>Snelle Selecties</h4>
+        <div className="snelle-selectie-knoppen">
+          <button onClick={handleSelectAll} className="snelle-selectie-knop">
+            Selecteer Alles
           </button>
+          <button onClick={handleDeselectAll} className="snelle-selectie-knop">
+            Deselecteer Alles
+          </button>
+          {activeTab === 'normaal' && (
+            <button onClick={handleHerstelLaatste} className="snelle-selectie-knop">
+              Herstel Laatste Selectie
+            </button>
+          )}
         </div>
       </div>
-    );
-  };
+
+      {/* Multiplayer opgeslagen selecties */}
+      {activeTab === 'multiplayer' && (
+        <div className="opgeslagen-selecties">
+          <h4>Opgeslagen Selecties</h4>
+          <div className="opgeslagen-selecties-lijst">
+            {opgeslagenSelecties.map(selectie => (
+              <div key={selectie.id} className="opgeslagen-selectie-item">
+                <div className="selectie-info">
+                  <span className="selectie-naam">{selectie.naam}</span>
+                  <span className="selectie-datum">
+                    {new Date(selectie.datum).toLocaleDateString()}
+                  </span>
+                  <span className="selectie-aantal">
+                    {selectie.categorieen.length} categorieën
+                  </span>
+                </div>
+                <div className="selectie-acties">
+                  <button 
+                    onClick={() => handleLaadSelectie(selectie)}
+                    className="laad-selectie-knop"
+                    title="Laad deze selectie"
+                  >
+                    📂
+                  </button>
+                  <button 
+                    onClick={() => handleVerwijderSelectie(selectie.id)}
+                    className="verwijder-selectie-knop"
+                    title="Verwijder deze selectie"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+            {opgeslagenSelecties.length < 5 && (
+              <button 
+                onClick={handleOpslaanSelectie}
+                className="opslaan-selectie-knop"
+                disabled={actieveCategorieSelectie.length === 0}
+              >
+                💾 Huidige Selectie Opslaan
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Highscore recordpogingen */}
+      {activeTab === 'highscore' && (
+        <div className="recordpogingen">
+          <h4>Kies een eerdere recordpoging:</h4>
+          <select onChange={handleHighScoreSelect} className="recordpoging-select">
+            <option value="">-- Selecteer een recordpoging --</option>
+            {highScoreLibrary && Object.entries(highScoreLibrary).map(([categories, data]) => (
+              <option key={categories} value={categories}>
+                {categories} - {data.score} punten ({data.spelerNaam})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Categorie lijst */}
+      <div className="categorie-lijst">
+        <h4>Categorieën</h4>
+        {alleCategorieen.map(categorie => {
+          const opdrachtenInCategorie = opdrachtenPerCategorie[categorie] || [];
+          const isGeselecteerd = actieveCategorieSelectie.includes(categorie);
+          
+          return (
+            <div key={categorie} className="categorie-item">
+              <label className="categorie-label">
+                <input
+                  type="checkbox"
+                  checked={isGeselecteerd}
+                  onChange={() => actieveCategorieHandler(categorie)}
+                />
+                <span className="categorie-naam">{categorie}</span>
+                <span className="categorie-aantal">({opdrachtenInCategorie.length})</span>
+              </label>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderLeitnerRedirect = () => (
+    <div className="leitner-redirect">
+      <h4>📚 Leitner Categorie Beheer</h4>
+      <p>
+        Voor gedetailleerde Leitner categorie beheer met statistieken en box verdeling, 
+        gebruik de speciale Leitner modal.
+      </p>
+      <button 
+        onClick={() => {
+          onClose();
+          window.dispatchEvent(new CustomEvent('openLeitnerCategorieBeheer'));
+        }}
+        className="leitner-redirect-knop"
+      >
+        🔄 Open Leitner Categorie Beheer
+      </button>
+    </div>
+  );
 
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content leitner-beheer-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>🎯 Categorie Selectie</h2>
-          <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
+          <h3>🎯 CATEGORIE SELECTIE</h3>
+          <button onClick={onClose} className="modal-close">&times;</button>
         </div>
-        
-        {/* Tabbladen */}
-        <div className="tab-navigation">
-          {(['normaal', 'leitner', 'highscore', 'multiplayer'] as TabType[]).map(tab => (
+
+        {/* Tab navigatie */}
+        <div className="tab-navigatie">
+          {(['multiplayer', 'highscore', 'normaal', 'leitner'] as TabType[]).map(tab => (
             <button
               key={tab}
-              className={`tab-button ${activeTab === tab ? 'active' : ''}`}
+              className={`tab-knop ${activeTab === tab ? 'actief' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
               {getTabTitle(tab)}
@@ -326,44 +429,41 @@ export const CategorieSelectieModal = ({
           ))}
         </div>
 
-        <div className="modal-body">
-          {/* Tab beschrijving */}
-          <div className="tab-description">
-            <p>{getTabDescription(activeTab)}</p>
-          </div>
+        {/* Tab beschrijving */}
+        <div className="tab-beschrijving">
+          <p>{getTabDescription(activeTab)}</p>
+        </div>
 
-          {/* Tab-specifieke content */}
-          {activeTab === 'highscore' && (
-            <div className="snelle-selecties">
-              <h4>Snelle Selecties</h4>
-              {gameMode === 'single' && highScoresExist && (
-                <div className="recordpoging-selector">
-                  <label htmlFor="highscore-select">
-                    <strong>Kies een eerdere recordpoging:</strong>
-                  </label>
-                  <p>Selecteer een eerdere recordpoging om dezelfde categorieën te laden.</p>
-                  <select id="highscore-select" onChange={handleHighScoreSelect}>
-                    <option value="">-- Herstel naar alle categorieën --</option>
-                    {Object.entries(highScoreLibrary!).map(([key, value]) => (
-                      <option key={key} value={key}>
-                        {value.score.toFixed(1)} pnt door {value.spelerNaam} ({key.replace(/,/g, ', ')})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <button onClick={handleHerstelLaatste} className="categorie-filter-knop herstel">
-                🔄 Herstel Laatste Selectie
-              </button>
-            </div>
-          )}
-
-          {/* Render de juiste content op basis van de actieve tab */}
+        {/* Tab content */}
+        <div className="tab-content">
           {activeTab === 'leitner' ? renderLeitnerRedirect() : renderBasisCategorieSelectie()}
         </div>
-        <div className="modal-footer">
-          <button onClick={onClose}>Sluiten</button>
-        </div>
+
+        {/* Opslaan modal */}
+        {toonOpslaanModal && (
+          <div className="opslaan-modal-overlay" onClick={() => setToonOpslaanModal(false)}>
+            <div className="opslaan-modal-content" onClick={(e) => e.stopPropagation()}>
+              <h4>💾 Selectie Opslaan</h4>
+              <p>Geef een naam op voor je categorie selectie:</p>
+              <input
+                type="text"
+                value={nieuweSelectieNaam}
+                onChange={(e) => setNieuweSelectieNaam(e.target.value)}
+                placeholder="Bijv. 'Anatomie Focus'"
+                className="selectie-naam-input"
+                maxLength={30}
+              />
+              <div className="opslaan-modal-acties">
+                <button onClick={() => setToonOpslaanModal(false)} className="annuleer-knop">
+                  Annuleren
+                </button>
+                <button onClick={handleBevestigOpslaan} className="bevestig-knop">
+                  Opslaan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

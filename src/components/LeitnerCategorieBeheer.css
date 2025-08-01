@@ -741,3 +741,483 @@
     border-right-color: transparent;
   }
 }
+
+/* Nieuwe styling voor CategorieSelectieModal */
+.modal-content {
+  background-color: #282c34;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  width: 95%;
+  max-width: 1000px;
+  border: 1px solid #444;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #61dafb;
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #61dafb;
+}
+
+.tab-navigatie {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+
+.tab-knop {
+  background-color: #444;
+  color: #e0e0e0;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.tab-knop:hover {
+  background-color: #555;
+}
+
+.tab-knop.actief {
+  background-color: #61dafb;
+  color: #282c34;
+}
+
+.tab-beschrijving {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 6px;
+  border-left: 4px solid #61dafb;
+}
+
+.tab-beschrijving p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.categorie-selectie-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.snelle-selecties {
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.snelle-selecties h4 {
+  margin: 0 0 10px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
+}
+
+.snelle-selectie-knoppen {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.snelle-selectie-knop {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.snelle-selectie-knop:hover {
+  background-color: #21a1f2;
+  transform: translateY(-1px);
+}
+
+.snelle-selectie-knop:disabled {
+  background-color: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Opgeslagen selecties styling */
+.opgeslagen-selecties {
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.opgeslagen-selecties h4 {
+  margin: 0 0 15px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
+}
+
+.opgeslagen-selecties-lijst {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opgeslagen-selectie-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+  transition: all 0.2s ease;
+}
+
+.opgeslagen-selectie-item:hover {
+  border-color: #61dafb;
+  background-color: #2f2f2f;
+}
+
+.selectie-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.selectie-naam {
+  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.selectie-datum {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.selectie-aantal {
+  font-size: 0.8rem;
+  color: #61dafb;
+}
+
+.selectie-acties {
+  display: flex;
+  gap: 8px;
+}
+
+.laad-selectie-knop,
+.verwijder-selectie-knop {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.laad-selectie-knop:hover {
+  background-color: #61dafb;
+  color: #282c34;
+}
+
+.verwijder-selectie-knop:hover {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.opslaan-selectie-knop {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.opslaan-selectie-knop:hover:not(:disabled) {
+  background-color: #2ecc71;
+  transform: translateY(-1px);
+}
+
+.opslaan-selectie-knop:disabled {
+  background-color: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Recordpogingen styling */
+.recordpogingen {
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.recordpogingen h4 {
+  margin: 0 0 10px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
+}
+
+.recordpoging-select {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.recordpoging-select:focus {
+  outline: none;
+  border-color: #61dafb;
+}
+
+/* Categorie lijst styling */
+.categorie-lijst {
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.categorie-lijst h4 {
+  margin: 0 0 15px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
+}
+
+.categorie-item {
+  margin-bottom: 8px;
+}
+
+.categorie-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.categorie-label:hover {
+  background-color: #2a2a2a;
+}
+
+.categorie-label input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.1);
+}
+
+.categorie-naam {
+  font-weight: 500;
+  color: #e0e0e0;
+  flex: 1;
+}
+
+.categorie-aantal {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* Opslaan modal styling */
+.opslaan-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.opslaan-modal-content {
+  background-color: #282c34;
+  color: #e0e0e0;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  width: 90%;
+  max-width: 400px;
+  border: 1px solid #444;
+}
+
+.opslaan-modal-content h4 {
+  margin: 0 0 15px 0;
+  color: #61dafb;
+  font-size: 1.2rem;
+}
+
+.opslaan-modal-content p {
+  margin: 0 0 15px 0;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.selectie-naam-input {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.selectie-naam-input:focus {
+  outline: none;
+  border-color: #61dafb;
+}
+
+.opslaan-modal-acties {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.annuleer-knop,
+.bevestig-knop {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.annuleer-knop {
+  background-color: #666;
+  color: #e0e0e0;
+}
+
+.annuleer-knop:hover {
+  background-color: #777;
+}
+
+.bevestig-knop {
+  background-color: #27ae60;
+  color: white;
+}
+
+.bevestig-knop:hover {
+  background-color: #2ecc71;
+}
+
+/* Leitner redirect styling */
+.leitner-redirect {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.leitner-redirect h4 {
+  margin: 0 0 15px 0;
+  color: #61dafb;
+  font-size: 1.3rem;
+}
+
+.leitner-redirect p {
+  margin: 0 0 25px 0;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.leitner-redirect-knop {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.leitner-redirect-knop:hover {
+  background-color: #21a1f2;
+  transform: translateY(-2px);
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 98%;
+    max-height: 95vh;
+    padding: 15px;
+  }
+
+  .tab-navigatie {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tab-knop {
+    border-radius: 6px;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .snelle-selectie-knoppen {
+    flex-direction: column;
+  }
+
+  .opgeslagen-selectie-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .selectie-acties {
+    align-self: flex-end;
+  }
+
+  .opslaan-modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+}

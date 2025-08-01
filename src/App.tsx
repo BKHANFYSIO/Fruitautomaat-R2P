@@ -1403,7 +1403,6 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
         geselecteerdeCategorieen={geselecteerdeCategorieen}
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
-        gameMode={gameMode}
         highScoreLibrary={getHighScoreLibrary()}
         onHighScoreSelect={setGeselecteerdeCategorieen}
         geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
