@@ -214,19 +214,9 @@ export const CategorieSelectieModal = ({
 
   const handleHoofdCategorieSelectie = (subcategorieen: string[], isGeselecteerd: boolean) => {
     if (isGeselecteerd) {
-      actieveBulkHandler(subcategorieen, 'select');
-    } else {
       actieveBulkHandler(subcategorieen, 'deselect');
-    }
-  };
-
-  // Herstel laatste selectie functionaliteit
-  const handleHerstelLaatste = () => {
-    const opgeslagenSelectie = localStorage.getItem('geselecteerdeCategorieen_normaal');
-    if (opgeslagenSelectie) {
-      const categorieen = JSON.parse(opgeslagenSelectie);
-      actieveBulkHandler(alleCategorieen, 'deselect');
-      actieveBulkHandler(categorieen, 'select');
+    } else {
+      actieveBulkHandler(subcategorieen, 'select');
     }
   };
 
@@ -332,11 +322,6 @@ export const CategorieSelectieModal = ({
           <button onClick={handleDeselectAll} className="snelle-selectie-knop">
             Deselecteer Alles
           </button>
-          {activeTab === 'normaal' && (
-            <button onClick={handleHerstelLaatste} className="snelle-selectie-knop">
-              Herstel Laatste Selectie
-            </button>
-          )}
         </div>
       </div>
 
