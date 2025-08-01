@@ -331,15 +331,6 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           <div className="controls">
             <button onClick={handleSelectAll}>Selecteer Alles</button>
             <button onClick={handleDeselectAll}>Selecteer Niets</button>
-            {opgeslagenSelecties.length < 5 && (
-              <button 
-                onClick={handleOpslaanSelectie}
-                disabled={geselecteerdeCategorieen.length === 0}
-                className="opslaan-knop"
-              >
-                💾 Opslaan Selectie
-              </button>
-            )}
           </div>
 
           {/* Opgeslagen selecties sectie */}
@@ -377,6 +368,19 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Opslaan knop sectie */}
+          {opgeslagenSelecties.length < 5 && (
+            <div className="opslaan-sectie">
+              <button 
+                onClick={handleOpslaanSelectie}
+                disabled={geselecteerdeCategorieen.length === 0}
+                className="opslaan-selectie-knop"
+              >
+                💾 Huidige Selectie Opslaan
+              </button>
             </div>
           )}
 
