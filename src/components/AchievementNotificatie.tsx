@@ -17,12 +17,14 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
 
   useEffect(() => {
     if (achievement) {
+      // Reset drag offset voordat we de achievement tonen
+      setDragOffset(0);
       setIsVisible(true);
       
       // Auto-hide na 4 seconden
       const timer = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(onClose, 300); // Wacht tot animatie klaar is
+        setTimeout(onClose, 500); // Wacht tot CSS animatie klaar is (0.5s)
       }, 4000);
 
       return () => clearTimeout(timer);
@@ -57,11 +59,18 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
     // Als de swipe meer dan 100px is, sluit de notificatie
     if (Math.abs(dragOffset) > 100) {
       setIsVisible(false);
-      setTimeout(onClose, 300);
+      setTimeout(onClose, 500); // Wacht tot CSS animatie klaar is (0.5s)
     } else {
       // Reset naar originele positie
       setDragOffset(0);
     }
+  };
+
+  const handleClose = () => {
+    // Reset drag offset voordat we sluiten
+    setDragOffset(0);
+    setIsVisible(false);
+    setTimeout(onClose, 500); // Wacht tot CSS animatie klaar is (0.5s)
   };
 
   if (!achievement) return null;
@@ -110,8 +119,7 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
   const handleClick = () => {
     if (onOpenLeeranalyse) {
       onOpenLeeranalyse();
-      setIsVisible(false);
-      setTimeout(onClose, 300);
+      handleClose();
     }
   };
 
@@ -141,8 +149,7 @@ export const AchievementNotificatie = ({ achievement, onClose, onOpenLeeranalyse
         </div>
         <button className="close-button" onClick={(e) => {
           e.stopPropagation(); // Voorkom dat de click event bubbelt
-          setIsVisible(false);
-          setTimeout(onClose, 300);
+          handleClose();
         }}>
           ×
         </button>

@@ -6,8 +6,9 @@
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(52, 144, 220, 0.3); /* Diepere schaduw met een subtiele blauwe gloed */
   z-index: 1000;
-  transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Vloeiendere animatie */
+  transition: right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Langere, vloeiendere animatie */
   border: 1px solid rgba(255, 255, 255, 0.15); /* Subtiele rand */
+  will-change: right; /* Optimaliseer voor animatie */
 }
 
 .achievement-notificatie.visible {
