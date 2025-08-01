@@ -518,8 +518,15 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const opdrachtenVoorFilter = useMemo(() => opdrachten, [opdrachten]);
 
   const alleUniekeCategorieen = useMemo(() => {
-    return [...new Set(opdrachten.map((o) => o.Categorie))];
+    const uniekeNamen = new Set<string>();
+    opdrachten.forEach(op => {
+      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+      uniekeNamen.add(uniekeIdentifier);
+    });
+    return [...uniekeNamen];
   }, [opdrachten]);
+
+
 
   // Effect om categorie-selecties te laden uit localStorage of te initialiseren
   useEffect(() => {
@@ -529,7 +536,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       setGeselecteerdeCategorieen(JSON.parse(normaleSelectie));
     } else if (opdrachten.length > 0) {
       // Alleen initialiseren als er geen opgeslagen data is EN opdrachten geladen zijn
-      setGeselecteerdeCategorieen(alleUniekeCategorieen);
+      setGeselecteerdeCategorieen([]);
     }
 
     const leitnerSelectie = localStorage.getItem('geselecteerdeCategorieen_leitner');
@@ -545,7 +552,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       setGeselecteerdeMultiplayerCategorieen(JSON.parse(multiplayerSelectie));
     } else if (opdrachten.length > 0) {
       // Alleen initialiseren als er geen opgeslagen data is
-      setGeselecteerdeMultiplayerCategorieen(alleUniekeCategorieen);
+      setGeselecteerdeMultiplayerCategorieen([]);
     }
 
     const highscoreSelectie = localStorage.getItem('geselecteerdeCategorieen_highscore');
@@ -553,16 +560,13 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       setGeselecteerdeHighscoreCategorieen(JSON.parse(highscoreSelectie));
     } else if (opdrachten.length > 0) {
       // Alleen initialiseren als er geen opgeslagen data is
-      setGeselecteerdeHighscoreCategorieen(alleUniekeCategorieen);
+      setGeselecteerdeHighscoreCategorieen([]);
     }
   }, [opdrachten, alleUniekeCategorieen]);
 
   // Effect om normale categorie-selectie op te slaan
   useEffect(() => {
-    // Voorkom het opslaan van een lege array bij de allereerste render
-    if (geselecteerdeCategorieen.length > 0) {
       localStorage.setItem('geselecteerdeCategorieen_normaal', JSON.stringify(geselecteerdeCategorieen));
-    }
   }, [geselecteerdeCategorieen]);
 
   // Effect om Leitner categorie-selectie op te slaan
@@ -604,19 +608,48 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 
   // Filter opdrachten op basis van de juiste selectie
   const gefilterdeOpdrachten = useMemo(() => {
-    const actieveSelectie = isSerieuzeLeerModusActief && leermodusType === 'leitner'
-      ? geselecteerdeLeitnerCategorieen
-      : geselecteerdeCategorieen;
+    let actieveSelectie: string[];
+
+    switch (gameMode) {
+      case 'multi':
+        actieveSelectie = geselecteerdeMultiplayerCategorieen;
+        break;
+      case 'single':
+        if (isSerieuzeLeerModusActief) {
+          if (leermodusType === 'leitner') {
+            actieveSelectie = geselecteerdeLeitnerCategorieen;
+    } else {
+            // Normale leermodus
+            actieveSelectie = geselecteerdeCategorieen;
+          }
+      } else {
+          // Highscore modus
+          actieveSelectie = geselecteerdeHighscoreCategorieen;
+        }
+        break;
+      default:
+        actieveSelectie = geselecteerdeCategorieen;
+    }
     
     // Als de selectie leeg is, zijn er geen opdrachten
     if (actieveSelectie.length === 0) {
       return [];
     }
 
-    return opdrachten.filter((opdracht) =>
-      actieveSelectie.includes(opdracht.Categorie)
-    );
-  }, [opdrachten, geselecteerdeCategorieen, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, leermodusType]);
+    return opdrachten.filter((opdracht) => {
+      const uniekeIdentifier = `${opdracht.Hoofdcategorie || 'Overig'} - ${opdracht.Categorie}`;
+      return actieveSelectie.includes(uniekeIdentifier);
+    });
+  }, [
+    opdrachten, 
+    gameMode,
+    isSerieuzeLeerModusActief,
+      leermodusType,
+    geselecteerdeCategorieen, 
+    geselecteerdeLeitnerCategorieen, 
+    geselecteerdeMultiplayerCategorieen, 
+    geselecteerdeHighscoreCategorieen
+  ]);
 
   // Effect om de beurt te resetten als de huidige opdracht ongeldig wordt door categoriewijziging
   useEffect(() => {
@@ -707,7 +740,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     // Start nieuwe sessie als er geen actieve sessie is en we in serieuze leer-modus zijn
     if (isSerieuzeLeerModusActief && gameMode === 'single' && !huidigeSessieId) {
       const leerDataManager = getLeerDataManager();
-      const nieuweSessieId = leerDataManager.startSessie(true);
+      const nieuweSessieId = leerDataManager.startSessie(true, leermodusType);
       setHuidigeSessieId(nieuweSessieId);
       
       setNotificatie({ 
@@ -781,13 +814,13 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     let opdrachtType: 'herhaling' | 'nieuw' | 'geen' = 'geen';
     let boxNummer: number | undefined = undefined;
 
-    if (isSerieuzeLeerModusActief && gameMode === 'single') {
+    if (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner') {
       const leerDataManager = getLeerDataManager();
       
       // Filter de te herhalen opdrachten HIER met de meest up-to-date state
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
-        geselecteerdeLeitnerCategorieen.includes(item.opdrachtId.split('_')[0])
+        geselecteerdeLeitnerCategorieen.includes(item.opdrachtId.split('_')[0] + " - " + item.opdrachtId.split('_')[1])
       );
       
       const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeLeitnerCategorieen);
@@ -806,9 +839,14 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       const beschikbareOpdrachten = gefilterdeOpdrachten.filter(
         op => !recentGebruikteOpdrachten.find(ruo => ruo.Opdracht === op.Opdracht)
       );
-      const teKiezenLijst = beschikbareOpdrachten.length > 0 ? beschikbareOpdrachten : gefilterdeOpdrachten;
       
-      gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
+      if (beschikbareOpdrachten.length === 0) {
+        // Als er geen opdrachten meer zijn na het filteren van recent gebruikte,
+        // gebruik dan de volledige gefilterde lijst.
+        gekozenOpdracht = gefilterdeOpdrachten[Math.floor(Math.random() * gefilterdeOpdrachten.length)];
+      } else {
+        gekozenOpdracht = beschikbareOpdrachten[Math.floor(Math.random() * beschikbareOpdrachten.length)];
+      }
       opdrachtType = 'nieuw';
     }
 
@@ -995,7 +1033,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
       }
 
       // Forceer een re-render om stats bij te werken
-      setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen));
+      setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen));
       
       setOpdrachtStartTijd(null);
     }
@@ -1295,17 +1333,26 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   };
 
   const handleStartFocusSessie = (categorie: string) => {
-    // Bepaal of de gekozen categorie een hoofd- of subcategorie is
-    const isHoofdcategorie = opdrachten.some(op => op.Hoofdcategorie === categorie);
+    // Deze functie verwacht nu een "Hoofdcategorie - Subcategorie" of alleen "Hoofdcategorie"
+    const isHoofdcategorie = !categorie.includes(' - ');
+
+    let geselecteerdeIds: string[];
 
     if (isHoofdcategorie) {
-      const subcategorieen = opdrachten
+      geselecteerdeIds = opdrachten
         .filter(op => op.Hoofdcategorie === categorie)
-        .map(op => op.Categorie);
-      setGeselecteerdeCategorieen([...new Set(subcategorieen)]);
+        .map(op => `${op.Hoofdcategorie} - ${op.Categorie}`);
     } else {
-      setGeselecteerdeCategorieen([categorie]);
+      geselecteerdeIds = [categorie];
     }
+
+    const uniekeGeselecteerdeIds = [...new Set(geselecteerdeIds)];
+
+    // Focus sessie geldt voor 'normale' leermodus
+    setGeselecteerdeCategorieen(uniekeGeselecteerdeIds);
+    setGameMode('single');
+    setIsSerieuzeLeerModusActief(true);
+    setLeermodusType('normaal');
 
     setIsLeeranalyseOpen(false);
     // Optioneel: toon een notificatie
@@ -1404,7 +1451,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
         highScoreLibrary={getHighScoreLibrary()}
-        onHighScoreSelect={setGeselecteerdeCategorieen}
+        onHighScoreSelect={setGeselecteerdeHighscoreCategorieen}
         geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
         setGeselecteerdeLeitnerCategorieen={setGeselecteerdeLeitnerCategorieen}
         geselecteerdeMultiplayerCategorieen={geselecteerdeMultiplayerCategorieen}

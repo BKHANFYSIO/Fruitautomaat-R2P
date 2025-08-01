@@ -10,6 +10,27 @@ interface OpgeslagenLeitnerSelectie {
   datum: string;
 }
 
+// Toast melding component
+const ToastMelding = ({ bericht, isZichtbaar, onClose }: { bericht: string; isZichtbaar: boolean; onClose: () => void }) => {
+  useEffect(() => {
+    if (isZichtbaar) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isZichtbaar, onClose]);
+
+  return (
+    <div className={`toast-melding ${isZichtbaar ? 'zichtbaar' : ''}`}>
+      <div className="toast-content">
+        <span className="toast-icon">✅</span>
+        <span className="toast-bericht">{bericht}</span>
+      </div>
+    </div>
+  );
+};
+
 const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
   <div className="box-uitleg-popup-overlay" onClick={onClose}>
     <div className="box-uitleg-popup-content" onClick={(e) => e.stopPropagation()}>
@@ -46,6 +67,7 @@ interface LeitnerCategorieBeheerProps {
 
 interface CategorieStatistiek {
   naam: string;
+  uniekeNaam: string;
   isHoofd: boolean;
   totaalOpdrachten: number;
   aanHetLeren: number;
@@ -75,7 +97,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenLeitnerSelectie[]>([]);
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
-  const [feedbackNotificatie, setFeedbackNotificatie] = useState<string | null>(null);
+  const [toastBericht, setToastBericht] = useState('');
+  const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
 
   // Laad opgeslagen selecties bij component mount
   useEffect(() => {
@@ -85,29 +108,11 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     }
   }, []);
 
-  // Feedback notificatie effect
-  useEffect(() => {
-    if (feedbackNotificatie) {
-      const timer = setTimeout(() => {
-        setFeedbackNotificatie(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [feedbackNotificatie]);
-
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
     const leerDataManager = getLeerDataManager();
     const leitnerData = leerDataManager.loadLeitnerData();
     const leerData = leerDataManager.loadLeerData();
-
-    const opdrachtenPerSubcategorie = alleOpdrachten.reduce((acc, op) => {
-      if (!acc[op.Categorie]) {
-        acc[op.Categorie] = 0;
-      }
-      acc[op.Categorie]++;
-      return acc;
-    }, {} as { [cat: string]: number });
 
     const hoofdcategorieMap: Record<string, string[]> = alleOpdrachten.reduce((acc, op) => {
       const hoofd = op.Hoofdcategorie || 'Overig';
@@ -119,54 +124,55 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       }
       return acc;
     }, {} as Record<string, string[]>);
-    
-    const alleSubcategorieen = [...new Set(alleOpdrachten.map(op => op.Categorie))];
-
-    const subcatStats: Record<string, CategorieStatistiek> = alleSubcategorieen.reduce((acc, subcat) => {
-      let aanHetLeren = 0;
-      let klaarVoorHerhaling = 0;
-      const perBox: { [boxId: number]: number } = {};
-      leitnerData.boxes.forEach(box => {
-        const categorieOpdrachten = box.opdrachten.filter(id => id.startsWith(subcat + '_'));
-        perBox[box.boxId] = (perBox[box.boxId] || 0) + categorieOpdrachten.length;
-        aanHetLeren += categorieOpdrachten.length;
-        
-        categorieOpdrachten.forEach(opdrachtId => {
-          const reviewTijd = leitnerData.opdrachtReviewTimes[opdrachtId];
-          if (reviewTijd) {
-            const msSindsReview = new Date().getTime() - new Date(reviewTijd).getTime();
-            const minutenSindsReview = msSindsReview / 60000;
-            if (minutenSindsReview >= (leitnerData.boxIntervallen[box.boxId] || 10)) {
-              klaarVoorHerhaling++;
-            }
-          }
-        });
-      });
-
-      let pogingen = 0;
-      Object.values(leerData?.opdrachten || {}).forEach(opData => {
-        if (opData.categorie === subcat) {
-          pogingen += opData.aantalKeerGedaan;
-        }
-      });
-
-      acc[subcat] = {
-        naam: subcat,
-        isHoofd: false,
-        totaalOpdrachten: opdrachtenPerSubcategorie[subcat] || 0,
-        aanHetLeren,
-        pogingen,
-        klaarVoorHerhaling,
-        perBox,
-      };
-      return acc;
-    }, {} as Record<string, CategorieStatistiek>);
 
     const finaleStatistieken: CategorieStatistiek[] = Object.entries(hoofdcategorieMap).map(([hoofd, subs]) => {
-      const subCategorieStats = subs.map(sub => subcatStats[sub]).filter(Boolean);
-      
+      const subCategorieStats = subs.map(sub => {
+        const uniekeIdentifier = `${hoofd} - ${sub}`;
+        
+        let aanHetLeren = 0;
+        let klaarVoorHerhaling = 0;
+        const perBox: { [boxId: number]: number } = {};
+        
+        leitnerData.boxes.forEach(box => {
+          const categorieOpdrachten = box.opdrachten.filter(id => id.startsWith(`${hoofd}_${sub}_`));
+          perBox[box.boxId] = (perBox[box.boxId] || 0) + categorieOpdrachten.length;
+          aanHetLeren += categorieOpdrachten.length;
+          
+          categorieOpdrachten.forEach(opdrachtId => {
+            const reviewTijd = leitnerData.opdrachtReviewTimes[opdrachtId];
+            if (reviewTijd) {
+              const msSindsReview = new Date().getTime() - new Date(reviewTijd).getTime();
+              const minutenSindsReview = msSindsReview / 60000;
+              if (minutenSindsReview >= (leitnerData.boxIntervallen[box.boxId] || 10)) {
+                klaarVoorHerhaling++;
+              }
+            }
+          });
+        });
+
+        let pogingen = 0;
+        Object.values(leerData?.opdrachten || {}).forEach(opData => {
+            const opIdentifier = `${opData.hoofdcategorie || 'Overig'} - ${opData.categorie}`;
+            if (opIdentifier === uniekeIdentifier) {
+                pogingen += opData.aantalKeerGedaan;
+            }
+        });
+
+        return {
+          naam: sub,
+          uniekeNaam: uniekeIdentifier,
+          isHoofd: false,
+          totaalOpdrachten: alleOpdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub).length,
+          aanHetLeren,
+          pogingen,
+          klaarVoorHerhaling,
+          perBox,
+        };
+      });
+
       const hoofdStat: CategorieStatistiek = {
         naam: hoofd,
+        uniekeNaam: hoofd,
         isHoofd: true,
         totaalOpdrachten: subCategorieStats.reduce((sum, s) => sum + s.totaalOpdrachten, 0),
         aanHetLeren: subCategorieStats.reduce((sum, s) => sum + s.aanHetLeren, 0),
@@ -223,7 +229,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   };
 
   const handleSelectAll = () => {
-    const alleSubCats = statistieken.flatMap(s => s.subCategorieen?.map(sub => sub.naam) || []);
+    const alleSubCats = statistieken.flatMap(s => s.subCategorieen?.map(sub => sub.uniekeNaam) || []);
     setGeselecteerdeCategorieen([...new Set(alleSubCats)]);
   };
 
@@ -232,7 +238,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   // Leitner selectie opslaan functionaliteit
   const handleOpslaanSelectie = () => {
     if (opgeslagenSelecties.length >= 5) {
-      alert('Je kunt maximaal 5 opgeslagen selecties hebben. Verwijder eerst een oude selectie.');
+      setToastBericht('Je kunt maximaal 5 opgeslagen selecties hebben. Verwijder eerst een oude selectie.');
+      setIsToastZichtbaar(true);
       return;
     }
     setToonOpslaanModal(true);
@@ -240,7 +247,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
   const handleBevestigOpslaan = () => {
     if (!nieuweSelectieNaam.trim()) {
-      alert('Geef een naam op voor je selectie.');
+      setToastBericht('Geef een naam op voor je selectie.');
+      setIsToastZichtbaar(true);
       return;
     }
 
@@ -257,37 +265,42 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     
     setNieuweSelectieNaam('');
     setToonOpslaanModal(false);
+    setToastBericht('Selectie opgeslagen!');
+    setIsToastZichtbaar(true);
   };
 
   const handleLaadSelectie = (selectie: OpgeslagenLeitnerSelectie) => {
     setGeselecteerdeCategorieen([...selectie.categorieen]);
-    setFeedbackNotificatie(`✅ Selectie "${selectie.naam}" geladen (${selectie.categorieen.length} categorieën)`);
+    setToastBericht(`Selectie "${selectie.naam}" is geladen!`);
+    setIsToastZichtbaar(true);
   };
 
   const handleVerwijderSelectie = (id: string) => {
     const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
     setOpgeslagenSelecties(nieuweSelecties);
     localStorage.setItem('leitner_categorie_selecties', JSON.stringify(nieuweSelecties));
+    setToastBericht('Selectie verwijderd!');
+    setIsToastZichtbaar(true);
   };
 
   const handleHoofdCategorieSelectie = (hoofdStat: CategorieStatistiek) => {
-    const subNamen = hoofdStat.subCategorieen?.map(s => s.naam) || [];
-    const zijnAllemaalGeselecteerd = subNamen.every(naam => geselecteerdeCategorieen.includes(naam));
+    const subUniekeNamen = hoofdStat.subCategorieen?.map(s => s.uniekeNaam) || [];
+    const zijnAllemaalGeselecteerd = subUniekeNamen.every(naam => geselecteerdeCategorieen.includes(naam));
 
     setGeselecteerdeCategorieen(prev => {
         const newSet = new Set(prev);
         if (zijnAllemaalGeselecteerd) {
-            subNamen.forEach(naam => newSet.delete(naam));
+            subUniekeNamen.forEach(naam => newSet.delete(naam));
         } else {
-            subNamen.forEach(naam => newSet.add(naam));
+            subUniekeNamen.forEach(naam => newSet.add(naam));
         }
         return Array.from(newSet);
     });
   };
 
-  const handleSubCategorieSelectie = (subNaam: string) => {
+  const handleSubCategorieSelectie = (subUniekeNaam: string) => {
     setGeselecteerdeCategorieen(prev => 
-        prev.includes(subNaam) ? prev.filter(n => n !== subNaam) : [...prev, subNaam]
+        prev.includes(subUniekeNaam) ? prev.filter(n => n !== subUniekeNaam) : [...prev, subUniekeNaam]
     );
   };
   
@@ -299,12 +312,12 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
   const renderRij = (stat: CategorieStatistiek) => {
     const isHoofd = stat.isHoofd;
-    const subNamen = stat.subCategorieen?.map(s => s.naam) || [];
-    const isAllesGeselecteerd = isHoofd ? subNamen.every(n => geselecteerdeCategorieen.includes(n)) : geselecteerdeCategorieen.includes(stat.naam);
-    const isDeelsGeselecteerd = isHoofd && subNamen.some(n => geselecteerdeCategorieen.includes(n)) && !isAllesGeselecteerd;
+    const subUniekeNamen = stat.subCategorieen?.map(s => s.uniekeNaam) || [];
+    const isAllesGeselecteerd = isHoofd ? subUniekeNamen.length > 0 && subUniekeNamen.every(n => geselecteerdeCategorieen.includes(n)) : geselecteerdeCategorieen.includes(stat.uniekeNaam);
+    const isDeelsGeselecteerd = isHoofd && subUniekeNamen.some(n => geselecteerdeCategorieen.includes(n)) && !isAllesGeselecteerd;
 
     return (
-      <tr key={stat.naam} className={isHoofd ? 'hoofd-categorie-rij' : 'sub-categorie-rij'}>
+      <tr key={stat.uniekeNaam} className={isHoofd ? 'hoofd-categorie-rij' : 'sub-categorie-rij'}>
         <td onClick={() => isHoofd && toggleHoofdCategorie(stat.naam)}>
             {isHoofd && <span className={`pijl ${openHoofdCategorieen[stat.naam] ? 'open' : ''}`}>▶</span>}
             {stat.naam}
@@ -314,7 +327,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             type="checkbox"
             checked={isAllesGeselecteerd}
             ref={input => { if (input) input.indeterminate = isDeelsGeselecteerd; }}
-            onChange={() => isHoofd ? handleHoofdCategorieSelectie(stat) : handleSubCategorieSelectie(stat.naam)}
+            onChange={() => isHoofd ? handleHoofdCategorieSelectie(stat) : handleSubCategorieSelectie(stat.uniekeNaam)}
           />
         </td>
         <td>{stat.totaalOpdrachten}</td>
@@ -340,15 +353,22 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
         <div className="modal-body">
-          <div className="controls">
-            <button onClick={handleSelectAll}>Selecteer Alles</button>
-            <button onClick={handleDeselectAll}>Selecteer Niets</button>
+          <div className="snelle-selecties">
+            <h4>Snelle Selecties</h4>
+            <div className="snelle-selectie-knoppen">
+              <button onClick={handleSelectAll} className="snelle-selectie-knop">
+                Selecteer Alles
+              </button>
+              <button onClick={handleDeselectAll} className="snelle-selectie-knop">
+                Deselecteer Alles
+              </button>
+            </div>
           </div>
 
           {/* Opgeslagen selecties sectie */}
-          {opgeslagenSelecties.length > 0 && (
-            <div className="opgeslagen-selecties-sectie">
-              <h4>📚 Opgeslagen Leitner Selecties</h4>
+          <div className="opgeslagen-selecties-sectie">
+            <h4>📚 Opgeslagen Leitner Selecties</h4>
+            {opgeslagenSelecties.length > 0 ? (
               <div className="opgeslagen-selecties-lijst">
                 {opgeslagenSelecties.map(selectie => (
                   <div key={selectie.id} className="opgeslagen-selectie-item">
@@ -380,21 +400,28 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Opslaan knop sectie */}
-          {opgeslagenSelecties.length < 5 && (
+            ) : (
+              <div className="geen-selecties-melding">
+                <p>Nog geen selecties opgeslagen. Maak een selectie en klik op de 'Huidige Selectie Opslaan' knop.</p>
+              </div>
+            )}
+            
+            {/* Opslaan knop sectie */}
             <div className="opslaan-sectie">
               <button 
                 onClick={handleOpslaanSelectie}
-                disabled={geselecteerdeCategorieen.length === 0}
+                disabled={geselecteerdeCategorieen.length === 0 || opgeslagenSelecties.length >= 5}
                 className="opslaan-selectie-knop"
               >
                 💾 Huidige Selectie Opslaan
               </button>
+              {opgeslagenSelecties.length >= 5 && (
+                <p className="max-selecties-melding">
+                  Maximum van 5 opgeslagen selecties bereikt. Verwijder eerst een selectie om een nieuwe op te slaan.
+                </p>
+              )}
             </div>
-          )}
+          </div>
 
           {isLoading ? (
             <p>Statistieken laden...</p>
@@ -459,13 +486,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           </div>
         </div>
       )}
-
-      {/* Feedback notificatie */}
-      {feedbackNotificatie && (
-        <div className="feedback-notificatie">
-          {feedbackNotificatie}
-        </div>
-      )}
+      {toastBericht && <ToastMelding bericht={toastBericht} isZichtbaar={isToastZichtbaar} onClose={() => setIsToastZichtbaar(false)} />}
     </div>
   );
 }; 

@@ -27,6 +27,7 @@ export interface SpinResultaatAnalyse {
 // Leeranalyse Types
 export interface OpdrachtData {
   opdrachtId: string;
+  hoofdcategorie?: string;
   categorie: string;
   aantalKeerGedaan: number;
   laatsteDatum: string;
@@ -46,6 +47,7 @@ export interface SessieData {
   opdrachtenGedaan: number;
   gemiddeldeScore: number;
   serieuzeModus: boolean;
+  leermodusType?: 'normaal' | 'leitner';
   categorieen: string[];
 }
 

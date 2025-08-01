@@ -391,7 +391,7 @@ class LeerDataManager {
   }
 
   // Sessie management
-  startSessie(serieuzeModus: boolean): string {
+  startSessie(serieuzeModus: boolean, leermodusType: 'normaal' | 'leitner'): string {
     const sessieId = generateId();
     const sessie: SessieData = {
       sessieId,
@@ -399,6 +399,7 @@ class LeerDataManager {
       opdrachtenGedaan: 0,
       gemiddeldeScore: 0,
       serieuzeModus,
+      leermodusType,
       categorieen: []
     };
 
@@ -429,11 +430,13 @@ class LeerDataManager {
   // Opdracht tracking
   recordOpdrachtStart(opdracht: Opdracht): void {
     const leerData = this.loadLeerData() || this.createEmptyLeerData();
-    const opdrachtId = `${opdracht.Categorie}_${opdracht.Opdracht.substring(0, 20)}`;
+    const hoofdcategorie = opdracht.Hoofdcategorie || 'Overig';
+    const opdrachtId = `${hoofdcategorie}_${opdracht.Categorie}_${opdracht.Opdracht.substring(0, 20)}`;
 
     if (!leerData.opdrachten[opdrachtId]) {
       leerData.opdrachten[opdrachtId] = {
         opdrachtId,
+        hoofdcategorie: opdracht.Hoofdcategorie || 'Overig',
         categorie: opdracht.Categorie,
         aantalKeerGedaan: 0,
         laatsteDatum: getDatumString(),
@@ -466,7 +469,8 @@ class LeerDataManager {
     const leerData = this.loadLeerData();
     if (!leerData) return [];
 
-    const opdrachtId = `${opdracht.Categorie}_${opdracht.Opdracht.substring(0, 20)}`;
+    const hoofdcategorie = opdracht.Hoofdcategorie || 'Overig';
+    const opdrachtId = `${hoofdcategorie}_${opdracht.Categorie}_${opdracht.Opdracht.substring(0, 20)}`;
     
     if (!leerData.opdrachten[opdrachtId]) {
       this.recordOpdrachtStart(opdracht);
@@ -1195,7 +1199,10 @@ class LeerDataManager {
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number } {
     if (!this.loadLeitnerData().isLeitnerActief) {
       // Als Leitner niet actief is, kies willekeurig uit alle opdrachten
-      const beschikbareOpdrachten = alleOpdrachten.filter(op => geselecteerdeCategorieen.includes(op.Categorie));
+      const beschikbareOpdrachten = alleOpdrachten.filter(op => {
+        const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+        return geselecteerdeCategorieen.includes(uniekeIdentifier);
+      });
       if (beschikbareOpdrachten.length === 0) return { opdracht: null, type: 'geen' };
       const gekozenOpdracht = beschikbareOpdrachten[Math.floor(Math.random() * beschikbareOpdrachten.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
@@ -1208,7 +1215,8 @@ class LeerDataManager {
       for (const item of shuffledHerhalingen) {
         const idToMatch = item.opdrachtId;
         const gekozenOpdracht = alleOpdrachten.find(op => {
-          const generatedId = `${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+          const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+          const generatedId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
           return generatedId === idToMatch;
         });
         
@@ -1235,10 +1243,12 @@ class LeerDataManager {
   ): Opdracht[] {
     const leitnerOpdrachtIds = this.getAllLeitnerOpdrachtIds();
     return alleOpdrachten.filter(op => {
-      if (!geselecteerdeCategorieen.includes(op.Categorie)) {
+      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+      if (!geselecteerdeCategorieen.includes(uniekeIdentifier)) {
         return false;
       }
-      const opdrachtId = `${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+      const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+      const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
       return !leitnerOpdrachtIds.has(opdrachtId);
     });
   }
@@ -1318,8 +1328,8 @@ class LeerDataManager {
       };
     }
 
-    const normaalSessies = Object.values(leerData.sessies).filter(s => !s.serieuzeModus && s.eindTijd);
-    const leitnerSessies = Object.values(leerData.sessies).filter(s => s.serieuzeModus && s.eindTijd);
+    const normaalSessies = Object.values(leerData.sessies).filter(s => s.serieuzeModus && s.leermodusType === 'normaal' && s.eindTijd);
+    const leitnerSessies = Object.values(leerData.sessies).filter(s => s.serieuzeModus && s.leermodusType === 'leitner' && s.eindTijd);
 
     const normaalStats = {
       sessies: normaalSessies.length,
@@ -1473,8 +1483,12 @@ class LeerDataManager {
         if (typeof opdrachtId !== 'string' || !opdrachtId.includes('_')) {
           return false;
         }
-        const categorie = opdrachtId.split('_')[0];
-        return geselecteerdeCategorieen.includes(categorie);
+        const parts = opdrachtId.split('_');
+        if (parts.length < 2) return false;
+
+        // Construeer de unieke categorie identifier: "Hoofdcategorie - Subcategorie"
+        const uniekeCategorieIdentifier = `${parts[0]} - ${parts[1]}`;
+        return geselecteerdeCategorieen.includes(uniekeCategorieIdentifier);
       });
       
       opdrachtenPerBox[box.boxId] = gefilterdeOpdrachten.length;
