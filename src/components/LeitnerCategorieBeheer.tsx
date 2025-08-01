@@ -75,6 +75,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenLeitnerSelectie[]>([]);
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
+  const [feedbackNotificatie, setFeedbackNotificatie] = useState<string | null>(null);
 
   // Laad opgeslagen selecties bij component mount
   useEffect(() => {
@@ -83,6 +84,16 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       setOpgeslagenSelecties(JSON.parse(opgeslagen));
     }
   }, []);
+
+  // Feedback notificatie effect
+  useEffect(() => {
+    if (feedbackNotificatie) {
+      const timer = setTimeout(() => {
+        setFeedbackNotificatie(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedbackNotificatie]);
 
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
@@ -250,6 +261,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
   const handleLaadSelectie = (selectie: OpgeslagenLeitnerSelectie) => {
     setGeselecteerdeCategorieen([...selectie.categorieen]);
+    setFeedbackNotificatie(`✅ Selectie "${selectie.naam}" geladen (${selectie.categorieen.length} categorieën)`);
   };
 
   const handleVerwijderSelectie = (id: string) => {
@@ -353,9 +365,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                       <button 
                         onClick={() => handleLaadSelectie(selectie)}
                         className="laad-selectie-knop"
-                        title="Laad deze selectie"
+                        title="Herstel deze selectie"
                       >
-                        📂
+                        🔄
                       </button>
                       <button 
                         onClick={() => handleVerwijderSelectie(selectie.id)}
@@ -445,6 +457,13 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Feedback notificatie */}
+      {feedbackNotificatie && (
+        <div className="feedback-notificatie">
+          {feedbackNotificatie}
         </div>
       )}
     </div>

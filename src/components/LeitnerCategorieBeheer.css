@@ -1311,7 +1311,6 @@
   cursor: pointer;
   font-weight: bold;
   transition: background-color 0.2s, transform 0.1s;
-  width: 100%;
   font-size: 0.9rem;
 }
 
@@ -1520,4 +1519,50 @@
 
 .bevestig-knop:hover {
   background-color: #2ecc71;
+}
+
+/* Feedback styling voor laden actie */
+.laad-selectie-knop {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.laad-selectie-knop:hover {
+  background-color: #61dafb;
+  color: #282c34;
+  transform: scale(1.1);
+}
+
+.laad-selectie-knop:active {
+  transform: scale(0.95);
+}
+
+/* Feedback notificatie styling */
+.feedback-notificatie {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #27ae60;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 3000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }

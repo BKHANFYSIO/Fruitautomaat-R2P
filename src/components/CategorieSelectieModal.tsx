@@ -57,6 +57,7 @@ export const CategorieSelectieModal = ({
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
+  const [feedbackNotificatie, setFeedbackNotificatie] = useState<string | null>(null);
 
   // Effect om activeTab bij te werken wanneer initialActiveTab verandert
   useEffect(() => {
@@ -77,6 +78,16 @@ export const CategorieSelectieModal = ({
       setOpgeslagenVrijeLeermodusSelecties(JSON.parse(opgeslagenVrijeLeermodus));
     }
   }, []);
+
+  // Feedback notificatie effect
+  useEffect(() => {
+    if (feedbackNotificatie) {
+      const timer = setTimeout(() => {
+        setFeedbackNotificatie(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedbackNotificatie]);
 
   // Bepaal welke categorie selectie actief is voor de huidige tab
   const getActieveCategorieSelectie = () => {
@@ -262,10 +273,12 @@ export const CategorieSelectieModal = ({
   const handleLaadSelectie = (selectie: OpgeslagenCategorieSelectie) => {
     if (activeTab === 'multiplayer' && setGeselecteerdeMultiplayerCategorieen) {
       setGeselecteerdeMultiplayerCategorieen([...selectie.categorieen]);
+      setFeedbackNotificatie(`✅ Multiplayer selectie "${selectie.naam}" geladen (${selectie.categorieen.length} categorieën)`);
     } else if (activeTab === 'normaal' && onBulkCategorieSelectie) {
       // Voor vrije leermodus gebruiken we de normale categorie selectie
       onBulkCategorieSelectie(alleCategorieen, 'deselect');
       onBulkCategorieSelectie(selectie.categorieen, 'select');
+      setFeedbackNotificatie(`✅ Vrije leermodus selectie "${selectie.naam}" geladen (${selectie.categorieen.length} categorieën)`);
     }
   };
 
@@ -392,9 +405,9 @@ export const CategorieSelectieModal = ({
                   <button 
                     onClick={() => handleLaadSelectie(selectie)}
                     className="laad-selectie-knop"
-                    title="Laad deze selectie"
+                    title="Herstel deze selectie"
                   >
-                    📂
+                    🔄
                   </button>
                   <button 
                     onClick={() => handleVerwijderSelectie(selectie.id)}
@@ -549,6 +562,13 @@ export const CategorieSelectieModal = ({
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Feedback notificatie */}
+        {feedbackNotificatie && (
+          <div className="feedback-notificatie">
+            {feedbackNotificatie}
           </div>
         )}
       </div>
