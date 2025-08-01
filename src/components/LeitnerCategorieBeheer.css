@@ -314,6 +314,7 @@
 .sub-categorie-rij td {
   padding-left: 30px;
   border-color: #383c44;
+  background-color: #2a2a2a !important;
 }
 
 .pijl {
@@ -389,6 +390,57 @@
   .controls button {
     padding: 6px 10px;
     font-size: 0.9rem;
+  }
+
+  .recordpogingen {
+    padding: 12px;
+  }
+
+  .recordpogingen h4 {
+    font-size: 1rem;
+  }
+
+  .recordpoging-select {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .hoofd-categorie-header {
+    padding: 10px;
+  }
+
+  .hoofd-categorie-naam {
+    font-size: 0.9rem;
+  }
+
+  .sub-categorie-item {
+    padding: 6px 10px;
+  }
+
+  .sub-categorie-naam {
+    font-size: 0.9rem;
+  }
+
+  .categorie-table {
+    font-size: 0.85rem;
+  }
+
+  .categorie-table th,
+  .categorie-table td {
+    padding: 8px 6px;
+  }
+
+  .categorie-naam-cell.sub-categorie {
+    padding-left: 20px;
+  }
+
+  .opdrachten-aantal {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+  }
+
+  .geselecteerd-aantal {
+    font-size: 0.8rem;
   }
 }
 
@@ -990,27 +1042,44 @@
   padding: 15px;
   border-radius: 8px;
   border: 1px solid #444;
+  margin-bottom: 15px;
 }
 
 .recordpogingen h4 {
-  margin: 0 0 10px 0;
+  margin: 0 0 12px 0;
   color: #61dafb;
   font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .recordpoging-select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background-color: #2a2a2a;
   color: #e0e0e0;
   border: 1px solid #444;
   border-radius: 6px;
   font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
 }
 
 .recordpoging-select:focus {
   outline: none;
   border-color: #61dafb;
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.2);
+}
+
+.recordpoging-select option {
+  padding: 8px;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.recordpoging-select option:hover {
+  background-color: #444;
 }
 
 /* Categorie lijst styling */
@@ -1027,6 +1096,180 @@
   font-size: 1.1rem;
 }
 
+/* Categorie tabel styling (consistent met Leitner) */
+.categorie-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #333;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #444;
+}
+
+.categorie-table th,
+.categorie-table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid #444;
+}
+
+.categorie-table th {
+  background-color: #1f1f1f;
+  color: #61dafb;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.categorie-table th:hover {
+  background-color: #2a2a2a;
+}
+
+.categorie-table th.sortable {
+  cursor: pointer;
+}
+
+.categorie-table th.sortable::after {
+  content: '▼';
+  margin-left: 5px;
+  font-size: 0.7rem;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.categorie-table th.sortable:hover::after {
+  opacity: 1;
+}
+
+.categorie-table th.sorted-asc::after {
+  content: '▲';
+  opacity: 1;
+}
+
+.categorie-table th.sorted-desc::after {
+  content: '▼';
+  opacity: 1;
+}
+
+/* Hoofdcategorie rijen */
+.hoofd-categorie-rij {
+  background-color: #2a2a2a;
+}
+
+.hoofd-categorie-rij:hover {
+  background-color: #333;
+}
+
+/* Subcategorie rijen */
+.sub-categorie-rij {
+  background-color: #2a2a2a;
+}
+
+.sub-categorie-rij:hover {
+  background-color: #333;
+}
+
+.sub-categorie-rij td {
+  color: #e0e0e0;
+}
+
+.hoofd-categorie-rij td {
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+/* Subcategorie rijen */
+.sub-categorie-rij {
+  background-color: #2a2a2a;
+}
+
+.sub-categorie-rij:hover {
+  background-color: #333;
+}
+
+.sub-categorie-rij td {
+  color: #e0e0e0;
+}
+
+/* Categorie naam cellen */
+.categorie-naam-cell {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.categorie-naam-cell.sub-categorie {
+  padding-left: 30px;
+  background-color: transparent !important;
+}
+
+.hoofd-categorie-naam {
+  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.sub-categorie-naam {
+  font-weight: 500;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
+/* Pijl styling */
+.pijl {
+  font-size: 0.8rem;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.pijl.open {
+  transform: rotate(90deg);
+}
+
+/* Checkbox styling */
+.categorie-table input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.1);
+}
+
+/* Opdrachten cellen */
+.opdrachten-cell {
+  text-align: center;
+}
+
+.opdrachten-aantal {
+  background-color: #61dafb;
+  color: #282c34;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+  display: inline-block;
+}
+
+/* Status cellen */
+.status-cell {
+  text-align: center;
+}
+
+.geselecteerd-aantal {
+  color: #999;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.geselecteerd-status {
+  color: #27ae60;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Oude categorie styling (voor backward compatibility) */
 .categorie-item {
   margin-bottom: 8px;
 }
@@ -1363,6 +1606,37 @@
   font-size: 1.1rem;
 }
 
+.geen-selecties-melding {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  background-color: #2a2d35;
+  border-radius: 6px;
+  border: 1px dashed #555;
+}
+
+.geen-selecties-melding p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.max-selecties-melding {
+  margin: 8px 0 0 0;
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Horizontale layout voor opgeslagen selecties */
+.opgeslagen-selecties-lijst {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 12px !important;
+}
+
 .opgeslagen-selecties-lijst {
   display: flex;
   flex-direction: column;
@@ -1521,74 +1795,109 @@
   background-color: #2ecc71;
 }
 
-/* CategorieSelectieModal opslaan knoppen styling */
-.opslaan-selectie-knop {
-  background-color: #61dafb;
-  color: #282c34;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  /* Verwijder width: 100% voor consistentie met andere knoppen */
-}
-
-.opslaan-selectie-knop:hover:not(:disabled) {
-  background-color: #21a1f2;
-  transform: translateY(-1px);
-}
-
-.opslaan-selectie-knop:disabled {
-  background-color: #666;
-  color: #999;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Feedback styling voor laden actie */
-.laad-selectie-knop {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.laad-selectie-knop:hover {
-  background-color: #61dafb;
-  color: #282c34;
-  transform: scale(1.1);
-}
-
-.laad-selectie-knop:active {
-  transform: scale(0.95);
-}
-
-/* Feedback notificatie styling */
-.feedback-notificatie {
+/* Toast melding styling */
+.toast-melding {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #27ae60;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 3000;
-  animation: slideInRight 0.3s ease-out;
+  top: 80px;
+  right: -400px;
+  width: 350px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(52, 144, 220, 0.3);
+  z-index: 1000;
+  transition: right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  will-change: right;
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+.toast-melding.zichtbaar {
+  right: 20px;
+}
+
+.toast-content {
+  padding: 16px 20px;
+  background: linear-gradient(140deg, #10B981, #059669);
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.toast-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.toast-bericht {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Responsive design voor toast */
+@media (max-width: 768px) {
+  .toast-melding {
+    width: calc(100vw - 30px);
+    right: -100vw;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+  
+  .toast-melding.zichtbaar {
+    right: 15px;
   }
+  
+  .toast-content {
+    padding: 14px 16px;
+  }
+  
+  /* Mobiele layout voor opgeslagen selecties */
+  .opgeslagen-selecties-lijst {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* Force dark background for all sub-categorie elements */
+.sub-categorie,
+.sub-categorie *,
+td.sub-categorie,
+.categorie-naam-cell.sub-categorie {
+  background-color: #2a2a2a !important;
+}
+
+/* Embedded Leitner styling */
+.leitner-embedded {
+  width: 100%;
+  height: 100%;
+}
+
+.leitner-embedded .modal-overlay {
+  position: static;
+  background: none;
+}
+
+.leitner-embedded .modal-content {
+  position: static;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  background: none;
+}
+
+.leitner-embedded .modal-header {
+  display: none; /* Verberg de header in embedded mode */
+}
+
+.leitner-embedded .modal-footer {
+  display: none; /* Verberg de footer in embedded mode */
+}
+
+.leitner-embedded .modal-body {
+  padding: 0;
+  height: 100%;
+  overflow-y: auto;
 }

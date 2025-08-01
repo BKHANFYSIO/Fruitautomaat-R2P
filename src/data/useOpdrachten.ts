@@ -7,6 +7,26 @@ const NOOD_OPDRACHTEN: Opdracht[] = [
   { Categorie: 'Anatomie (Voorbeeld)', Opdracht: 'Benoem de botten in de onderarm', Antwoordsleutel: 'Radius (spaakbeen) en Ulna (ellepijp)', Tijdslimiet: 30, Extra_Punten: 2 },
 ];
 
+// Helper functie voor het weergeven van categorieën met automatische conflict detectie
+export const getDisplayCategorie = (opdracht: Opdracht, alleOpdrachten: Opdracht[]): string => {
+  if (!opdracht.Hoofdcategorie) {
+    return opdracht.Categorie;
+  }
+  
+  // Check of er conflicterende categorieën zijn (zelfde naam, andere hoofdcategorie)
+  const conflicterendeOpdrachten = alleOpdrachten.filter(
+    o => o.Categorie === opdracht.Categorie && 
+         o.Hoofdcategorie !== opdracht.Hoofdcategorie &&
+         o.Hoofdcategorie !== undefined
+  );
+  
+  if (conflicterendeOpdrachten.length > 0) {
+    return `${opdracht.Categorie} (${opdracht.Hoofdcategorie})`;
+  }
+  
+  return opdracht.Categorie;
+};
+
 
 export const useOpdrachten = (defaultFilePath: string) => {
   const [opdrachten, setOpdrachten] = useState<Opdracht[]>([]);
