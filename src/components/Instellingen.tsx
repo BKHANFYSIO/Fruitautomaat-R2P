@@ -17,6 +17,7 @@ interface InstellingenProps {
   onClose: () => void;
   // Opdrachtenbeheer
   children: React.ReactNode; // Voor de bestands-uploader en categorie-filter
+  onVerwijderGebruikerOpdrachten: () => void;
   // Geavanceerd
   bonusOpdrachten: BonusOpdracht[];
   setBonusOpdrachten: (opdrachten: BonusOpdracht[]) => void;
@@ -34,6 +35,7 @@ export const Instellingen = React.memo(({
   onClose,
   // Opdrachtenbeheer
   children,
+  onVerwijderGebruikerOpdrachten,
   // Geavanceerd
   bonusOpdrachten,
   setBonusOpdrachten,
@@ -424,6 +426,7 @@ export const Instellingen = React.memo(({
                   // Call the downloadTemplate function from the BestandsUploader props
                   const data = [
                     { 
+                      Hoofdcategorie: 'Voorbeeld Hoofdcategorie',
                       Categorie: 'Voorbeeld Categorie', 
                       Opdracht: 'Voorbeeld Opdracht', 
                       Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
@@ -553,6 +556,18 @@ export const Instellingen = React.memo(({
             </p>
             
             <div className="data-beheer-knoppen">
+              <button 
+                onClick={() => {
+                  if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
+                    onVerwijderGebruikerOpdrachten();
+                    alert('Alle eigen opdrachten zijn verwijderd.');
+                  }
+                }}
+                className="data-beheer-knop opdrachten-knop"
+              >
+                📝 Verwijder Eigen Opdrachten
+              </button>
+
               <button 
                 onClick={handleClearHighscoresAndRecords}
                 className="data-beheer-knop single-player-knop"

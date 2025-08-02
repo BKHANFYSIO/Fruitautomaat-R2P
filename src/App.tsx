@@ -42,13 +42,15 @@ type Notificatie = {
   type: 'succes' | 'fout';
 }
 
+type OpdrachtBronFilter = 'alle' | 'systeem' | 'gebruiker';
+
 function App() {
   // Refs
   const mainContentRef = useRef<HTMLDivElement>(null);
   const actieDashboardRef = useRef<HTMLDivElement>(null);
 
   // Data hooks
-  const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData } = useOpdrachten('/opdrachten.xlsx');
+  const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData, verwijderGebruikerOpdrachten } = useOpdrachten('/opdrachten.xlsx');
   
   // Effect om opdrachten door te geven aan de data manager
   useEffect(() => {
@@ -121,6 +123,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
+const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>('alle');
 
 
 
@@ -392,6 +395,29 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     }
   }, []);
 
+  // Effect om de 'd' toets te detecteren voor dev mode
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'd') {
+          setIsDevMode(prev => !prev);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, []);
+
+  // Effect om categorie selectie te openen via custom event
+  useEffect(() => {
+    const handleOpenCategorieSelectie = () => {
+      setIsCategorieBeheerOpen(false);
+      setIsCategorieSelectieOpen(true);
+    };
+    window.addEventListener('openCategorieSelectie', handleOpenCategorieSelectie);
+    return () => window.removeEventListener('openCategorieSelectie', handleOpenCategorieSelectie);
+  }, []);
+
   // Effect om leeranalyse te openen via custom event
   useEffect(() => {
     const handleOpenLeeranalyse = () => {
@@ -514,17 +540,22 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij spel reset
   };
 
-  // Memoized opdrachten voor het filter
-  const opdrachtenVoorFilter = useMemo(() => opdrachten, [opdrachten]);
+  // Memoized opdrachten voor het filter, rekening houdend met de bron
+  const opdrachtenVoorFilter = useMemo(() => {
+    if (opdrachtBronFilter === 'alle') {
+      return opdrachten;
+    }
+    return opdrachten.filter(op => op.bron === opdrachtBronFilter);
+  }, [opdrachten, opdrachtBronFilter]);
 
   const alleUniekeCategorieen = useMemo(() => {
     const uniekeNamen = new Set<string>();
-    opdrachten.forEach(op => {
+    opdrachtenVoorFilter.forEach(op => {
       const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
       uniekeNamen.add(uniekeIdentifier);
     });
     return [...uniekeNamen];
-  }, [opdrachten]);
+  }, [opdrachtenVoorFilter]);
 
 
 
@@ -1157,7 +1188,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
     reader.onload = (event) => {
       try {
         const arrayBuffer = event.target?.result as ArrayBuffer;
-        const nieuweOpdrachten = parseExcelData(arrayBuffer);
+        const nieuweOpdrachten = parseExcelData(arrayBuffer, 'gebruiker');
         laadNieuweOpdrachten(nieuweOpdrachten, isVervangenActief);
         alert(`${nieuweOpdrachten.length} opdrachten succesvol geladen!`);
         setGeselecteerdBestand(null); // Reset na succes
@@ -1392,6 +1423,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
         <Instellingen
           isOpen={isInstellingenOpen}
           onClose={() => setIsInstellingenOpen(false)}
+          onVerwijderGebruikerOpdrachten={verwijderGebruikerOpdrachten}
           // Geavanceerd
           bonusOpdrachten={bonusOpdrachten}
           setBonusOpdrachten={setBonusOpdrachten}
@@ -1446,10 +1478,13 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
             setIsCategorieSelectieOpen(false);
             setIsCategorieBeheerOpen(false); // Reset Leitner modal state
           }}
-        opdrachten={opdrachtenVoorFilter}
+        opdrachten={opdrachten}
+        opdrachtBronFilter={opdrachtBronFilter}
+        setOpdrachtBronFilter={setOpdrachtBronFilter}
         geselecteerdeCategorieen={geselecteerdeCategorieen}
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
+        onOpenLeitnerBeheer={handleOpenLeitnerCategorieBeheer}
         highScoreLibrary={getHighScoreLibrary()}
         onHighScoreSelect={setGeselecteerdeHighscoreCategorieen}
         geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
@@ -1472,6 +1507,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
           setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
           alleCategorieen={alleUniekeCategorieen}
           alleOpdrachten={opdrachten}
+          opdrachtBronFilter={opdrachtBronFilter}
+          setOpdrachtBronFilter={setOpdrachtBronFilter}
         />
       )}
 

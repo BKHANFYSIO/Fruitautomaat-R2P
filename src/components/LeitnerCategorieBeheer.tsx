@@ -10,6 +10,17 @@ interface OpgeslagenLeitnerSelectie {
   datum: string;
 }
 
+const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
+    const relevanteOpdrachten = opdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub);
+    const bronnen = new Set(relevanteOpdrachten.map(op => op.bron));
+    
+    let iconen = '';
+    if (bronnen.has('systeem')) iconen += '⚙️';
+    if (bronnen.has('gebruiker')) iconen += '👤';
+    
+    return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
+  };
+
 // Toast melding component
 const ToastMelding = ({ bericht, isZichtbaar, onClose }: { bericht: string; isZichtbaar: boolean; onClose: () => void }) => {
   useEffect(() => {
@@ -63,6 +74,8 @@ interface LeitnerCategorieBeheerProps {
   setGeselecteerdeCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   alleCategorieen: string[];
   alleOpdrachten: Opdracht[];
+  opdrachtBronFilter: 'alle' | 'systeem' | 'gebruiker';
+  setOpdrachtBronFilter: (filter: 'alle' | 'systeem' | 'gebruiker') => void;
 }
 
 interface CategorieStatistiek {
@@ -87,7 +100,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   onClose,
   geselecteerdeCategorieen,
   setGeselecteerdeCategorieen,
-  alleOpdrachten
+  alleOpdrachten,
+  opdrachtBronFilter,
+  setOpdrachtBronFilter,
 }) => {
   const [statistieken, setStatistieken] = useState<CategorieStatistiek[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,13 +123,18 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     }
   }, []);
 
+  const gefilterdeOpdrachten = useMemo(() => {
+    if (opdrachtBronFilter === 'alle') return alleOpdrachten;
+    return alleOpdrachten.filter(op => op.bron === opdrachtBronFilter);
+  }, [alleOpdrachten, opdrachtBronFilter]);
+
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
     const leerDataManager = getLeerDataManager();
     const leitnerData = leerDataManager.loadLeitnerData();
     const leerData = leerDataManager.loadLeerData();
 
-    const hoofdcategorieMap: Record<string, string[]> = alleOpdrachten.reduce((acc, op) => {
+    const hoofdcategorieMap: Record<string, string[]> = gefilterdeOpdrachten.reduce((acc, op) => {
       const hoofd = op.Hoofdcategorie || 'Overig';
       if (!acc[hoofd]) {
         acc[hoofd] = [];
@@ -191,7 +211,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
     setStatistieken(finaleStatistieken);
     setIsLoading(false);
-  }, [alleOpdrachten]);
+  }, [gefilterdeOpdrachten, alleOpdrachten]);
 
   useEffect(() => {
     if (isOpen) {
@@ -320,6 +340,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       <tr key={stat.uniekeNaam} className={isHoofd ? 'hoofd-categorie-rij' : 'sub-categorie-rij'}>
         <td onClick={() => isHoofd && toggleHoofdCategorie(stat.naam)}>
             {isHoofd && <span className={`pijl ${openHoofdCategorieen[stat.naam] ? 'open' : ''}`}>▶</span>}
+            {!isHoofd && getBronIconen(alleOpdrachten, stat.uniekeNaam.split(' - ')[0], stat.naam)}
             {stat.naam}
         </td>
         <td>
@@ -349,7 +370,13 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     <div className="modal-overlay">
       <div className="modal-content leitner-beheer-modal">
         <div className="modal-header">
-          <h2>📚 Leitner Categorie Beheer</h2>
+          <div className="modal-title-container">
+            <h2>CATEGORIE SELECTIE</h2>
+            <h3 className="modal-subtitle">Voor Leitner Leermodus</h3>
+          </div>
+          <button onClick={() => window.dispatchEvent(new CustomEvent('openCategorieSelectie'))} className="terug-naar-selectie-knop">
+            ← Categorie Selectie Andere Modi
+          </button>
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
         <div className="modal-body">
@@ -361,6 +388,12 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               </button>
               <button onClick={handleDeselectAll} className="snelle-selectie-knop">
                 Deselecteer Alles
+              </button>
+              <button onClick={() => handleSelecteerBron('systeem')} className="snelle-selectie-knop">
+                ⚙️ Alleen Systeem
+              </button>
+              <button onClick={() => handleSelecteerBron('gebruiker')} className="snelle-selectie-knop">
+                👤 Alleen Eigen
               </button>
             </div>
           </div>
@@ -422,7 +455,23 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               )}
             </div>
           </div>
-
+            <div className="categorie-lijst-header">
+                <h4>Categorieën</h4>
+                <div className="bron-filter">
+                <p className="filter-uitleg">Toon alleen de opdrachten van een specifieke bron.</p>
+                <div className="bron-filter-knoppen">
+                    <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
+                    Allemaal
+                    </button>
+                    <button onClick={() => setOpdrachtBronFilter('systeem')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}>
+                    ⚙️ Systeem
+                    </button>
+                    <button onClick={() => setOpdrachtBronFilter('gebruiker')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}>
+                    👤 Eigen
+                    </button>
+                </div>
+                </div>
+            </div>
           {isLoading ? (
             <p>Statistieken laden...</p>
           ) : (

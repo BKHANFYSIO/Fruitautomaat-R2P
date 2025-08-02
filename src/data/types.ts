@@ -7,6 +7,7 @@ export interface Opdracht {
   Antwoordsleutel: string;
   Tijdslimiet: number;
   Extra_Punten: number;
+  bron?: 'systeem' | 'gebruiker';
 }
 
 export interface Speler {

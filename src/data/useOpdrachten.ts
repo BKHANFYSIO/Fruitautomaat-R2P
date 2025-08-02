@@ -3,17 +3,23 @@ import * as XLSX from 'xlsx';
 import type { Opdracht } from './types';
 
 const NOOD_OPDRACHTEN: Opdracht[] = [
-  { Categorie: 'Algemeen', Opdracht: 'Leg het concept van deze app uit', Antwoordsleutel: 'Een fruitautomaat die willekeurig opdrachten en spelers kiest.', Tijdslimiet: 60, Extra_Punten: 1 },
-  { Categorie: 'Anatomie (Voorbeeld)', Opdracht: 'Benoem de botten in de onderarm', Antwoordsleutel: 'Radius (spaakbeen) en Ulna (ellepijp)', Tijdslimiet: 30, Extra_Punten: 2 },
+  { Hoofdcategorie: 'Algemeen', Categorie: 'Algemeen', Opdracht: 'Leg het concept van deze app uit', Antwoordsleutel: 'Een fruitautomaat die willekeurig opdrachten en spelers kiest.', Tijdslimiet: 60, Extra_Punten: 1, bron: 'systeem' },
+  { Hoofdcategorie: 'Voorbeeld', Categorie: 'Anatomie', Opdracht: 'Benoem de botten in de onderarm', Antwoordsleutel: 'Radius (spaakbeen) en Ulna (ellepijp)', Tijdslimiet: 30, Extra_Punten: 2, bron: 'systeem' },
 ];
 
-// Helper functie voor het weergeven van categorieën met automatische conflict detectie
+const OPDRACHTEN_STORAGE_KEY = 'fruitautomaat_user_opdrachten';
+
+// Helper om een string te capitaliseren
+const capitalize = (s: string) => {
+  if (typeof s !== 'string' || !s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+};
+
 export const getDisplayCategorie = (opdracht: Opdracht, alleOpdrachten: Opdracht[]): string => {
-  if (!opdracht.Hoofdcategorie) {
+  if (!opdracht.Hoofdcategorie || opdracht.Hoofdcategorie === 'Ongecategoriseerd') {
     return opdracht.Categorie;
   }
   
-  // Check of er conflicterende categorieën zijn (zelfde naam, andere hoofdcategorie)
   const conflicterendeOpdrachten = alleOpdrachten.filter(
     o => o.Categorie === opdracht.Categorie && 
          o.Hoofdcategorie !== opdracht.Hoofdcategorie &&
@@ -34,25 +40,27 @@ export const useOpdrachten = (defaultFilePath: string) => {
   const [error, setError] = useState<Error | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
-  const parseExcelData = useCallback((data: ArrayBuffer): Opdracht[] => {
+  const parseExcelData = useCallback((data: ArrayBuffer, bron: 'systeem' | 'gebruiker'): Opdracht[] => {
     const workbook = XLSX.read(data, { type: 'array' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json<any>(worksheet, { raw: false, defval: "" });
 
     return json.map(row => {
-      // Probeer beide mogelijke kolomnamen voor Tijdslimiet
       const tijdslimiet = Number(row["Tijdslimiet (sec)"]) || Number(row.Tijdslimiet);
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
 
+      const hoofdcategorie = row.Hoofdcategorie?.trim();
+      const categorie = row.Categorie?.trim();
+
       return {
-        Hoofdcategorie: row.Hoofdcategorie || undefined,
-        Categorie: row.Categorie || "Onbekend",
+        Hoofdcategorie: hoofdcategorie ? capitalize(hoofdcategorie) : 'Ongecategoriseerd',
+        Categorie: categorie ? capitalize(categorie) : "Onbekend",
         Opdracht: row.Opdracht || "Geen opdrachttekst",
         Antwoordsleutel: row.Antwoordsleutel || "",
-        // Als tijdslimiet geen geldig getal is of 0, gebruik 0 (geen timer)
         Tijdslimiet: !isNaN(tijdslimiet) && tijdslimiet > 0 ? tijdslimiet : 0,
         Extra_Punten: !isNaN(extraPunten) ? extraPunten : 0,
+        bron,
       };
     });
   }, []);
@@ -63,18 +71,26 @@ export const useOpdrachten = (defaultFilePath: string) => {
         setLoading(true);
         setError(null);
         setWarning(null);
+
+        // 1. Laad systeemopdrachten
         const response = await fetch(defaultFilePath);
         if (!response.ok) {
           throw new Error(`Standaard opdrachtenbestand (${defaultFilePath}) kon niet worden geladen.`);
         }
-
         const arrayBuffer = await response.arrayBuffer();
-        const data = parseExcelData(arrayBuffer);
-        // Voeg een extra check toe om te zien of er daadwerkelijk rijen zijn geparsed.
-        if (data.length === 0) {
+        const systeemOpdrachten = parseExcelData(arrayBuffer, 'systeem');
+
+        if (systeemOpdrachten.length === 0) {
             throw new Error("Excel-bestand is leeg of heeft een onverwacht format.");
         }
-        setOpdrachten(data);
+
+        // 2. Laad gebruiker opdrachten uit localStorage
+        const opgeslagenGebruikerOpdrachten = localStorage.getItem(OPDRACHTEN_STORAGE_KEY);
+        const gebruikerOpdrachten = opgeslagenGebruikerOpdrachten ? JSON.parse(opgeslagenGebruikerOpdrachten) : [];
+
+        // 3. Combineer en set de opdrachten
+        setOpdrachten([...systeemOpdrachten, ...gebruikerOpdrachten]);
+
       } catch (err) {
         setWarning('Standaard opdrachtenbestand niet gevonden of ongeldig. De app gebruikt nu voorbeeldopdrachten. Upload een correct bestand via Instellingen.');
         setOpdrachten(NOOD_OPDRACHTEN);
@@ -87,17 +103,30 @@ export const useOpdrachten = (defaultFilePath: string) => {
   }, [defaultFilePath, parseExcelData]);
 
   const laadNieuweOpdrachten = useCallback((nieuweOpdrachten: Opdracht[], vervang: boolean) => {
-    if (vervang) {
-      setOpdrachten(nieuweOpdrachten);
-    } else {
-      setOpdrachten(huidigeOpdrachten => {
-        const bestaandeOpdrachtKeys = new Set(huidigeOpdrachten.map(o => o.Opdracht));
-        const uniekeNieuweOpdrachten = nieuweOpdrachten.filter(o => !bestaandeOpdrachtKeys.has(o.Opdracht));
-        return [...huidigeOpdrachten, ...uniekeNieuweOpdrachten];
-      });
-    }
-    setWarning(null); // Verwijder de waarschuwing na een succesvolle upload
+    // We slaan alleen 'gebruiker' opdrachten op in localStorage
+    const gebruikerOpdrachten = nieuweOpdrachten.filter(o => o.bron === 'gebruiker');
+
+    setOpdrachten(huidigeOpdrachten => {
+      const systeemOpdrachten = huidigeOpdrachten.filter(o => o.bron === 'systeem');
+      const huidigeGebruikerOpdrachten = vervang ? [] : huidigeOpdrachten.filter(o => o.bron === 'gebruiker');
+      
+      const bestaandeOpdrachtKeys = new Set(huidigeGebruikerOpdrachten.map(o => o.Opdracht));
+      const uniekeNieuweOpdrachten = gebruikerOpdrachten.filter(o => !bestaandeOpdrachtKeys.has(o.Opdracht));
+
+      const gecombineerdeGebruikerOpdrachten = [...huidigeGebruikerOpdrachten, ...uniekeNieuweOpdrachten];
+      
+      localStorage.setItem(OPDRACHTEN_STORAGE_KEY, JSON.stringify(gecombineerdeGebruikerOpdrachten));
+      
+      return [...systeemOpdrachten, ...gecombineerdeGebruikerOpdrachten];
+    });
+
+    setWarning(null);
+  }, []);
+  
+  const verwijderGebruikerOpdrachten = useCallback(() => {
+    localStorage.removeItem(OPDRACHTEN_STORAGE_KEY);
+    setOpdrachten(huidigeOpdrachten => huidigeOpdrachten.filter(o => o.bron === 'systeem'));
   }, []);
 
-  return { opdrachten, loading, error, warning, laadNieuweOpdrachten, parseExcelData };
-}; 
+  return { opdrachten, loading, error, warning, laadNieuweOpdrachten, parseExcelData, verwijderGebruikerOpdrachten };
+};
