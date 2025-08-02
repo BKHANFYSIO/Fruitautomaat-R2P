@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './SpelerInput.css';
 
 // Tooltip component en interface verwijderd - niet meer gebruikt
@@ -107,17 +107,47 @@ export const SpelerInput = ({
     </div>
   );
 
-  // Eenvoudige tooltip state
+  // Tooltip state met timeout
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
+  const [tooltipTimeout, setTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [leermodusTypeTooltipTimeout, setLeermodusTypeTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const handleTooltipToggle = () => {
-    setShowTooltip(!showTooltip);
+  const handleTooltipShow = () => {
+    if (tooltipTimeout) {
+      clearTimeout(tooltipTimeout);
+    }
+    setShowTooltip(true);
   };
 
-  const handleLeermodusTypeTooltipToggle = () => {
-    setShowLeermodusTypeTooltip(!showLeermodusTypeTooltip);
+  const handleTooltipHide = () => {
+    const timeout = setTimeout(() => {
+      setShowTooltip(false);
+    }, 3000); // Auto-hide na 3 seconden
+    setTooltipTimeout(timeout);
   };
+
+  const handleLeermodusTypeTooltipShow = () => {
+    if (leermodusTypeTooltipTimeout) {
+      clearTimeout(leermodusTypeTooltipTimeout);
+    }
+    setShowLeermodusTypeTooltip(true);
+  };
+
+  const handleLeermodusTypeTooltipHide = () => {
+    const timeout = setTimeout(() => {
+      setShowLeermodusTypeTooltip(false);
+    }, 3000); // Auto-hide na 3 seconden
+    setLeermodusTypeTooltipTimeout(timeout);
+  };
+
+  // Cleanup timeouts bij unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeout) clearTimeout(tooltipTimeout);
+      if (leermodusTypeTooltipTimeout) clearTimeout(leermodusTypeTooltipTimeout);
+    };
+  }, [tooltipTimeout, leermodusTypeTooltipTimeout]);
 
   const gameModeSelector = (
     <div className="game-mode-selector">
@@ -149,8 +179,10 @@ export const SpelerInput = ({
   const singlePlayerModeSelector = (
     <div 
       className="game-mode-selector sub-selector"
-      onMouseEnter={handleTooltipToggle}
-      onMouseLeave={handleTooltipToggle}
+      onMouseEnter={handleTooltipShow}
+      onMouseLeave={handleTooltipHide}
+      onTouchStart={handleTooltipShow}
+      onTouchEnd={handleTooltipHide}
     >
       <label>
         <input 
@@ -177,11 +209,13 @@ export const SpelerInput = ({
     </div>
   );
 
-  const leermodusTypeSelector = (
-    <div 
+    const leermodusTypeSelector = (
+    <div
       className="game-mode-selector sub-selector sub-sub-selector"
-      onMouseEnter={handleLeermodusTypeTooltipToggle}
-      onMouseLeave={handleLeermodusTypeTooltipToggle}
+      onMouseEnter={handleLeermodusTypeTooltipShow}
+      onMouseLeave={handleLeermodusTypeTooltipHide}
+      onTouchStart={handleLeermodusTypeTooltipShow}
+      onTouchEnd={handleLeermodusTypeTooltipHide}
     >
       <label>
         <input 

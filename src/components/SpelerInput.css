@@ -112,6 +112,27 @@
   .serieuze-modus-toggle-knop {
     padding-right: 30px; /* Extra ruimte voor het icoon */
   }
+
+  /* Mobiele tooltip aanpassingen */
+  .tooltip {
+    width: 280px;
+    font-size: 0.85em;
+    padding: 15px;
+    /* Zorg ervoor dat tooltip niet buiten scherm komt */
+    max-width: calc(100vw - 40px);
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .tooltip-top {
+    top: 100%;
+    margin-top: 15px;
+  }
+
+  /* Voorkom dat tooltips te lang blijven staan op mobiel */
+  .game-mode-selector {
+    touch-action: manipulation;
+  }
 }
 
 /* Leitner sectie styling */
@@ -248,6 +269,9 @@
   /* Debug styling om te zien of tooltip wordt gerenderd */
   min-height: 50px;
   display: block !important;
+  /* Voeg animatie toe voor soepelere ervaring */
+  transition: opacity 0.3s ease-in-out;
+  opacity: 1;
 }
 
 .tooltip-top {
