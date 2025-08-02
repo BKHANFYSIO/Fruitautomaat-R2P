@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './SpelerInput.css';
-
-// Tooltip component en interface verwijderd - niet meer gebruikt
 
 interface SpelerInputProps {
   onSpelerToevoegen: (naam: string) => void;
@@ -31,6 +29,39 @@ export const SpelerInput = ({
   const [naam, setNaam] = useState('');
   const [showSerieuzeModusWaarschuwing, setShowSerieuzeModusWaarschuwing] = useState(false);
   const [showSerieuzeModusUitschakelen, setShowSerieuzeModusUitschakelen] = useState(false);
+  
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
+
+  const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLongPress = (tooltipSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    tooltipTimeout.current = setTimeout(() => {
+      tooltipSetter(true);
+    }, 500); // 500ms voor een lange druk
+  };
+
+  const handleTouchEnd = () => {
+    if (tooltipTimeout.current) {
+      clearTimeout(tooltipTimeout.current);
+    }
+  };
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.sub-selector')) {
+        setShowTooltip(false);
+        setShowLeermodusTypeTooltip(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +75,10 @@ export const SpelerInput = ({
     if (!setIsSerieuzeLeerModusActief) return;
 
     if (!isSerieuzeLeerModusActief && isSpelGestart) {
-      // Activeren tijdens actief spel - toon waarschuwing
       setShowSerieuzeModusWaarschuwing(true);
     } else if (isSerieuzeLeerModusActief && isSpelGestart) {
-      // Uitschakelen tijdens actief spel - toon waarschuwing
       setShowSerieuzeModusUitschakelen(true);
     } else {
-      // Geen actief spel - direct toggle
       setIsSerieuzeLeerModusActief(!isSerieuzeLeerModusActief);
     }
   };
@@ -73,7 +101,6 @@ export const SpelerInput = ({
 
   const isInputVolledigUitgeschakeld = isSpelerInputDisabled || (gameMode === 'multi' && isSpelGestart);
 
-  // Tooltip content voor leermodus - dynamisch op basis van status
   const leermodusTooltip = !isSerieuzeLeerModusActief ? (
     <div className="tooltip-content">
       <h4>📚 Schakel naar Leermodus</h4>
@@ -90,7 +117,6 @@ export const SpelerInput = ({
     </div>
   );
 
-  // Tooltip content voor leermodus types - dynamisch op basis van huidige selectie
   const leermodusTypeTooltip = leermodusType === 'normaal' ? (
     <div className="tooltip-content">
       <h4>🔄 Schakel naar Leitner</h4>
@@ -106,48 +132,6 @@ export const SpelerInput = ({
       <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
     </div>
   );
-
-  // Tooltip state met timeout
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
-  const [tooltipTimeout, setTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [leermodusTypeTooltipTimeout, setLeermodusTypeTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const handleTooltipShow = () => {
-    if (tooltipTimeout) {
-      clearTimeout(tooltipTimeout);
-    }
-    setShowTooltip(true);
-  };
-
-  const handleTooltipHide = () => {
-    const timeout = setTimeout(() => {
-      setShowTooltip(false);
-    }, 3000); // Auto-hide na 3 seconden
-    setTooltipTimeout(timeout);
-  };
-
-  const handleLeermodusTypeTooltipShow = () => {
-    if (leermodusTypeTooltipTimeout) {
-      clearTimeout(leermodusTypeTooltipTimeout);
-    }
-    setShowLeermodusTypeTooltip(true);
-  };
-
-  const handleLeermodusTypeTooltipHide = () => {
-    const timeout = setTimeout(() => {
-      setShowLeermodusTypeTooltip(false);
-    }, 3000); // Auto-hide na 3 seconden
-    setLeermodusTypeTooltipTimeout(timeout);
-  };
-
-  // Cleanup timeouts bij unmount
-  useEffect(() => {
-    return () => {
-      if (tooltipTimeout) clearTimeout(tooltipTimeout);
-      if (leermodusTypeTooltipTimeout) clearTimeout(leermodusTypeTooltipTimeout);
-    };
-  }, [tooltipTimeout, leermodusTypeTooltipTimeout]);
 
   const gameModeSelector = (
     <div className="game-mode-selector">
@@ -179,10 +163,11 @@ export const SpelerInput = ({
   const singlePlayerModeSelector = (
     <div 
       className="game-mode-selector sub-selector"
-      onMouseEnter={handleTooltipShow}
-      onMouseLeave={handleTooltipHide}
-      onTouchStart={handleTooltipShow}
-      onTouchEnd={handleTooltipHide}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onTouchStart={() => handleLongPress(setShowTooltip)}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
     >
       <label>
         <input 
@@ -209,13 +194,14 @@ export const SpelerInput = ({
     </div>
   );
 
-    const leermodusTypeSelector = (
-    <div
+  const leermodusTypeSelector = (
+    <div 
       className="game-mode-selector sub-selector sub-sub-selector"
-      onMouseEnter={handleLeermodusTypeTooltipShow}
-      onMouseLeave={handleLeermodusTypeTooltipHide}
-      onTouchStart={handleLeermodusTypeTooltipShow}
-      onTouchEnd={handleLeermodusTypeTooltipHide}
+      onMouseEnter={() => setShowLeermodusTypeTooltip(true)}
+      onMouseLeave={() => setShowLeermodusTypeTooltip(false)}
+      onTouchStart={() => handleLongPress(setShowLeermodusTypeTooltip)}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
     >
       <label>
         <input 
@@ -283,9 +269,6 @@ export const SpelerInput = ({
         </form>
       ) : null}
 
-
-
-      {/* Waarschuwing modals blijven ongewijzigd */}
       {showSerieuzeModusWaarschuwing && (
         <div className="serieuze-modus-modal-overlay" onClick={() => setShowSerieuzeModusWaarschuwing(false)}>
           <div className="serieuze-modus-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -328,7 +311,6 @@ export const SpelerInput = ({
         </div>
       )}
 
-      {/* Waarschuwing modal voor uitschakelen tijdens actief spel */}
       {showSerieuzeModusUitschakelen && (
         <div className="serieuze-modus-modal-overlay" onClick={() => setShowSerieuzeModusUitschakelen(false)}>
           <div className="serieuze-modus-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -377,4 +359,4 @@ export const SpelerInput = ({
       )}
     </div>
   );
-}; 
+};
