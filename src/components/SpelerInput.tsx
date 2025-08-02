@@ -33,32 +33,43 @@ export const SpelerInput = ({
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
 
-  const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isTouchDevice = useRef(typeof window !== 'undefined' && 'ontouchstart' in window);
+  const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleLongPress = (tooltipSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+  const handleLongPressStart = (tooltipSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    if (hideTooltipTimeout.current) clearTimeout(hideTooltipTimeout.current);
     tooltipTimeout.current = setTimeout(() => {
-      tooltipSetter(true);
-    }, 500); // 500ms voor een lange druk
+        tooltipSetter(true);
+        // Automatisch verbergen na 3 seconden
+        hideTooltipTimeout.current = setTimeout(() => {
+            tooltipSetter(false);
+        }, 3000);
+    }, 500);
   };
 
-  const handleTouchEnd = () => {
+  const handleLongPressEnd = () => {
     if (tooltipTimeout.current) {
-      clearTimeout(tooltipTimeout.current);
+        clearTimeout(tooltipTimeout.current);
     }
   };
   
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const eventType = isTouchDevice.current ? 'touchstart' : 'mousedown';
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.sub-selector')) {
+      if (!target.closest('.sub-selector') && !target.closest('.tooltip')) {
         setShowTooltip(false);
         setShowLeermodusTypeTooltip(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener(eventType, handleClickOutside, true);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener(eventType, handleClickOutside, true);
+      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+      if (hideTooltipTimeout.current) clearTimeout(hideTooltipTimeout.current);
     };
   }, []);
 
@@ -101,36 +112,44 @@ export const SpelerInput = ({
 
   const isInputVolledigUitgeschakeld = isSpelerInputDisabled || (gameMode === 'multi' && isSpelGestart);
 
-  const leermodusTooltip = !isSerieuzeLeerModusActief ? (
+  const leermodusTooltip = (
     <div className="tooltip-content">
-      <h4>📚 Schakel naar Leermodus</h4>
-      <p><strong>Wat verandert er?</strong> Geen punten, minder afleiding, meer focus op leren.</p>
-      <p><strong>Functies:</strong> Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
-      <p><strong>💡 Perfect voor:</strong> Zelfstudie en portfolio ontwikkeling.</p>
-    </div>
-  ) : (
-    <div className="tooltip-content">
-      <h4>🏆 Schakel naar Highscore Modus</h4>
-      <p><strong>Wat gebeurt er?</strong> Je schakelt over naar Highscore Modus voor competitie en fun.</p>
-      <p><strong>Voordelen:</strong> Meer fun en je kunt ook om de beurt elkaars records proberen te verbeteren!</p>
-      <p><strong>💡 Belangrijk:</strong> Je leerdata blijft bewaard voor later gebruik.</p>
+      {!isSerieuzeLeerModusActief ? (
+        <>
+          <h4>📚 Schakel naar Leermodus</h4>
+          <p><strong>Wat verandert er?</strong> Geen punten, minder afleiding, meer focus op leren.</p>
+          <p><strong>Functies:</strong> Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
+          <p><strong>💡 Perfect voor:</strong> Zelfstudie en portfolio ontwikkeling.</p>
+        </>
+      ) : (
+        <>
+          <h4>🏆 Schakel naar Highscore Modus</h4>
+          <p><strong>Wat gebeurt er?</strong> Je schakelt over naar Highscore Modus voor competitie en fun.</p>
+          <p><strong>Voordelen:</strong> Meer fun en je kunt ook om de beurt elkaars records proberen te verbeteren!</p>
+          <p><strong>💡 Belangrijk:</strong> Je leerdata blijft bewaard voor later gebruik.</p>
+        </>
+      )}
     </div>
   );
 
-  const leermodusTypeTooltip = leermodusType === 'normaal' ? (
-    <div className="tooltip-content">
-      <h4>🔄 Schakel naar Leitner</h4>
-      <p><strong>Wat verandert er?</strong> Je schakelt over naar de geavanceerde Leitner leermethode.</p>
-      <p><strong>Voordelen:</strong> Spaced repetition met box systeem, gedetailleerde statistieken en optimale herhaling timing.</p>
-      <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
-    </div>
-  ) : (
-    <div className="tooltip-content">
-      <h4>📚 Schakel naar Vrije Leermodus</h4>
-      <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige vrije leermodus.</p>
-      <p><strong>Voordelen:</strong> Eenvoudige herhaling, snelle sessies en basis data opslag.</p>
-      <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
-    </div>
+  const leermodusTypeTooltip = (
+     <div className="tooltip-content">
+        {leermodusType === 'normaal' ? (
+            <>
+                <h4>🔄 Schakel naar Leitner</h4>
+                <p><strong>Wat verandert er?</strong> Je schakelt over naar de geavanceerde Leitner leermethode.</p>
+                <p><strong>Voordelen:</strong> Spaced repetition met box systeem, gedetailleerde statistieken en optimale herhaling timing.</p>
+                <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
+            </>
+        ) : (
+            <>
+                <h4>📚 Schakel naar Vrije Leermodus</h4>
+                <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige vrije leermodus.</p>
+                <p><strong>Voordelen:</strong> Eenvoudige herhaling, snelle sessies en basis data opslag.</p>
+                <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
+            </>
+        )}
+     </div>
   );
 
   const gameModeSelector = (
@@ -160,15 +179,24 @@ export const SpelerInput = ({
     </div>
   );
 
+  const singlePlayerProps = {
+    onMouseEnter: !isTouchDevice.current ? () => setShowTooltip(true) : undefined,
+    onMouseLeave: !isTouchDevice.current ? () => setShowTooltip(false) : undefined,
+    onTouchStart: isTouchDevice.current ? () => handleLongPressStart(setShowTooltip) : undefined,
+    onTouchEnd: isTouchDevice.current ? handleLongPressEnd : undefined,
+    onTouchMove: isTouchDevice.current ? handleLongPressEnd : undefined,
+  };
+
+  const leermodusTypeProps = {
+    onMouseEnter: !isTouchDevice.current ? () => setShowLeermodusTypeTooltip(true) : undefined,
+    onMouseLeave: !isTouchDevice.current ? () => setShowLeermodusTypeTooltip(false) : undefined,
+    onTouchStart: isTouchDevice.current ? () => handleLongPressStart(setShowLeermodusTypeTooltip) : undefined,
+    onTouchEnd: isTouchDevice.current ? handleLongPressEnd : undefined,
+    onTouchMove: isTouchDevice.current ? handleLongPressEnd : undefined,
+  };
+
   const singlePlayerModeSelector = (
-    <div 
-      className="game-mode-selector sub-selector"
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-      onTouchStart={() => handleLongPress(setShowTooltip)}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchEnd}
-    >
+    <div className="game-mode-selector sub-selector" {...singlePlayerProps}>
       <label>
         <input 
           type="radio" 
@@ -195,14 +223,7 @@ export const SpelerInput = ({
   );
 
   const leermodusTypeSelector = (
-    <div 
-      className="game-mode-selector sub-selector sub-sub-selector"
-      onMouseEnter={() => setShowLeermodusTypeTooltip(true)}
-      onMouseLeave={() => setShowLeermodusTypeTooltip(false)}
-      onTouchStart={() => handleLongPress(setShowLeermodusTypeTooltip)}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchEnd}
-    >
+    <div className="game-mode-selector sub-selector sub-sub-selector" {...leermodusTypeProps}>
       <label>
         <input 
           type="radio" 
