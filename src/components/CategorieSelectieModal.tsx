@@ -97,6 +97,9 @@ export const CategorieSelectieModal = ({
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
   
+  const heeftSysteemOpdrachten = useMemo(() => opdrachten.some(op => op.bron === 'systeem'), [opdrachten]);
+  const heeftGebruikerOpdrachten = useMemo(() => opdrachten.some(op => op.bron === 'gebruiker'), [opdrachten]);
+  
   // Sorteer functionaliteit
   const [sortConfig, setSortConfig] = useState<{
     key: 'naam' | 'aantalOpdrachten' | 'geselecteerd';
@@ -358,7 +361,7 @@ export const CategorieSelectieModal = ({
       case 'multiplayer': return '🎮 Multiplayer Modus';
       case 'highscore': return '🏆 Highscore Modus';
       case 'normaal': return '📖 Vrije Leermodus';
-      case 'leitner': return '📚 Leitner Modus';
+      case 'leitner': return '📚 Leitner Leermodus';
     }
   };
 
@@ -367,7 +370,7 @@ export const CategorieSelectieModal = ({
       case 'multiplayer': return 'Kies categorieën voor multiplayer spelsessies.';
       case 'highscore': return 'Selecteer categorieën voor highscore pogingen en bekijk eerdere recordpogingen.';
       case 'normaal': return 'Selecteer categorieën voor vrije leersessies zonder herhalingen of opslag.';
-      case 'leitner': return 'Beheer categorieën voor het Leitner leersysteem met statistieken en box verdeling.';
+      case 'leitner': return 'Selecteer categorieën voor de Leitner leermodus. Gebruik de knop hieronder voor gedetailleerd beheer met statistieken.';
     }
   };
   
@@ -448,10 +451,20 @@ export const CategorieSelectieModal = ({
           <button onClick={() => actieveBulkHandler(alleCategorieen, 'deselect')} className="snelle-selectie-knop">
             Niets
           </button>
-          <button onClick={() => handleSelecteerBron('systeem')} className="snelle-selectie-knop">
+          <button 
+            onClick={() => handleSelecteerBron('systeem')} 
+            className="snelle-selectie-knop"
+            disabled={!heeftSysteemOpdrachten}
+            title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
+          >
             ⚙️ Alleen Systeem
           </button>
-          <button onClick={() => handleSelecteerBron('gebruiker')} className="snelle-selectie-knop">
+          <button 
+            onClick={() => handleSelecteerBron('gebruiker')} 
+            className="snelle-selectie-knop"
+            disabled={!heeftGebruikerOpdrachten}
+            title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
+          >
             👤 Alleen Eigen
           </button>
         </div>
@@ -603,12 +616,22 @@ export const CategorieSelectieModal = ({
               <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
                 Allemaal
               </button>
-              <button onClick={() => setOpdrachtBronFilter('systeem')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}>
-                    ⚙️ Systeem
-                    </button>
-                    <button onClick={() => setOpdrachtBronFilter('gebruiker')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}>
-                    👤 Eigen
-                    </button>
+              <button 
+                onClick={() => setOpdrachtBronFilter('systeem')} 
+                className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
+                disabled={!heeftSysteemOpdrachten}
+                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
+              >
+                ⚙️ Systeem
+              </button>
+              <button 
+                onClick={() => setOpdrachtBronFilter('gebruiker')} 
+                className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}
+                disabled={!heeftGebruikerOpdrachten}
+                title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Filter op eigen opdrachten'}
+              >
+                👤 Eigen
+              </button>
             </div>
           </div>
         </div>
@@ -703,7 +726,7 @@ export const CategorieSelectieModal = ({
     <div className="leitner-tab-content">
       <p>Het Leitner-systeem gebruikt een eigen, gespecialiseerd beheerscherm voor de beste leerervaring.</p>
       <button onClick={onOpenLeitnerBeheer} className="snelle-selectie-knop">
-        Open Leitner Beheer
+        Selecteer Leitner Categorieën
       </button>
     </div>
   );

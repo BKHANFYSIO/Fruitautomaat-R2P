@@ -52,10 +52,8 @@
   cursor: pointer;
   padding: 0 10px;
   line-height: 1;
-  position: absolute; /* Absolute positionering */
-  right: 25px;      /* Rechts uitlijnen, met wat padding van de rand */
-  top: 50%;         /* Verticaal centreren in de header */
-  transform: translateY(-50%); /* Correctie voor centreren */
+  position: relative; /* Relative positionering binnen de header */
+  margin-left: auto;  /* Duwt de button naar rechts */
 }
 
 .modal-close-button:hover {

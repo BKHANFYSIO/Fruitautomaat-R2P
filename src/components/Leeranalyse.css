@@ -9,1527 +9,1188 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .leeranalyse-modal {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  max-width: 90vw;
-  max-height: 90vh;
-  width: 800px;
+  background-color: #2c2c2c;
+  color: #e0e0e0;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 90%;
+  max-width: 1200px;
+  border: 1px solid #444;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  z-index: 1001;
 }
 
 .leeranalyse-header {
+  border-bottom: 1px solid #444;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding-left: 40px;
+  padding-right: 40px;
 }
 
 .leeranalyse-header h2 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: #61dafb;
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #61dafb;
 }
 
 .leeranalyse-tabs {
   display: flex;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .tab {
-  flex: 1;
-  padding: 12px 16px;
+  background: #444;
   border: none;
-  background: transparent;
+  color: #ccc;
+  padding: 10px 15px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
-  color: #666;
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 10;
+  transition: all 0.2s;
 }
 
 .tab:hover {
-  background: #e9ecef;
-  color: #333;
+  background: #555;
+  color: #fff;
 }
 
 .tab.active {
-  background: white;
-  color: #667eea;
-  border-bottom: 2px solid #667eea;
+  background: #61dafb;
+  color: #282c34;
+  font-weight: bold;
 }
 
-  .leeranalyse-content {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-    max-height: 60vh;
-  }
-
-  .chart-sectie {
-    margin-top: 24px;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-  }
-
-  .chart-sectie h3 {
-    font-family: 'Bungee', cursive;
-    color: #63b3ed;
-    text-shadow: 0 0 5px rgba(99, 179, 237, 0.5);
-    margin: 0 0 20px 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-    text-align: center;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #4a4a4a;
-  }
-
-  .chart-container {
-    height: 300px;
-    position: relative;
-  }
-
-  .achievement-chart {
-    height: 250px;
-  }
-
-  .achievement-charts-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 20px;
-  }
-
-  @media (max-width: 768px) {
-    .achievement-charts-container {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-  }
+.leeranalyse-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
 
 .geen-data {
   text-align: center;
-  padding: 40px 20px;
-  color: #666;
+  padding: 40px;
+  color: #888;
 }
 
 .geen-data p {
-  margin: 8px 0;
-  font-size: 1rem;
+  margin: 10px 0;
 }
 
-/* Overzicht Tab */
+/* Grid Layouts */
+.spelmodus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
 .statistieken-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-.statistiek-card {
-  background: #f8f9fa;
-  border-radius: 8px;
+/* Card Styling */
+.spelmodus-card {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.spelmodus-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
+}
+
+.spelmodus-card h4 {
+  margin: 0 0 15px 0;
+  color: #61dafb;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modus-statistieken p {
+  margin: 8px 0;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
+.modus-statistieken strong {
+  color: #61dafb;
+}
+
+/* Statistiek Cards */
+.statistiek-card {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
   text-align: center;
-  border: 1px solid #e9ecef;
-  transition: transform 0.2s ease;
 }
 
 .statistiek-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.statistiek-card h3 {
-  margin: 0 0 12px 0;
-  font-size: 1rem;
-  color: #666;
-  font-weight: 500;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
 }
 
 .statistiek-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
 .statistiek-card-header h3 {
   margin: 0;
-  font-size: 1rem;
-  color: #666;
-  font-weight: 500;
+  color: #61dafb;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .info-knop {
   background: none;
   border: none;
-  font-size: 1.2rem;
+  color: #61dafb;
+  font-size: 1rem;
   cursor: pointer;
-  color: #6c757d;
-  padding: 4px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  line-height: 1;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
 .info-knop:hover {
-  background: #f8f9fa;
-  color: #495057;
-  transform: scale(1.1);
+  opacity: 1;
 }
 
-.info-knop:active {
-  transform: scale(0.95);
+.statistiek-waarde {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin: 10px 0;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
 }
 
-/* Info Modal */
+.statistiek-context {
+  color: #ccc;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Info Box Styling */
+.leeranalyse-info-box {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.info-icon {
+  font-size: 1.5rem;
+  color: #61dafb;
+  margin-top: 2px;
+}
+
+.info-content h4 {
+  margin: 0 0 10px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
+}
+
+.info-content p {
+  margin: 0;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+
+/* Section Headers */
+.spelmodus-overzicht h3 {
+  color: #a855f7;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+/* Info Modal Styling */
 .info-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 10000;
-  backdrop-filter: blur(4px);
+  align-items: center;
+  z-index: 2000; /* Hoger dan de leeranalyse modal */
+  backdrop-filter: blur(5px);
 }
 
 .info-modal {
-  background: white;
-  border-radius: 12px;
-  padding: 0;
-  max-width: 500px;
+  background-color: #2c2c2c;
+  color: #e0e0e0;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   width: 90%;
+  max-width: 500px;
+  border: 1px solid #444;
   max-height: 80vh;
-  overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  display: flex;
+  flex-direction: column;
 }
 
 .info-modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #555;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .info-modal-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  color: #61dafb;
+  font-size: 1.3rem;
   font-weight: 600;
 }
 
 .info-modal-close {
   background: none;
   border: none;
-  color: white;
-  font-size: 1.5rem;
+  color: #e0e0e0;
+  font-size: 2rem;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
 }
 
 .info-modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
-.info-modal-close:active {
-  transform: scale(0.95);
+  color: #61dafb;
 }
 
 .info-modal-content {
-  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .info-modal-content p {
-  margin: 0;
-  font-size: 1rem;
+  margin: 0 0 15px 0;
   line-height: 1.6;
-  color: #333;
+  color: #e0e0e0;
 }
 
-.statistiek-waarde {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #667eea;
-  margin: 0;
+.info-modal-content p:last-child {
+  margin-bottom: 0;
 }
 
-.statistiek-context {
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 8px;
-  font-style: italic;
-}
-
-/* Info Box */
-.leeranalyse-info-box {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border: 1px solid #2196f3;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
-}
-
-.info-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.info-content h4 {
-  margin: 0 0 8px 0;
-  color: #1976d2;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.info-content p {
-  margin: 0;
-  color: #424242;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.info-content strong {
-  color: #1976d2;
-  font-weight: 600;
-}
-
-/* Spelmodus Overzicht */
-.spelmodus-overzicht {
-  margin-bottom: 24px;
-}
-
-.spelmodus-overzicht h3 {
-  font-family: 'Bungee', cursive;
-  color: #63b3ed;
-  text-shadow: 0 0 5px rgba(99, 179, 237, 0.5);
-  margin: 0 0 20px 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  text-align: center;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #4a4a4a;
-}
-
-.spelmodus-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.spelmodus-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.spelmodus-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-}
-
-.spelmodus-card.normaal::before {
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
-}
-
-.spelmodus-card.leitner::before {
-  background: linear-gradient(90deg, #43e97b, #38f9d7);
-}
-
-.spelmodus-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-}
-
-.spelmodus-card h4 {
-  margin: 0 0 16px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  text-align: center;
-}
-
-.modus-statistieken p {
-  margin: 8px 0;
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.modus-statistieken strong {
-  color: #333;
-  font-weight: 600;
-}
-
-/* Prestatie Highlights */
+/* Prestatie Highlights Styling */
 .prestatie-highlights {
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 .prestatie-highlights h3 {
-  font-family: 'Bungee', cursive;
-  color: #63b3ed;
-  text-shadow: 0 0 5px rgba(99, 179, 237, 0.5);
+  color: #a855f7;
+  font-size: 1.4rem;
   margin: 0 0 20px 0;
-  font-size: 1.2rem;
   font-weight: 600;
-  text-align: center;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #4a4a4a;
 }
 
 .highlights-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
 .highlight-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
   border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
   text-align: center;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.highlight-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  transform: rotate(45deg);
-  transition: all 0.3s ease;
-  opacity: 0;
-}
-
-.highlight-card:hover::before {
-  opacity: 1;
-  transform: rotate(45deg) scale(1.2);
 }
 
 .highlight-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
 }
 
 .highlight-card h4 {
-  margin: 0 0 12px 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.highlight-waarde {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 8px 0;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.highlight-context {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0;
-  font-style: italic;
-}
-
-.voortgang-sectie {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.voortgang-sectie h3 {
-  margin: 0 0 16px 0;
-  color: #333;
-  font-size: 1.2rem;
-}
-
-.voortgang-info p {
-  margin: 8px 0;
-  font-size: 0.95rem;
-  color: #555;
-}
-
-/* Categorieën Tab */
-.categorieen-lijst {
-  display: grid;
-  gap: 16px;
-}
-
-.categorie-card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.categorie-card h4 {
-  margin: 0 0 12px 0;
-  color: #333;
+  margin: 0 0 15px 0;
+  color: #61dafb;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
-.categorie-statistieken p {
-  margin: 6px 0;
+.highlight-waarde {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin: 10px 0;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+}
+
+.highlight-context {
+  color: #ccc;
   font-size: 0.9rem;
-  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Voortgang Sectie Styling */
+.voortgang-sectie {
+  margin-bottom: 30px;
+}
+
+.voortgang-sectie h3 {
+  color: #a855f7;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+.voortgang-info {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.voortgang-info p {
+  margin: 0 0 10px 0;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+
+.voortgang-info p:last-child {
+  margin-bottom: 0;
+}
+
+.voortgang-info strong {
+  color: #61dafb;
+}
+
+/* Categorieën Tab Styling */
+.categorieen-tab {
+  margin-bottom: 30px;
 }
 
 /* Categorie Vergelijking */
 .categorie-vergelijking {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  border: 1px solid #dee2e6;
+  margin-bottom: 30px;
 }
 
 .categorie-vergelijking h4 {
-  margin: 0 0 16px 0;
-  color: #495057;
-  font-size: 1.1rem;
+  color: #a855f7;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
   font-weight: 600;
-  text-align: center;
 }
 
 .vergelijking-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .vergelijking-card {
-  background: white;
-  border-radius: 8px;
-  padding: 16px;
-  text-align: center;
-  border: 2px solid transparent;
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 .vergelijking-card.beste {
-  border-color: #28a745;
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border-color: #ffd700;
 }
 
 .vergelijking-card.zwakste {
-  border-color: #dc3545;
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border-color: #ff6b6b;
 }
 
 .vergelijking-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .vergelijking-card h5 {
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
+  margin: 0 0 10px 0;
+  color: #61dafb;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #495057;
 }
 
 .categorie-naam {
-  margin: 8px 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #212529;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e0e0e0;
+  margin: 10px 0;
 }
 
 .categorie-score {
+  color: #4ade80;
+  font-size: 1rem;
   margin: 0;
-  font-size: 0.9rem;
-  color: #495057;
-  font-weight: 600;
 }
 
-/* Beheersing Statistieken */
-.beheersing-statistieken {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 16px 0;
-  border: 1px solid #e9ecef;
-}
-
-.beheersing-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.beheersing-row:last-child {
-  margin-bottom: 0;
-}
-
-.beheersing-item {
+/* Categorie Cards */
+.categorieen-lijst {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  flex: 1;
+  gap: 15px;
 }
 
-.beheersing-label {
-  font-size: 0.8rem;
-  color: #495057;
-  margin-bottom: 4px;
-  font-weight: 600;
+.categorie-card {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.beheersing-waarde {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #495057;
+.categorie-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
 }
 
-/* Score Trend Info */
-.score-trend-info {
-  background: white;
-  border-radius: 8px;
-  padding: 12px;
-  margin: 16px 0;
-  border: 1px solid #e9ecef;
-  display: flex;
-  justify-content: space-between;
-}
-
-.trend-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.trend-label {
-  font-size: 0.8rem;
-  color: #495057;
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-
-.trend-waarde {
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.trend-waarde.stijgend {
-  color: #28a745;
-  background: #d4edda;
-}
-
-.trend-waarde.dalend {
-  color: #dc3545;
-  background: #f8d7da;
-}
-
-.trend-waarde.stabiel {
-  color: #6c757d;
-  background: #e9ecef;
+.categorie-card.sub-categorie {
+  margin-left: 20px;
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
 }
 
 .categorie-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
 }
 
 .categorie-card-header h4 {
   margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.mastery-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-weight: 600;
-}
-
-.mastery-icon {
+  color: #61dafb;
   font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.mastery-level {
+.pijl {
+  font-size: 0.8rem;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.pijl.open {
+  transform: rotate(90deg);
+}
+
+/* Beheersing Statistieken */
+.beheersing-statistieken {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.beheersing-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.beheersing-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.beheersing-label {
+  color: #ccc;
   font-size: 0.9rem;
 }
 
+.beheersing-waarde {
+  color: #4ade80;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Score Trend Info */
+.score-trend-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.trend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trend-label {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.trend-waarde {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.trend-waarde.stijgend {
+  color: #4ade80;
+}
+
+.trend-waarde.dalend {
+  color: #ff6b6b;
+}
+
+.trend-waarde.stabiel {
+  color: #fbbf24;
+}
+
+/* Categorie Acties */
 .categorie-acties {
   margin-top: 15px;
-  text-align: right;
+  text-align: center;
 }
 
 .focus-knop {
-  background-color: #667eea;
-  color: white;
+  background: linear-gradient(135deg, #61dafb 0%, #21a1f2 100%);
+  color: #282c34;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .focus-knop:hover {
-  background-color: #5a67d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(97, 218, 251, 0.3);
 }
 
-/* Kennis Verankering Bar */
-.verdeling-bar-container {
-  margin-top: 15px;
+/* Achievements Tab Styling */
+.achievements-tab {
+  margin-bottom: 30px;
 }
 
-.verdeling-bar-container strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-  color: #555;
-  font-weight: 600;
-}
-
-.verdeling-bar {
-  display: flex;
-  width: 100%;
-  height: 20px;
-  border-radius: 6px;
-  overflow: hidden;
-  background-color: #e9ecef;
-}
-
-.verdeling-segment {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.verdeling-bar-leeg {
-  font-size: 0.85rem;
-  color: #999;
-  font-style: italic;
-  margin-top: 15px;
-}
-
-/* Sparkline styling */
-.sparkline-container {
-  margin-top: 15px;
-}
-
-.sparkline-container strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-  color: #555;
-  font-weight: 600;
-}
-
-.sparkline-chart {
-  height: 40px;
-  width: 100%;
-}
-
-
-/* Prestaties Tab */
-.prestatie-statistieken {
+/* Achievement Charts Container */
+.achievement-charts-container {
+  margin-bottom: 30px;
   display: grid;
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
 }
 
-.prestatie-card {
-  background: #f8f9fa;
-  border-radius: 8px;
+.chart-sectie {
+  margin-bottom: 0;
+}
+
+.chart-sectie h3 {
+  color: #a855f7;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+.chart-container {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
   padding: 20px;
-  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  min-height: 350px;
 }
 
-.prestatie-card h4 {
-  margin: 0 0 12px 0;
-  color: #333;
+.achievement-chart {
+  height: 300px;
+  min-height: 300px;
+}
+
+/* Achievement Columns */
+.achievements-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+}
+
+.achievement-column h3 {
+  color: #a855f7;
+  font-size: 1.4rem;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+}
+
+/* Achievement Categories */
+.achievement-categorie-groep {
+  margin-bottom: 25px;
+}
+
+.achievement-categorie-header {
+  color: #61dafb;
   font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background: rgba(97, 218, 251, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #61dafb;
 }
 
-.prestatie-card p {
-  margin: 6px 0;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-/* Achievements Tab */
+/* Achievement Cards */
 .achievements-lijst {
-  display: grid;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .achievement-card {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 18px;
-  margin-bottom: 12px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
   border-radius: 12px;
-  border-left: 5px solid;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
-}
-
-/* Algemene Achievement Categorieën */
-.achievement-card.categorie-onboarding {
-  background: linear-gradient(135deg, #10B981, #059669);
-  border-left-color: #34D399;
-  color: white;
-}
-
-.achievement-card.categorie-progressie {
-  background: linear-gradient(135deg, #3B82F6, #1E40AF);
-  border-left-color: #60A5FA;
-  color: white;
-}
-
-.achievement-card.categorie-kwaliteit {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  border-left-color: #FBBF24;
-  color: white;
-}
-
-.achievement-card.categorie-consistentie {
-  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-  border-left-color: #A78BFA;
-  color: white;
-}
-
-.achievement-card.categorie-exploratie {
-  background: linear-gradient(135deg, #EC4899, #DB2777);
-  border-left-color: #F472B6;
-  color: white;
-}
-
-.achievement-card.categorie-speciaal {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  border-left-color: #22D3EE;
-  color: white;
-}
-
-/* Leitner Achievement Categorieën */
-.achievement-card.categorie-herhaling {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  border-left-color: #22D3EE;
-  color: white;
-}
-
-.achievement-card.categorie-promotie {
-  background: linear-gradient(135deg, #F6E05E, #E6D700);
-  border-left-color: #FEF08A;
-  color: #1F2937;
-}
-
-.achievement-card.categorie-consistentie-leitner {
-  background: linear-gradient(135deg, #EC4899, #DB2777);
-  border-left-color: #F472B6;
-  color: white;
-}
-
-/* Niet-behaalde achievements */
-.achievement-card.niet-behaald {
-  opacity: 0.6;
-  background: #2d2d2d !important;
-  border-left-color: #555 !important;
-  color: #999 !important;
-}
-
-.achievement-card.niet-behaald .achievement-info h4 {
-  color: #999;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
 }
 
 .achievement-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
+}
+
+.achievement-card.behaald {
+  border-color: #4ade80;
+  background: linear-gradient(135deg, #1a2a1a 0%, #2a3a2a 100%);
+}
+
+.achievement-card.niet-behaald {
+  opacity: 0.7;
+  border-color: #666;
 }
 
 .achievement-icon {
   font-size: 2rem;
-  margin-right: 16px;
-  min-width: 40px;
-  text-align: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.achievement-info {
+  flex: 1;
 }
 
 .achievement-info h4 {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
+  margin: 0 0 8px 0;
+  color: #e0e0e0;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
 .achievement-info p {
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
+  color: #ccc;
   font-size: 0.9rem;
-  opacity: 0.9;
+  line-height: 1.4;
 }
 
 .achievement-info small {
+  color: #4ade80;
   font-size: 0.8rem;
-  opacity: 0.7;
+  font-style: italic;
 }
 
-/* Categorie Headers */
-.achievement-categorie-header {
-  margin: 24px 0 16px 0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
+/* Category-specific styling */
+.achievement-card.categorie-onboarding {
+  border-left: 4px solid #fbbf24;
 }
 
-.achievement-categorie-header.basis {
-  background: linear-gradient(135deg, #3B82F6, #1E40AF);
-  color: white;
+.achievement-card.categorie-progressie {
+  border-left: 4px solid #4ade80;
 }
 
-.achievement-categorie-header.prestatie {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  color: white;
+.achievement-card.categorie-kwaliteit {
+  border-left: 4px solid #f59e0b;
 }
 
-.achievement-categorie-header.consistentie {
-  background: linear-gradient(135deg, #10B981, #059669);
-  color: white;
+.achievement-card.categorie-consistentie {
+  border-left: 4px solid #ec4899;
 }
 
-.achievement-categorie-header.expert {
-  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-  color: white;
+.achievement-card.categorie-exploratie {
+  border-left: 4px solid #8b5cf6;
 }
 
-.achievement-categorie-header.herhaling {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  color: white;
+.achievement-card.categorie-speciaal {
+  border-left: 4px solid #06b6d4;
 }
 
-.achievement-categorie-header.promotie {
-  background: linear-gradient(135deg, #F6E05E, #E6D700);
-  color: #1F2937;
+.achievement-card.categorie-herhaling {
+  border-left: 4px solid #ef4444;
 }
 
-.achievement-categorie-header.consistentie-leitner {
-  background: linear-gradient(135deg, #EC4899, #DB2777);
-  color: white;
+.achievement-card.categorie-promotie {
+  border-left: 4px solid #10b981;
 }
 
-/* Verbindingslijnen tussen achievements */
-.achievement-categorie-groep {
-  position: relative;
-  padding-left: 20px;
+.achievement-card.categorie-consistentie-leitner {
+  border-left: 4px solid #f97316;
 }
 
-.achievement-categorie-groep::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--categorie-color), transparent);
+/* Leitner Tab Styling */
+.leitner-tab {
+  margin-bottom: 30px;
 }
 
-.achievement-categorie-groep.basis::before {
-  --categorie-color: #3B82F6;
-}
-
-.achievement-categorie-groep.prestatie::before {
-  --categorie-color: #F59E0B;
-}
-
-.achievement-categorie-groep.consistentie::before {
-  --categorie-color: #10B981;
-}
-
-.achievement-categorie-groep.expert::before {
-  --categorie-color: #8B5CF6;
-}
-
-.achievement-categorie-groep.herhaling::before {
-  --categorie-color: #06B6D4;
-}
-
-.achievement-categorie-groep.promotie::before {
-  --categorie-color: #F6E05E;
-}
-
-.achievement-categorie-groep.consistentie-leitner::before {
-  --categorie-color: #EC4899;
-}
-
-/* Achievement columns layout */
-.achievements-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.achievement-column {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-} 
-
-.achievement-column h3 {
-  font-family: 'Bungee', cursive;
-  color: #63b3ed;
-  text-shadow: 0 0 5px rgba(99, 179, 237, 0.5);
+.leitner-tab h3 {
+  color: #a855f7;
+  font-size: 1.4rem;
   margin: 0 0 20px 0;
-  font-size: 1.2rem;
   font-weight: 600;
-  text-align: center;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #4a4a4a;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .achievements-columns {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .achievement-card {
-    padding: 12px;
-  }
-  
-  .achievement-icon {
-    font-size: 1.5rem;
-  }
-
-  .spelmodus-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .highlights-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .spelmodus-card,
-  .highlight-card {
-    padding: 16px;
-  }
-
-  .highlight-waarde {
-    font-size: 1.5rem;
-  }
-
-  .leeranalyse-info-box {
-    flex-direction: column;
-    text-align: center;
-    gap: 8px;
-  }
-
-  .info-icon {
-    margin-top: 0;
-  }
-
-  .vergelijking-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .beheersing-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .score-trend-info {
-    flex-direction: column;
-    gap: 12px;
-  }
-}
-
-/* Footer */
-.leeranalyse-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
-}
-
-.export-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.export-button {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.export-button:hover {
-  background: #218838;
-}
-
-.export-button.json-export {
-  background: #17a2b8;
-}
-
-.export-button.json-export:hover {
-  background: #138496;
-}
-
-.export-button.excel-export {
-  background: #28a745;
-}
-
-.export-button.excel-export:hover {
-  background: #218838;
-}
-
-.close-button {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-button:hover {
-  background: #5a6268;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .leeranalyse-modal {
-    width: 95vw;
-    max-height: 95vh;
-  }
-
-  .leeranalyse-tabs {
-    flex-wrap: wrap;
-  }
-
-  .tab {
-    flex: 1 1 50%;
-    font-size: 0.8rem;
-    padding: 8px 12px;
-  }
-
-  .statistieken-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .statistiek-card {
-    padding: 16px;
-  }
-
-  .statistiek-waarde {
-    font-size: 1.5rem;
-  }
-
-  .leeranalyse-content {
-    padding: 16px;
-    max-height: 50vh;
-  }
-
-  .achievement-card {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .achievement-icon {
-    margin-right: 0;
-    margin-bottom: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .statistieken-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tab {
-    flex: 1 1 100%;
-  }
-
-  .leeranalyse-footer {
-    flex-direction: column;
-    gap: 12px;
-  }
-}
-
-/* Leitner tab styling */
+/* Leitner Overzicht */
 .leitner-overzicht {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 30px;
+  margin-bottom: 30px;
 }
 
 .leitner-statistiek-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.leitner-statistiek-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
 }
 
 .leitner-statistiek-card h4 {
   margin: 0 0 15px 0;
+  color: #61dafb;
   font-size: 1.2rem;
-  color: #fff;
+  font-weight: 600;
 }
 
 .leitner-statistiek-card p {
   margin: 8px 0;
-  font-size: 1rem;
-  color: #f0f0f0;
+  color: #e0e0e0;
+  font-size: 0.95rem;
 }
 
 .leitner-statistiek-card strong {
-  color: #ffd700;
-  font-weight: bold;
+  color: #4ade80;
 }
 
-.leitner-box-overzicht h4 {
-  margin: 0 0 15px 0;
-  font-size: 1.2rem;
-  color: #333;
+/* Leitner Box Overzicht */
+.leitner-box-overzicht {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
-.box-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.box-card {
-  background: white;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 15px;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.box-card:hover {
+.leitner-box-overzicht:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.box-card h5 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 600;
-}
-
-.box-interval {
-  margin: 5px 0;
-  font-size: 0.9rem;
-  color: #666;
-  font-style: italic;
-}
-
-.box-count {
-  margin: 8px 0 0 0;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #667eea;
-}
-
-/* Box kleuren */
-.box-card:nth-child(1) {
-  border-color: #805ad5; /* Paars - 10 minuten */
-}
-
-.box-card:nth-child(2) {
-  border-color: #ff6b6b; /* Rood - 1 dag */
-}
-
-.box-card:nth-child(3) {
-  border-color: #feca57; /* Oranje - 2 dagen */
-}
-
-.box-card:nth-child(4) {
-  border-color: #48dbfb; /* Geel - 4 dagen */
-}
-
-.box-card:nth-child(5) {
-  border-color: #0abde3; /* Groen - 7 dagen */
-}
-
-.box-card:nth-child(6) {
-  border-color: #54a0ff; /* Blauw - 14 dagen */
-}
-
-.box-card:nth-child(7) {
-  border-color: #2c3e50; /* Donkergrijs - 1,5 maand */
-}
-
-.box-card.box-7 {
-  border-color: #ffd700; /* Goud */
-  background-color: #fffbeb;
-}
-
-.box-card.box-7 .box-count {
-  color: #b7950b; /* Donkergoud voor contrast */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
 }
 
 .leitner-box-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 15px;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .leitner-box-header h4 {
   margin: 0;
+  color: #61dafb;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .info-knop {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  color: #61dafb;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0 5px;
-  opacity: 0.6;
+  padding: 0;
+  opacity: 0.7;
   transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #666;
 }
 
 .info-knop:hover {
   opacity: 1;
-  color: #000;
 }
 
+/* Leitner Uitleg */
 .leitner-uitleg {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: rgba(97, 218, 251, 0.1);
+  border: 1px solid #61dafb;
   border-radius: 8px;
-  padding: 15px 20px;
+  padding: 15px;
   margin-bottom: 20px;
 }
 
 .leitner-uitleg h4 {
   margin: 0 0 10px 0;
-  color: #333;
+  color: #61dafb;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .leitner-uitleg p {
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
+  margin: 0 0 10px 0;
+  color: #e0e0e0;
   line-height: 1.5;
-  color: #555;
+  font-size: 0.9rem;
 }
 
+.leitner-uitleg p:last-child {
+  margin-bottom: 0;
+}
+
+/* Box Grid */
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.box-card {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.box-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  border-color: #61dafb;
+}
+
+.box-card h5 {
+  margin: 0 0 8px 0;
+  color: #61dafb;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.box-interval {
+  margin: 0 0 8px 0;
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+.box-count {
+  margin: 0;
+  color: #4ade80;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Box-specific styling */
+.box-card.box-0 {
+  border-color: #805ad5;
+}
+
+.box-card.box-1 {
+  border-color: #ff6b6b;
+}
+
+.box-card.box-2 {
+  border-color: #feca57;
+}
+
+.box-card.box-3 {
+  border-color: #48dbfb;
+}
+
+.box-card.box-4 {
+  border-color: #0abde3;
+}
+
+.box-card.box-5 {
+  border-color: #54a0ff;
+}
+
+.box-card.box-6 {
+  border-color: #2c3e50;
+}
+
+.box-card.box-7 {
+  border-color: #ffd700;
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
+  .leeranalyse-modal {
+    width: 95%;
+    padding: 20px;
+    max-height: 90vh;
+  }
+  
+  .leeranalyse-header {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .leeranalyse-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .leeranalyse-tabs {
+    gap: 5px;
+  }
+  
+  .tab {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .modal-close {
+    font-size: 2.5rem;
+    padding: 0 10px;
+  }
+  
+  /* Mobile Grid Adjustments */
+  .spelmodus-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .statistieken-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .spelmodus-card,
+  .statistiek-card {
+    padding: 15px;
+  }
+  
+  .statistiek-waarde {
+    font-size: 2rem;
+  }
+  
+  .leeranalyse-info-box {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Mobile Info Modal Adjustments */
+  .info-modal {
+    width: 95%;
+    padding: 20px;
+    max-height: 90vh;
+  }
+  
+  .info-modal-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .info-modal-close {
+    font-size: 1.8rem;
+  }
+  
+  /* Mobile Highlights Adjustments */
+  .highlights-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .highlight-card {
+    padding: 15px;
+  }
+  
+  .highlight-waarde {
+    font-size: 1.8rem;
+  }
+  
+  .voortgang-info {
+    padding: 15px;
+  }
+  
+  /* Mobile Categorieën Adjustments */
+  .vergelijking-cards {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .categorie-card {
+    padding: 15px;
+  }
+  
+  .categorie-card.sub-categorie {
+    margin-left: 10px;
+  }
+  
+  .beheersing-statistieken,
+  .score-trend-info {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .categorie-card-header h4 {
+    font-size: 1rem;
+  }
+  
+  /* Mobile Achievements Adjustments */
+  .achievements-columns {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .achievement-card {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .achievement-icon {
+    font-size: 1.5rem;
+  }
+  
+  .achievement-info h4 {
+    font-size: 1rem;
+  }
+  
+  .achievement-info p {
+    font-size: 0.85rem;
+  }
+  
+  .chart-container {
+    padding: 15px;
+  }
+  
+  .achievement-chart {
+    height: 250px;
+    min-height: 250px;
+  }
+  
+  /* Mobile Chart Adjustments */
+  .achievement-charts-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .chart-sectie {
+    margin-bottom: 20px;
+  }
+  
+  /* Mobile Leitner Adjustments */
+  .leitner-overzicht {
+    gap: 20px;
+  }
+  
+  .leitner-statistiek-card,
+  .leitner-box-overzicht {
+    padding: 15px;
+  }
+  
   .box-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   
   .box-card {
-    padding: 12px;
+    padding: 15px;
+    min-height: 100px;
   }
   
   .box-card h5 {
-    font-size: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .box-interval {
+    font-size: 0.75rem;
   }
   
   .box-count {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
-} 
-
-.achievements-tab h3 {
-  margin-bottom: 20px;
-  border-bottom: 2px solid #4a4a4a;
-  padding-bottom: 10px;
-}
-
-.achievements-columns {
-  display: flex;
-  gap: 30px;
-}
-
-.achievement-column {
-  flex: 1;
-  min-width: 0;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-} 
-
-.achievement-categorie-header.onboarding {
-  background: linear-gradient(135deg, #10B981, #059669);
-  color: white;
-}
-
-.achievement-categorie-header.progressie {
-  background: linear-gradient(135deg, #3B82F6, #1E40AF);
-  color: white;
-}
-
-.achievement-categorie-header.kwaliteit {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  color: white;
-}
-
-.achievement-categorie-header.consistentie {
-  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-  color: white;
-}
-
-.achievement-categorie-header.exploratie {
-  background: linear-gradient(135deg, #EC4899, #DB2777);
-  color: white;
-}
-
-.achievement-categorie-header.speciaal {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  color: white;
-} 
-
-.achievement-categorie-groep.onboarding::before {
-  --categorie-color: #10B981;
-}
-
-.achievement-categorie-groep.progressie::before {
-  --categorie-color: #3B82F6;
-}
-
-.achievement-categorie-groep.kwaliteit::before {
-  --categorie-color: #F59E0B;
-}
-
-.achievement-categorie-groep.consistentie::before {
-  --categorie-color: #8B5CF6;
-}
-
-.achievement-categorie-groep.exploratie::before {
-  --categorie-color: #EC4899;
-}
-
-.achievement-categorie-groep.speciaal::before {
-  --categorie-color: #06B6D4;
-}
-
-.hoofd-categorie {
-    cursor: pointer;
-    border-left: 5px solid #667eea;
-}
-
-.sub-categorie {
-    margin-left: 20px;
-    border-left: 3px solid #ccc;
-    background-color: #f8f9fa;
-}
-
-.pijl {
-    display: inline-block;
-    margin-right: 10px;
-    transition: transform 0.2s;
-}
-
-.pijl.open {
-    transform: rotate(90deg);
 }

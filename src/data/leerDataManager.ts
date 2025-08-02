@@ -1027,6 +1027,9 @@ class LeerDataManager {
       if (data.huidigeStreak === undefined) data.huidigeStreak = 0;
       if (data.langsteStreak === undefined) data.langsteStreak = 0;
       if (data.laatsteVoltooiingsDatum === undefined) data.laatsteVoltooiingsDatum = '';
+      if (!data.newQuestionsToday) {
+        data.newQuestionsToday = { date: getDatumString(), count: 0 };
+      }
       return data;
     }
     
@@ -1060,7 +1063,8 @@ class LeerDataManager {
       voltooiingen: 0,
       huidigeStreak: 0,
       langsteStreak: 0,
-      laatsteVoltooiingsDatum: ''
+      laatsteVoltooiingsDatum: '',
+      newQuestionsToday: { date: getDatumString(), count: 0 }
     };
   }
 
@@ -1085,9 +1089,34 @@ class LeerDataManager {
       // Stel de individuele timer in voor de nieuwe opdracht
       leitnerData.opdrachtReviewTimes[opdrachtId] = new Date().toISOString();
     }
+
+    // Update de teller voor nieuwe vragen vandaag
+    const vandaag = getDatumString();
+    if (leitnerData.newQuestionsToday.date !== vandaag) {
+      leitnerData.newQuestionsToday.date = vandaag;
+      leitnerData.newQuestionsToday.count = 1;
+    } else {
+      leitnerData.newQuestionsToday.count++;
+    }
     
     this.saveLeitnerData(leitnerData);
   }
+
+  getNewQuestionsTodayCount(): number {
+    const leitnerData = this.loadLeitnerData();
+    const vandaag = getDatumString();
+
+    if (leitnerData.newQuestionsToday.date !== vandaag) {
+      // Reset de teller voor een nieuwe dag
+      leitnerData.newQuestionsToday.date = vandaag;
+      leitnerData.newQuestionsToday.count = 0;
+      this.saveLeitnerData(leitnerData);
+      return 0;
+    }
+
+    return leitnerData.newQuestionsToday.count;
+  }
+
 
   updateLeitnerBox(opdrachtId: string, score: number): LeitnerAchievement | null {
     const leitnerData = this.loadLeitnerData();

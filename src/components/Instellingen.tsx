@@ -49,6 +49,7 @@ export const Instellingen = React.memo(({
   // Settings context
   const {
     gameMode,
+    setGameMode,
     maxRondes,
     setMaxRondes,
     isGeluidActief,
@@ -74,8 +75,11 @@ export const Instellingen = React.memo(({
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
     leermodusType,
+    setLeermodusType,
     isLokaleBonusOpslagActief,
     setIsLokaleBonusOpslagActief,
+    maxNewLeitnerQuestionsPerDay,
+    setMaxNewLeitnerQuestionsPerDay,
   } = useSettings();
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
@@ -171,24 +175,31 @@ export const Instellingen = React.memo(({
   };
 
   const handleSerieuzeModusToggle = (checked: boolean) => {
-    if (checked && isSpelGestart) {
-      setIsSerieuzeModusWaarschuwingOpen(true);
-    } else if (!checked && isSerieuzeLeerModusActief) {
-      // Alleen waarschuwing tonen als er daadwerkelijk spins zijn gedraaid
-      if (isSpelGestart) {
-        setIsSerieuzeModusUitschakelenOpen(true);
+    if (checked) {
+      if (isSpelGestart && gameMode === 'multi') {
+        setIsSerieuzeModusWaarschuwingOpen(true);
       } else {
-        // Geen spins gedraaid, direct uitschakelen
-        setIsSerieuzeLeerModusActief(false);
-        setIsLeerFeedbackActief(false);
+        setIsSerieuzeLeerModusActief(true);
+        if (gameMode === 'multi') {
+          setGameMode('single');
+        }
       }
     } else {
-      setIsSerieuzeLeerModusActief(checked);
+      if (isSpelGestart && isSerieuzeLeerModusActief) {
+        setIsSerieuzeModusUitschakelenOpen(true);
+      } else {
+        setIsSerieuzeLeerModusActief(false);
+      }
     }
   };
 
+  const handleLeitnerModusToggle = (checked: boolean) => {
+    setLeermodusType(checked ? 'leitner' : 'normaal');
+  };
+  
   const handleSerieuzeModusBevestiging = () => {
     setIsSerieuzeLeerModusActief(true);
+    setGameMode('single');
     onSpelReset();
     setIsSerieuzeModusWaarschuwingOpen(false);
   };
@@ -277,12 +288,20 @@ export const Instellingen = React.memo(({
             <h4>Spelverloop</h4>
             {gameMode === 'multi' && (
               <label>
-                Aantal rondes instellen (0 is oneindig):
+                Aantal rondes (alleen multiplayer):
                 <input
                   type="number"
                   value={maxRondes}
-                  onChange={(e) => setMaxRondes(Number(e.target.value))}
-                  min="0"
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (value >= 1 && value <= 30) {
+                      setMaxRondes(value);
+                    } else if (e.target.value === '') {
+                      setMaxRondes(1); // Of een andere fallback als je dat wilt
+                    }
+                  }}
+                  min="1"
+                  max="30"
                   style={{ marginLeft: 'auto', width: '80px' }}
                 />
               </label>
@@ -351,14 +370,13 @@ export const Instellingen = React.memo(({
                   type="checkbox"
                   checked={isSerieuzeLeerModusActief}
                   onChange={(e) => handleSerieuzeModusToggle(e.target.checked)}
-                  disabled={gameMode === 'multi'}
                 />
-                Leer Modus gebruiken {gameMode === 'multi' && <span style={{ color: '#666', fontSize: '0.9em' }}>(alleen in single player modus beschikbaar)</span>}
+                Leer Modus gebruiken {gameMode === 'multi' && isSerieuzeLeerModusActief && <span style={{ color: '#666', fontSize: '0.9em' }}>(Switched naar single player)</span>}
               </label>
               <p className="setting-description">
                 In deze modus worden geen punten gegeven. Minder afleiding, meer focus op leren. Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat generatie. Perfect voor zelfstudie, het ontwikkelen van studievaardigheden en gebruik in je portfolio. Leerzame feedback en tips worden standaard getoond.
               </p>
-              {isSerieuzeLeerModusActief && gameMode === 'single' && (
+              {isSerieuzeLeerModusActief && (
                 <>
                   <label>
                     <input
@@ -372,17 +390,40 @@ export const Instellingen = React.memo(({
                     Toon leerzame feedback en tips over effectief leren bij spin combinaties. Standaard aan gezet in Leer Modus. Als uitgeschakeld krijg je alleen de Leer Modus zonder feedback.
                   </p>
                   
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={leermodusType === 'leitner'}
+                      onChange={(e) => handleLeitnerModusToggle(e.target.checked)}
+                    />
+                    Leitner Leer Modus gebruiken
+                  </label>
                   <p className="setting-description">
                     Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
                   </p>
                   {leermodusType === 'leitner' && (
-                    <button
-                      className="instellingen-knop"
-                      onClick={handleOpenLeitnerBeheer}
-                      style={{ marginTop: '10px' }}
-                    >
-                      Beheer Leitner Categorieën
-                    </button>
+                    <>
+                      <label>
+                        Max. nieuwe vragen per dag:
+                        <input
+                          type="number"
+                          value={maxNewLeitnerQuestionsPerDay}
+                          onChange={(e) => setMaxNewLeitnerQuestionsPerDay(Number(e.target.value))}
+                          min="1"
+                          style={{ marginLeft: '10px', width: '60px' }}
+                        />
+                      </label>
+                      <p className="setting-description">
+                        Stel een limiet in voor het aantal nieuwe vragen dat per dag aan het Leitner-systeem wordt toegevoegd om een te hoge leerlast te voorkomen.
+                      </p>
+                      <button
+                        className="instellingen-knop"
+                        onClick={handleOpenLeitnerBeheer}
+                        style={{ marginTop: '10px' }}
+                      >
+                        Beheer Leitner Categorieën
+                      </button>
+                    </>
                   )}
                 </>
               )}

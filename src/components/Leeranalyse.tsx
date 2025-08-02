@@ -218,31 +218,45 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   const leitnerBoxData = useMemo(() => {
     if (!leitnerStats) return null;
 
-    const boxLabels = ['Box 1 (Dagelijks)', 'Box 2 (2 dagen)', 'Box 3 (4 dagen)', 'Box 4 (7 dagen)', 'Box 5 (14 dagen)'];
+    const boxLabels = [
+      'Box 0 (10 min)', 
+      'Box 1 (1 dag)', 
+      'Box 2 (2 dagen)', 
+      'Box 3 (4 dagen)', 
+      'Box 4 (7 dagen)', 
+      'Box 5 (14 dagen)',
+      'Box 6 (1,5 maand)',
+      'Beheerst'
+    ];
     
+    const colors = [
+      '#805ad5', // Paars voor box 0
+      '#ff6b6b', // Rood voor box 1
+      '#feca57', // Oranje voor box 2
+      '#48dbfb', // Blauw voor box 3
+      '#0abde3', // Donkerblauw voor box 4
+      '#54a0ff', // Lichtblauw voor box 5
+      '#2c3e50', // Grijs voor box 6
+      '#ffd700'  // Goud voor beheerst
+    ];
+
+    const datasets = boxLabels.map((label, index) => {
+      const boxId = index;
+      return {
+        label: label,
+        data: boxLabels.map((_, dataIndex) => 
+          dataIndex === index ? leitnerStats.opdrachtenPerBox[boxId] || 0 : 0
+        ),
+        backgroundColor: colors[index],
+        borderColor: colors[index],
+        borderWidth: 1,
+        stack: 'leitner' // Zorgt ervoor dat de staven op dezelfde plek worden "gestapeld"
+      };
+    });
+
     return {
       labels: boxLabels,
-      datasets: [
-        {
-          label: 'Aantal Opdrachten per Box',
-          data: [
-            leitnerStats.opdrachtenPerBox[1] || 0,
-            leitnerStats.opdrachtenPerBox[2] || 0,
-            leitnerStats.opdrachtenPerBox[3] || 0,
-            leitnerStats.opdrachtenPerBox[4] || 0,
-            leitnerStats.opdrachtenPerBox[5] || 0
-          ],
-          backgroundColor: [
-            '#ff6b6b', // Rood voor box 1
-            '#feca57', // Oranje voor box 2
-            '#48dbfb', // Blauw voor box 3
-            '#0abde3', // Donkerblauw voor box 4
-            '#54a0ff'  // Lichtblauw voor box 5
-          ],
-          borderColor: chartColors.primary,
-          borderWidth: 1
-        }
-      ]
+      datasets: datasets
     };
   }, [leitnerStats]);
 
@@ -528,7 +542,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
         <div className="leeranalyse-header">
           <h2>📊 Leeranalyse (Leer Modus)</h2>
           <button 
-            className="close-button"
+            className="modal-close"
             aria-label="Sluiten"
             onClick={(e) => {
               e.preventDefault();
@@ -744,6 +758,25 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                             <p className="statistiek-waarde">{leerData.statistieken.consistentieScore}%</p>
                             <p className="statistiek-context">
                               {totaalSessies > 0 ? `${Math.round((totaalNormaal / totaalSessies) * 100)}% vrije leermodus sessies` : 'Geen sessies'}
+                            </p>
+                          </div>
+                          <div className="statistiek-card">
+                            <div className="statistiek-card-header">
+                              <h3>🆕 Nieuwe Opdrachten Vandaag</h3>
+                              <button 
+                                className="info-knop" 
+                                title="Aantal nieuwe opdrachten vandaag gestart"
+                                onClick={() => showInfoModal(
+                                  '🆕 Nieuwe Opdrachten Vandaag',
+                                  'Het aantal nieuwe opdrachten dat je vandaag hebt gestart in het Leitner-systeem. Dit helpt je om je dagelijkse leerdoelen bij te houden.'
+                                )}
+                              >
+                                ℹ️
+                              </button>
+                            </div>
+                            <p className="statistiek-waarde">{leerDataManager.getNewQuestionsTodayCount()}</p>
+                            <p className="statistiek-context">
+                              Nieuwe opdrachten toegevoegd aan Box 0 vandaag
                             </p>
                           </div>
                         </>
@@ -1154,17 +1187,6 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
               📊 Export Excel
             </button>
           </div>
-          <button 
-            className="close-button" 
-            aria-label="Sluiten"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
-          >
-            &times;
-          </button>
         </div>
       </div>
 

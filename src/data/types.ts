@@ -156,6 +156,7 @@ export interface LeitnerData {
   huidigeStreak: number;
   langsteStreak: number;
   laatsteVoltooiingsDatum: string;
+  newQuestionsToday: { date: string; count: number };
 }
 
 export interface LeitnerOpdrachtInfo {

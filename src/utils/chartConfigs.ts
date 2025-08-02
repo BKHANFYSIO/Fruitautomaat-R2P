@@ -40,7 +40,7 @@ export const baseChartConfig = {
           size: 12,
           family: 'Inter, sans-serif'
         },
-        color: '#333'
+        color: '#e0e0e0'
       }
     },
     tooltip: {
@@ -116,24 +116,27 @@ export const barChartConfig = {
   ...baseChartConfig,
   scales: {
     x: {
+      stacked: true,
       grid: {
         display: false
       },
       ticks: {
-        color: '#666',
+        display: false, // Verberg de x-as labels
+        color: '#e0e0e0',
         font: {
           size: 11
         }
       }
     },
     y: {
+      stacked: true,
       beginAtZero: true,
       grid: {
         color: '#e2e8f0',
         drawBorder: false
       },
       ticks: {
-        color: '#666',
+        color: '#e0e0e0',
         font: {
           size: 11
         }
@@ -176,6 +179,7 @@ export const doughnutChartConfig = {
       labels: {
         padding: 20,
         usePointStyle: true,
+        color: '#e0e0e0',
         font: {
           size: 11
         }

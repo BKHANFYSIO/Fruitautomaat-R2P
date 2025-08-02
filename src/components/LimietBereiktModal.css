@@ -1,0 +1,120 @@
+.limiet-bereikt-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.limiet-bereikt-modal-content {
+  background: #2c2c2c;
+  padding: 25px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 550px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  border: 1px solid #444;
+  color: #f0f0f0;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.limiet-bereikt-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.limiet-bereikt-modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #ffc107; /* Oranje-achtige waarschuwingskleur */
+}
+
+.limiet-bereikt-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0 10px;
+  line-height: 1;
+}
+
+.limiet-bereikt-modal-close:hover {
+  color: #fff;
+}
+
+.limiet-bereikt-modal-body {
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.limiet-bereikt-modal-body p {
+  margin-bottom: 15px;
+}
+
+.limiet-bereikt-modal-body .uitleg-tekst {
+  font-size: 0.95rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+  color: #ddd;
+}
+
+.limiet-bereikt-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.limiet-bereikt-modal-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.limiet-bereikt-modal-button:active {
+    transform: scale(0.98);
+}
+
+.limiet-bereikt-modal-button.primary {
+  background-color: #e67e22; /* Oranje */
+  color: white;
+}
+
+.limiet-bereikt-modal-button.primary:hover {
+  background-color: #d35400;
+}
+
+.limiet-bereikt-modal-button.secondary {
+  background-color: #555;
+  color: #f0f0f0;
+}
+
+.limiet-bereikt-modal-button.secondary:hover {
+  background-color: #666;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

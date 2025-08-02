@@ -115,6 +115,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
 
+  const heeftSysteemOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'systeem'), [alleOpdrachten]);
+  const heeftGebruikerOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'gebruiker'), [alleOpdrachten]);
+
   // Laad opgeslagen selecties bij component mount
   useEffect(() => {
     const opgeslagen = localStorage.getItem('leitner_categorie_selecties');
@@ -399,10 +402,20 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               <button onClick={handleDeselectAll} className="snelle-selectie-knop">
                 Deselecteer Alles
               </button>
-              <button onClick={() => handleSelecteerBron('systeem')} className="snelle-selectie-knop">
+              <button 
+                onClick={() => handleSelecteerBron('systeem')} 
+                className="snelle-selectie-knop"
+                disabled={!heeftSysteemOpdrachten}
+                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
+              >
                 ⚙️ Alleen Systeem
               </button>
-              <button onClick={() => handleSelecteerBron('gebruiker')} className="snelle-selectie-knop">
+              <button 
+                onClick={() => handleSelecteerBron('gebruiker')} 
+                className="snelle-selectie-knop"
+                disabled={!heeftGebruikerOpdrachten}
+                title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
+              >
                 👤 Alleen Eigen
               </button>
             </div>
@@ -473,10 +486,20 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                     <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
                     Allemaal
                     </button>
-                    <button onClick={() => setOpdrachtBronFilter('systeem')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}>
+                    <button 
+                        onClick={() => setOpdrachtBronFilter('systeem')} 
+                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
+                        disabled={!heeftSysteemOpdrachten}
+                        title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
+                    >
                     ⚙️ Systeem
                     </button>
-                    <button onClick={() => setOpdrachtBronFilter('gebruiker')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}>
+                    <button 
+                        onClick={() => setOpdrachtBronFilter('gebruiker')} 
+                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}
+                        disabled={!heeftGebruikerOpdrachten}
+                        title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Filter op eigen opdrachten'}
+                    >
                     👤 Eigen
                     </button>
                 </div>

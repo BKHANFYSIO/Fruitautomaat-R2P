@@ -24,6 +24,7 @@ import { AchievementNotificatie } from './components/AchievementNotificatie';
 import { Leeranalyse } from './components/Leeranalyse';
 import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
 import { DevPanel } from './components/DevPanel';
+import { LimietBereiktModal } from './components/LimietBereiktModal';
 
 // Hooks
 import { useAudio } from './hooks/useAudio';
@@ -83,6 +84,7 @@ function App() {
     setIsLeerFeedbackActief,
       leermodusType,
   setLeermodusType,
+  maxNewLeitnerQuestionsPerDay,
   } = useSettings();
 
   // Game engine hook
@@ -106,6 +108,7 @@ function App() {
     verdiendeSpinsDezeBeurt,
     setVerdiendeSpinsDezeBeurt,
     analyseerSpin,
+    selectLeitnerOpdracht,
     shuffle
   } = useGameEngine();
 
@@ -124,6 +127,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
 const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>('alle');
+const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
+const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
 
 
 
@@ -538,6 +543,7 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
     setOpdrachtStartTijd(null);
     setGamePhase('idle');
     setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij spel reset
+    setLimietWaarschuwingGenegeerd(false); // Reset limiet waarschuwing
   };
 
   // Memoized opdrachten voor het filter, rekening houdend met de bron
@@ -556,6 +562,18 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
     });
     return [...uniekeNamen];
   }, [opdrachtenVoorFilter]);
+
+  const berekenAantalOpdrachten = (geselecteerde: string[]) => {
+    return opdrachten.filter(op => {
+      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+      return geselecteerde.includes(uniekeIdentifier);
+    }).length;
+  };
+
+  const aantalOpdrachtenHighscore = useMemo(() => berekenAantalOpdrachten(geselecteerdeHighscoreCategorieen), [geselecteerdeHighscoreCategorieen, opdrachten]);
+  const aantalOpdrachtenMultiplayer = useMemo(() => berekenAantalOpdrachten(geselecteerdeMultiplayerCategorieen), [geselecteerdeMultiplayerCategorieen, opdrachten]);
+  const aantalOpdrachtenLeitner = useMemo(() => berekenAantalOpdrachten(geselecteerdeLeitnerCategorieen), [geselecteerdeLeitnerCategorieen, opdrachten]);
+  const aantalOpdrachtenNormaal = useMemo(() => berekenAantalOpdrachten(geselecteerdeCategorieen), [geselecteerdeCategorieen, opdrachten]);
 
 
 
@@ -754,6 +772,23 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
       return;
     }
 
+    // Specifieke checks voor spelmodi
+    if (gameMode === 'single' && !isSerieuzeLeerModusActief && gefilterdeOpdrachten.length < 10) {
+      setNotificatie({ 
+        zichtbaar: true, 
+        bericht: `Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`,
+        type: 'fout' 
+      });
+      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+      return;
+    }
+
+    if (gameMode === 'multi' && gefilterdeOpdrachten.length < 20) {
+      if (!window.confirm(`Let op: je hebt minder dan 20 opdrachten (${gefilterdeOpdrachten.length}) geselecteerd. Voor de beste spelervaring raden we meer aan. Wil je toch doorgaan?`)) {
+        return; // Stop als de gebruiker annuleert
+      }
+    }
+
     if (!isSpelGestart) {
       setIsSpelGestart(true);
       
@@ -846,15 +881,15 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
     let boxNummer: number | undefined = undefined;
 
     if (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner') {
-      const leerDataManager = getLeerDataManager();
+      const result = selectLeitnerOpdracht(opdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode);
       
-      // Filter de te herhalen opdrachten HIER met de meest up-to-date state
-      const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
-      const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
-        geselecteerdeLeitnerCategorieen.includes(item.opdrachtId.split('_')[0] + " - " + item.opdrachtId.split('_')[1])
-      );
-      
-      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeLeitnerCategorieen);
+      if (result.limietBereikt && !limietWaarschuwingGenegeerd) {
+        setIsLimietModalOpen(true);
+        setIsAanHetSpinnen(false);
+        setGamePhase('idle');
+        return;
+      }
+
       gekozenOpdracht = result.opdracht;
       opdrachtType = result.type;
       boxNummer = result.box;
@@ -1512,6 +1547,22 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
         />
       )}
 
+      <LimietBereiktModal
+        isOpen={isLimietModalOpen}
+        onClose={() => setIsLimietModalOpen(false)}
+        onConfirm={() => {
+          setLimietWaarschuwingGenegeerd(true);
+          setIsLimietModalOpen(false);
+          // Probeer de spin opnieuw nu de waarschuwing is genegeerd
+          if (huidigeSpeler) {
+            voerSpinUit(huidigeSpeler);
+          } else {
+            handleSpin();
+          }
+        }}
+        maxVragen={maxNewLeitnerQuestionsPerDay}
+      />
+
       {isMobieleWeergave && (
         <>
           <button className="score-lade-knop" onClick={() => setIsScoreLadeOpen(prev => !prev)}>
@@ -1572,7 +1623,8 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
                   className="categorie-beheer-knop"
                   disabled={isSpelGestart}
                 >
-                  Categorieën aanpassen ({geselecteerdeHighscoreCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                  <span className="knop-titel">Categorieën Aanpassen</span>
+                  <span className="knop-details">{geselecteerdeHighscoreCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenHighscore} Opdr.</span>
                   {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
                 </button>
                 <div className="highscore-info-text">
@@ -1594,7 +1646,8 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
                   className="categorie-beheer-knop"
                   disabled={isSpelGestart}
                 >
-                  Categorieën aanpassen ({geselecteerdeMultiplayerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                  <span className="knop-titel">Categorieën Aanpassen</span>
+                  <span className="knop-details">{geselecteerdeMultiplayerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenMultiplayer} Opdr.</span>
                   {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
                 </button>
                 <div className="multiplayer-info-text">
@@ -1617,7 +1670,8 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
                       onClick={handleOpenLeitnerCategorieBeheer}
                       className="categorie-beheer-knop"
                     >
-                      Categorieën aanpassen ({geselecteerdeLeitnerCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                      <span className="knop-titel">Categorieën Aanpassen</span>
+                      <span className="knop-details">{geselecteerdeLeitnerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenLeitner} Opdr.</span>
                     </button>
                     <div className="leitner-stats-info">
                       <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
@@ -1640,7 +1694,8 @@ const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>
                       onClick={handleOpenNormaleLeermodusCategorieSelectie}
                       className="categorie-beheer-knop"
                     >
-                      Categorieën aanpassen ({geselecteerdeCategorieen.length} van {alleUniekeCategorieen.length} geselecteerd)
+                      <span className="knop-titel">Categorieën Aanpassen</span>
+                      <span className="knop-details">{geselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.</span>
                     </button>
                     <div className="vrije-leermodus-info-text">
                       <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>

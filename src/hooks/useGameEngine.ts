@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/types';
 import { getLeerDataManager } from '../data/leerDataManager';
 import { getLeerFeedback } from '../data/leerFeedback';
+import { useSettings } from '../context/SettingsContext';
 
 // Helper functie voor het shufflen van arrays
 const shuffle = <T,>(array: T[]): T[] => {
@@ -14,6 +15,8 @@ const shuffle = <T,>(array: T[]): T[] => {
 };
 
 export const useGameEngine = () => {
+  const { maxNewLeitnerQuestionsPerDay } = useSettings();
+
   // Game state
   const [spelers, setSpelers] = useState<Speler[]>([]);
   const [huidigeSpeler, setHuidigeSpeler] = useState<Speler | null>(null);
@@ -135,20 +138,29 @@ export const useGameEngine = () => {
 
   const selectLeitnerOpdracht = useCallback((
     opdrachten: Opdracht[],
-    _geselecteerdeCategorieen: string[],
+    geselecteerdeCategorieen: string[],
     isSerieuzeLeerModusActief: boolean,
     gameMode: 'single' | 'multi'
-  ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number } => {
+  ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number, limietBereikt?: boolean } => {
     if (isSerieuzeLeerModusActief && gameMode === 'single') {
       const leerDataManager = getLeerDataManager();
       
-      // Filter de te herhalen opdrachten HIER met de meest up-to-date state
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
         _geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
       );
       
       const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, _geselecteerdeCategorieen);
+      
+      // Check of we een nieuwe opdracht willen en of de limiet is bereikt
+      if (result.type === 'nieuw') {
+        const newQuestionsToday = leerDataManager.getNewQuestionsTodayCount();
+        if (newQuestionsToday >= maxNewLeitnerQuestionsPerDay) {
+          // Limiet bereikt, geef geen nieuwe opdracht.
+          return { ...result, opdracht: null, type: 'geen', limietBereikt: true };
+        }
+      }
+      
       return result;
     } else {
       // Standaard selectie voor multiplayer of niet-serieuze modus
@@ -160,7 +172,7 @@ export const useGameEngine = () => {
       const gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
-  }, []);
+  }, [maxNewLeitnerQuestionsPerDay]);
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,

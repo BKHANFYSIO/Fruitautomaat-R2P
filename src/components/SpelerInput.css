@@ -191,6 +191,26 @@
   background-color: #2980b9;
 }
 
+/* Styling voor knop tekst elementen */
+.categorie-beheer-knop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.knop-titel {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.knop-details {
+  display: block;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
 .serieuze-modus-toggle-knop:disabled {
   background-color: #95a5a6 !important;
   cursor: not-allowed;
