@@ -256,7 +256,6 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const handleDeselectAll = () => setGeselecteerdeCategorieen([]);
 
   const handleSelecteerBron = (bron: 'systeem' | 'gebruiker') => {
-    const alleSubCats = statistieken.flatMap(s => s.subCategorieen?.map(sub => sub.uniekeNaam) || []);
     setGeselecteerdeCategorieen([]); // Eerst alles deselecteren
 
     const bronCategorieen = alleOpdrachten
