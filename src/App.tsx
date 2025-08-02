@@ -426,6 +426,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Effect om leeranalyse te openen via custom event
   useEffect(() => {
     const handleOpenLeeranalyse = () => {
+      setIsScoreLadeOpen(false);
       setIsLeeranalyseOpen(true);
     };
 
