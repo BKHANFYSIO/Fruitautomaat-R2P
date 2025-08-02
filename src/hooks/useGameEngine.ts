@@ -147,10 +147,10 @@ export const useGameEngine = () => {
       
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
-        _geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
+        geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
       );
       
-      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, _geselecteerdeCategorieen);
+      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
       
       // Check of we een nieuwe opdracht willen en of de limiet is bereikt
       if (result.type === 'nieuw') {
@@ -165,7 +165,7 @@ export const useGameEngine = () => {
     } else {
       // Standaard selectie voor multiplayer of niet-serieuze modus
       const beschikbareOpdrachten = opdrachten.filter(
-        op => _geselecteerdeCategorieen.includes(op.Categorie)
+        op => geselecteerdeCategorieen.includes(op.Categorie)
       );
       const teKiezenLijst = beschikbareOpdrachten.length > 0 ? beschikbareOpdrachten : opdrachten;
       
@@ -176,8 +176,7 @@ export const useGameEngine = () => {
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,
-    gameMode: 'single' | 'multi',
-    _geselecteerdeCategorieen: string[]
+    gameMode: 'single' | 'multi'
   ): boolean => {
     if (gameMode === 'single' && huidigeSpeler) {
       // Single player einde logica

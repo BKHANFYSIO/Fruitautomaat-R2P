@@ -40,6 +40,8 @@ interface SettingsContextType {
   setIsLeerFeedbackActief: (actief: boolean) => void;
   leermodusType: 'normaal' | 'leitner';
   setLeermodusType: (type: 'normaal' | 'leitner') => void;
+  maxNewLeitnerQuestionsPerDay: number;
+  setMaxNewLeitnerQuestionsPerDay: (aantal: number) => void;
   
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
@@ -82,7 +84,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(false);
   const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(true);
   const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>('normaal');
-  
+  const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(10);
+
   // Bonus settings
   const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(false);
 
@@ -122,6 +125,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsLeerFeedbackActief,
     leermodusType,
     setLeermodusType,
+    maxNewLeitnerQuestionsPerDay,
+    setMaxNewLeitnerQuestionsPerDay,
     
     // Bonus settings
     isLokaleBonusOpslagActief,
