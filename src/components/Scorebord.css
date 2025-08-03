@@ -207,16 +207,24 @@
   justify-content: center;
   min-width: 40px;
   height: 40px;
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(76, 175, 80, 0.15); /* Groene kleur voor consistentie */
   border-radius: 8px;
   border: 2px solid transparent;
 }
 
 .achievement-score:hover {
-  background: rgba(102, 126, 234, 0.25);
-  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(76, 175, 80, 0.25); /* Groene kleur voor consistentie */
+  border-color: rgba(76, 175, 80, 0.4);
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.actieve-speler .achievement-score {
+  background: #4CAF50;
+}
+
+.actieve-speler .achievement-score:hover {
+  background: #45a049;
 }
 
 .laatste-achievement {
@@ -226,7 +234,7 @@
   margin-left: 12px;
   padding: 6px;
   border-radius: 8px;
-  background: rgba(102, 126, 234, 0.15);
+  background: rgba(76, 175, 80, 0.15); /* Groene kleur voor consistentie */
   border: 2px solid transparent;
   display: flex;
   align-items: center;
@@ -236,10 +244,10 @@
 }
 
 .laatste-achievement:hover {
-  background: rgba(102, 126, 234, 0.25);
-  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(76, 175, 80, 0.25); /* Groene kleur voor consistentie */
+  border-color: rgba(76, 175, 80, 0.4);
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 @keyframes heartbeat {

@@ -4,6 +4,101 @@
   gap: 10px; /* Dit creëert de ruimte */
 }
 
+/* Nieuwe styling voor de 4-knop layout */
+.mode-selector-title {
+  text-align: center;
+  color: #ecf0f1;
+  margin: 0 0 15px 0;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.mode-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mode-button-container {
+  position: relative;
+  display: flex;
+}
+
+.mode-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 10px;
+  background-color: #34495e;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
+  color: #ecf0f1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+  font-size: 0.9em;
+  font-weight: 500;
+  width: 100%;
+}
+
+.mode-button:hover {
+  background-color: #3a4a5e;
+  border-color: #3498db;
+  transform: translateY(-2px);
+}
+
+.mode-button.active {
+  background-color: #3498db;
+  border-color: #2980b9;
+  color: white;
+  font-weight: 600;
+}
+
+.mode-button:disabled {
+  background-color: #2c3e50;
+  border-color: #34495e;
+  color: #7f8c8d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mode-button:disabled:hover {
+  background-color: #2c3e50;
+  border-color: #34495e;
+  transform: none;
+}
+
+.mode-icon {
+  font-size: 1.5em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.mode-text {
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Responsive design voor de grid */
+@media (max-width: 480px) {
+  .mode-selector-grid {
+    gap: 8px;
+  }
+  
+  .mode-button {
+    padding: 12px 8px;
+    min-height: 70px;
+    font-size: 0.8em;
+  }
+  
+  .mode-icon {
+    font-size: 1.3em;
+    margin-bottom: 6px;
+  }
+}
+
 .speler-input-form input {
   width: 100%;
   box-sizing: border-box; /* Zorgt dat padding en border binnen de 100% vallen */
@@ -21,6 +116,7 @@
   background-color: #45a049;
 }
 
+/* Oude game-mode-selector styling - behouden voor backward compatibility */
 .game-mode-selector {
   display: flex;
   justify-content: space-around;
@@ -112,27 +208,6 @@
   .serieuze-modus-toggle-knop {
     padding-right: 30px; /* Extra ruimte voor het icoon */
   }
-
-  /* Mobiele tooltip aanpassingen */
-  .tooltip {
-    width: 280px;
-    font-size: 0.85em;
-    padding: 15px;
-    /* Zorg ervoor dat tooltip niet buiten scherm komt */
-    max-width: calc(100vw - 40px);
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-  }
-
-  .tooltip-top {
-    top: 100%;
-    margin-top: 15px;
-  }
-
-  /* Voorkom dat tooltips te lang blijven staan op mobiel */
-  .game-mode-selector {
-    touch-action: manipulation;
-  }
 }
 
 /* Leitner sectie styling */
@@ -196,7 +271,7 @@
 }
 
 .categorie-beheer-knop {
-  background-color: #3498db;
+  background-color: #4CAF50; /* Groene kleur voor consistentie met leermodi */
   color: white;
   border: none;
   padding: 8px 16px;
@@ -209,7 +284,7 @@
 }
 
 .categorie-beheer-knop:hover {
-  background-color: #2980b9;
+  background-color: #45a049; /* Donkerder groen bij hover */
 }
 
 /* Styling voor knop tekst elementen */
@@ -269,9 +344,6 @@
   /* Debug styling om te zien of tooltip wordt gerenderd */
   min-height: 50px;
   display: block !important;
-  /* Voeg animatie toe voor soepelere ervaring */
-  transition: opacity 0.3s ease-in-out;
-  opacity: 1;
 }
 
 .tooltip-top {
@@ -290,6 +362,33 @@
   border-width: 8px;
   border-style: solid;
   border-color: transparent transparent #ffffff transparent;
+}
+
+/* Speciale positionering voor linker knoppen */
+.mode-button-container:nth-child(1) .tooltip,
+.mode-button-container:nth-child(3) .tooltip {
+  left: 0;
+  transform: translateX(0);
+}
+
+.mode-button-container:nth-child(1) .tooltip-top::after,
+.mode-button-container:nth-child(3) .tooltip-top::after {
+  left: 20px; /* Positioneer pijl correct */
+  margin-left: 0;
+}
+
+/* Speciale positionering voor rechter knoppen */
+.mode-button-container:nth-child(2) .tooltip,
+.mode-button-container:nth-child(4) .tooltip {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+.mode-button-container:nth-child(2) .tooltip-top::after,
+.mode-button-container:nth-child(4) .tooltip-top::after {
+  left: auto;
+  right: 20px; /* Positioneer de pijl correct */
 }
 
 .tooltip-content h4 {

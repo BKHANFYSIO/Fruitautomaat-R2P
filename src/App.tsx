@@ -1734,7 +1734,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           {/* Instellingen knoppen - altijd zichtbaar */}
           <div className="instellingen-knoppen">
             <button className="instellingen-knop" onClick={handleOpenInstellingen}>⚙️ Instellingen</button>
-            <button onClick={handleOpenUitleg}>Uitleg</button>
+            <button className="instellingen-knop" onClick={handleOpenUitleg}>📖 Uitleg</button>
           </div>
 
           {/* HAN Logo - altijd zichtbaar */}

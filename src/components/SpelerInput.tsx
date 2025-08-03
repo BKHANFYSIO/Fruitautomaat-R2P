@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './SpelerInput.css';
 
 interface SpelerInputProps {
@@ -30,49 +30,14 @@ export const SpelerInput = ({
   const [showSerieuzeModusWaarschuwing, setShowSerieuzeModusWaarschuwing] = useState(false);
   const [showSerieuzeModusUitschakelen, setShowSerieuzeModusUitschakelen] = useState(false);
   
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [showLeermodusTypeTooltip, setShowLeermodusTypeTooltip] = useState(false);
+  // Lokale state voor directe feedback
+  const [localActiveMode, setLocalActiveMode] = useState<string>('');
 
-  const isTouchDevice = useRef(typeof window !== 'undefined' && 'ontouchstart' in window);
-  const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hideTooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleLongPressStart = (tooltipSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    if (hideTooltipTimeout.current) clearTimeout(hideTooltipTimeout.current);
-    tooltipTimeout.current = setTimeout(() => {
-        tooltipSetter(true);
-        // Automatisch verbergen na 3 seconden
-        hideTooltipTimeout.current = setTimeout(() => {
-            tooltipSetter(false);
-        }, 3000);
-    }, 500);
-  };
-
-  const handleLongPressEnd = () => {
-    if (tooltipTimeout.current) {
-        clearTimeout(tooltipTimeout.current);
-    }
-  };
-  
-  useEffect(() => {
-    const eventType = isTouchDevice.current ? 'touchstart' : 'mousedown';
-
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.sub-selector') && !target.closest('.tooltip')) {
-        setShowTooltip(false);
-        setShowLeermodusTypeTooltip(false);
-      }
-    };
-
-    document.addEventListener(eventType, handleClickOutside, true);
-    return () => {
-      document.removeEventListener(eventType, handleClickOutside, true);
-      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
-      if (hideTooltipTimeout.current) clearTimeout(hideTooltipTimeout.current);
-    };
-  }, []);
-
+  // Tooltip states
+  const [showHighscoreTooltip, setShowHighscoreTooltip] = useState(false);
+  const [showMultiplayerTooltip, setShowMultiplayerTooltip] = useState(false);
+  const [showVrijeLeermodusTooltip, setShowVrijeLeermodusTooltip] = useState(false);
+  const [showLeitnerTooltip, setShowLeitnerTooltip] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,15 +47,45 @@ export const SpelerInput = ({
     }
   };
 
-  const handleSerieuzeModusToggle = () => {
-    if (!setIsSerieuzeLeerModusActief) return;
-
-    if (!isSerieuzeLeerModusActief && isSpelGestart) {
-      setShowSerieuzeModusWaarschuwing(true);
-    } else if (isSerieuzeLeerModusActief && isSpelGestart) {
+  // Nieuwe functies voor directe modus selectie
+  const handleHighscoreSelect = () => {
+    setLocalActiveMode('highscore'); // Direct feedback
+    if (isSpelGestart && isSerieuzeLeerModusActief) {
       setShowSerieuzeModusUitschakelen(true);
     } else {
-      setIsSerieuzeLeerModusActief(!isSerieuzeLeerModusActief);
+      setGameMode('single');
+      setIsSerieuzeLeerModusActief?.(false);
+      if (onSpelReset) onSpelReset();
+    }
+  };
+
+  const handleMultiplayerSelect = () => {
+    setLocalActiveMode('multiplayer'); // Direct feedback
+    setGameMode('multi');
+    if (onSpelReset) onSpelReset();
+  };
+
+  const handleVrijeLeermodusSelect = () => {
+    setLocalActiveMode('vrije-leermodus'); // Direct feedback
+    if (isSpelGestart && !isSerieuzeLeerModusActief) {
+      setShowSerieuzeModusWaarschuwing(true);
+    } else {
+      setGameMode('single');
+      setIsSerieuzeLeerModusActief?.(true);
+      setLeermodusType?.('normaal');
+      if (onSpelReset) onSpelReset();
+    }
+  };
+
+  const handleLeitnerSelect = () => {
+    setLocalActiveMode('leitner'); // Direct feedback
+    if (isSpelGestart && !isSerieuzeLeerModusActief) {
+      setShowSerieuzeModusWaarschuwing(true);
+    } else {
+      setGameMode('single');
+      setIsSerieuzeLeerModusActief?.(true);
+      setLeermodusType?.('leitner');
+      if (onSpelReset) onSpelReset();
     }
   };
 
@@ -112,170 +107,134 @@ export const SpelerInput = ({
 
   const isInputVolledigUitgeschakeld = isSpelerInputDisabled || (gameMode === 'multi' && isSpelGestart);
 
-  const leermodusTooltip = (
-    <div className="tooltip-content">
-      {!isSerieuzeLeerModusActief ? (
-        <>
-          <h4>📚 Schakel naar Leermodus</h4>
-          <p><strong>Wat verandert er?</strong> Geen punten, minder afleiding, meer focus op leren.</p>
-          <p><strong>Functies:</strong> Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
-          <p><strong>💡 Perfect voor:</strong> Zelfstudie en portfolio ontwikkeling.</p>
-        </>
-      ) : (
-        <>
-          <h4>🏆 Schakel naar Highscore Modus</h4>
-          <p><strong>Wat gebeurt er?</strong> Je schakelt over naar Highscore Modus voor competitie en fun.</p>
-          <p><strong>Voordelen:</strong> Meer fun en je kunt ook om de beurt elkaars records proberen te verbeteren!</p>
-          <p><strong>💡 Belangrijk:</strong> Je leerdata blijft bewaard voor later gebruik.</p>
-        </>
-      )}
-    </div>
-  );
-
-  const leermodusTypeTooltip = (
-     <div className="tooltip-content">
-        {leermodusType === 'normaal' ? (
-            <>
-                <h4>🔄 Schakel naar Leitner</h4>
-                <p><strong>Wat verandert er?</strong> Je schakelt over naar de geavanceerde Leitner leermethode.</p>
-                <p><strong>Voordelen:</strong> Spaced repetition met box systeem, gedetailleerde statistieken en optimale herhaling timing.</p>
-                <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
-            </>
-        ) : (
-            <>
-                <h4>📚 Schakel naar Vrije Leermodus</h4>
-                <p><strong>Wat verandert er?</strong> Je schakelt over naar de eenvoudige vrije leermodus.</p>
-                <p><strong>Voordelen:</strong> Eenvoudige herhaling, snelle sessies en basis data opslag.</p>
-                <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
-            </>
-        )}
-     </div>
-  );
-
-  const gameModeSelector = (
-    <div className="game-mode-selector">
-      <label>
-        <input 
-          type="radio" 
-          name="gameMode" 
-          value="single" 
-          checked={gameMode === 'single'} 
-          onChange={() => setGameMode('single')}
-          disabled={isSpelGestart}
-        />
-        Single Player
-      </label>
-      <label>
-        <input 
-          type="radio" 
-          name="gameMode" 
-          value="multi" 
-          checked={gameMode === 'multi'} 
-          onChange={() => setGameMode('multi')}
-          disabled={isSpelGestart}
-        />
-        Multiplayer
-      </label>
-    </div>
-  );
-
-  const singlePlayerProps = {
-    onMouseEnter: !isTouchDevice.current ? () => setShowTooltip(true) : undefined,
-    onMouseLeave: !isTouchDevice.current ? () => setShowTooltip(false) : undefined,
-    onTouchStart: isTouchDevice.current ? () => handleLongPressStart(setShowTooltip) : undefined,
-    onTouchEnd: isTouchDevice.current ? handleLongPressEnd : undefined,
-    onTouchMove: isTouchDevice.current ? handleLongPressEnd : undefined,
+  // Bepaal welke modus actief is - gebruik lokale state als die bestaat, anders bereken
+  const getActiveMode = () => {
+    if (localActiveMode) return localActiveMode;
+    if (gameMode === 'multi') return 'multiplayer';
+    if (!isSerieuzeLeerModusActief) return 'highscore';
+    if (leermodusType === 'leitner') return 'leitner';
+    return 'vrije-leermodus';
   };
 
-  const leermodusTypeProps = {
-    onMouseEnter: !isTouchDevice.current ? () => setShowLeermodusTypeTooltip(true) : undefined,
-    onMouseLeave: !isTouchDevice.current ? () => setShowLeermodusTypeTooltip(false) : undefined,
-    onTouchStart: isTouchDevice.current ? () => handleLongPressStart(setShowLeermodusTypeTooltip) : undefined,
-    onTouchEnd: isTouchDevice.current ? handleLongPressEnd : undefined,
-    onTouchMove: isTouchDevice.current ? handleLongPressEnd : undefined,
-  };
+  const activeMode = getActiveMode();
 
-  const singlePlayerModeSelector = (
-    <div className="game-mode-selector sub-selector" {...singlePlayerProps}>
-      <label>
-        <input 
-          type="radio" 
-          name="singlePlayerMode" 
-          value="highscore" 
-          checked={!isSerieuzeLeerModusActief} 
-          onChange={handleSerieuzeModusToggle}
-          disabled={isSpelGestart}
-        />
-        🏆 Highscore
-      </label>
-      <label>
-        <input 
-          type="radio" 
-          name="singlePlayerMode" 
-          value="learn" 
-          checked={isSerieuzeLeerModusActief} 
-          onChange={handleSerieuzeModusToggle}
-          disabled={isSpelGestart}
-        />
-        📚 Leermodus
-      </label>
-    </div>
-  );
-
-  const leermodusTypeSelector = (
-    <div className="game-mode-selector sub-selector sub-sub-selector" {...leermodusTypeProps}>
-      <label>
-        <input 
-          type="radio" 
-          name="leermodusType" 
-          value="normaal" 
-          checked={leermodusType === 'normaal'} 
-          onChange={() => setLeermodusType?.('normaal')}
-          disabled={isSpelGestart}
-        />
-        📚 Vrije Leermodus
-      </label>
-      <label>
-        <input 
-          type="radio" 
-          name="leermodusType" 
-          value="leitner" 
-          checked={leermodusType === 'leitner'} 
-          onChange={() => setLeermodusType?.('leitner')}
-          disabled={isSpelGestart}
-        />
-        🔄 Leitner
-      </label>
-    </div>
-  );
+  // Reset lokale state wanneer props veranderen (bijvoorbeeld bij spel reset)
+  useEffect(() => {
+    if (!isSpelGestart) {
+      setLocalActiveMode('');
+    }
+  }, [isSpelGestart]);
 
   return (
     <div className="speler-input-form">
-      {gameModeSelector}
+      <h3 className="mode-selector-title">Kies je spelmodus</h3>
       
-      {gameMode === 'single' && (
-        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'stretch' }}>
-          {singlePlayerModeSelector}
-          {showTooltip && (
+      <div className="mode-selector-grid">
+        {/* Bovenste rij */}
+        <div 
+          className="mode-button-container"
+          onMouseEnter={() => setShowHighscoreTooltip(true)}
+          onMouseLeave={() => setShowHighscoreTooltip(false)}
+        >
+          <button
+            className={`mode-button ${activeMode === 'highscore' ? 'active' : ''}`}
+            onClick={handleHighscoreSelect}
+            disabled={isSpelGestart}
+          >
+            <span className="mode-icon">🏆</span>
+            <span className="mode-text">Highscore</span>
+          </button>
+          {showHighscoreTooltip && (
             <div className="tooltip tooltip-top">
-              {leermodusTooltip}
+              <div className="tooltip-content">
+                <h4>🏆 Highscore Modus</h4>
+                <p><strong>Competitie en fun!</strong> Probeer de hoogste score te behalen.</p>
+                <p><strong>Functies:</strong> Punten verdienen, records verbeteren, leaderboards.</p>
+                <p><strong>💡 Perfect voor:</strong> Competitief spelen en records breken.</p>
+              </div>
             </div>
           )}
         </div>
-      )}
 
-      {gameMode === 'single' && isSerieuzeLeerModusActief && (
-        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'stretch' }}>
-          {leermodusTypeSelector}
-          {showLeermodusTypeTooltip && (
+        <div 
+          className="mode-button-container"
+          onMouseEnter={() => setShowMultiplayerTooltip(true)}
+          onMouseLeave={() => setShowMultiplayerTooltip(false)}
+        >
+          <button
+            className={`mode-button ${activeMode === 'multiplayer' ? 'active' : ''}`}
+            onClick={handleMultiplayerSelect}
+            disabled={isSpelGestart}
+          >
+            <span className="mode-icon">👥</span>
+            <span className="mode-text">Multiplayer</span>
+          </button>
+          {showMultiplayerTooltip && (
             <div className="tooltip tooltip-top">
-              {leermodusTypeTooltip}
+              <div className="tooltip-content">
+                <h4>👥 Multiplayer Modus</h4>
+                <p><strong>Samen spelen!</strong> Speel met meerdere spelers om de beurt.</p>
+                <p><strong>Functies:</strong> Meerdere spelers, om de beurt spelen, gezamenlijke scores.</p>
+                <p><strong>💡 Perfect voor:</strong> Groepsactiviteiten en samen leren.</p>
+              </div>
             </div>
           )}
         </div>
-      )}
 
-      {gameMode === 'multi' || (gameMode === 'single' && !isSerieuzeLeerModusActief) ? (
+        {/* Onderste rij */}
+        <div 
+          className="mode-button-container"
+          onMouseEnter={() => setShowVrijeLeermodusTooltip(true)}
+          onMouseLeave={() => setShowVrijeLeermodusTooltip(false)}
+        >
+          <button
+            className={`mode-button ${activeMode === 'vrije-leermodus' ? 'active' : ''}`}
+            onClick={handleVrijeLeermodusSelect}
+            disabled={isSpelGestart}
+          >
+            <span className="mode-icon">📚</span>
+            <span className="mode-text">Vrije Leermodus</span>
+          </button>
+          {showVrijeLeermodusTooltip && (
+            <div className="tooltip tooltip-top">
+              <div className="tooltip-content">
+                <h4>📚 Vrije Leermodus</h4>
+                <p><strong>Focus op leren!</strong> Geen punten, minder afleiding.</p>
+                <p><strong>Functies:</strong> Eenvoudige herhaling, basis data opslag, leeranalyses.</p>
+                <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div 
+          className="mode-button-container"
+          onMouseEnter={() => setShowLeitnerTooltip(true)}
+          onMouseLeave={() => setShowLeitnerTooltip(false)}
+        >
+          <button
+            className={`mode-button ${activeMode === 'leitner' ? 'active' : ''}`}
+            onClick={handleLeitnerSelect}
+            disabled={isSpelGestart}
+          >
+            <span className="mode-icon">🔄</span>
+            <span className="mode-text">Leitner</span>
+          </button>
+          {showLeitnerTooltip && (
+            <div className="tooltip tooltip-top">
+              <div className="tooltip-content">
+                <h4>🔄 Leitner Leermodus</h4>
+                <p><strong>Geavanceerd leren!</strong> Spaced repetition met box systeem.</p>
+                <p><strong>Functies:</strong> Box systeem, gedetailleerde statistieken, optimale herhaling timing.</p>
+                <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Speler input form - alleen voor multiplayer en highscore */}
+      {(gameMode === 'multi' || (gameMode === 'single' && !isSerieuzeLeerModusActief)) ? (
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -290,6 +249,7 @@ export const SpelerInput = ({
         </form>
       ) : null}
 
+      {/* Waarschuwing modals */}
       {showSerieuzeModusWaarschuwing && (
         <div className="serieuze-modus-modal-overlay" onClick={() => setShowSerieuzeModusWaarschuwing(false)}>
           <div className="serieuze-modus-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -380,4 +340,4 @@ export const SpelerInput = ({
       )}
     </div>
   );
-};
+}; 
