@@ -24,6 +24,7 @@
   box-sizing: border-box; /* Zorgt dat padding binnen de hoogte blijft */
   overflow-wrap: break-word; /* Breek lange woorden af als het moet */
   hyphens: auto; /* Voeg automatisch afbreekstreepjes toe */
+  color: #e2e8f0; /* Zorgt voor een lichte, leesbare tekstkleur */
 }
 
 .rol-image {

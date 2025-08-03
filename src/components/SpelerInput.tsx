@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './SpelerInput.css';
 
 interface SpelerInputProps {
@@ -14,12 +14,81 @@ interface SpelerInputProps {
   onSpelReset?: () => void;
 }
 
-export const SpelerInput = ({ 
-  onSpelerToevoegen, 
-  gameMode, 
-  setGameMode, 
-  isSpelerInputDisabled, 
-  isSpelGestart, 
+// Hulpcomponent voor de knoppen met tooltip functionaliteit
+const TooltipButton = ({
+  mode,
+  activeMode,
+  onClick,
+  isSpelGestart,
+  icon,
+  text,
+  tooltipContent,
+}: {
+  mode: string;
+  activeMode: string;
+  onClick: () => void;
+  isSpelGestart: boolean;
+  icon: string;
+  text: string;
+  tooltipContent: React.ReactNode;
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+
+  const handlePressStart = () => {
+    pressTimer.current = window.setTimeout(() => {
+      setShowTooltip(true);
+    }, 500); // 500ms voor een lange druk
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    // Verberg de tooltip na een korte vertraging, zodat de gebruiker de inhoud kan zien
+    setTimeout(() => setShowTooltip(false), 2000);
+  };
+
+  const handleClick = () => {
+    if (!showTooltip) {
+      onClick();
+    }
+  };
+
+  // Detecteer of het een touch-apparaat is
+  const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  return (
+    <div
+      className="mode-button-container"
+      onMouseEnter={!isTouchDevice() ? () => setShowTooltip(true) : undefined}
+      onMouseLeave={!isTouchDevice() ? () => setShowTooltip(false) : undefined}
+      onTouchStart={isTouchDevice() ? handlePressStart : undefined}
+      onTouchEnd={isTouchDevice() ? handlePressEnd : undefined}
+      onTouchCancel={isTouchDevice() ? handlePressEnd : undefined}
+    >
+      <button
+        className={`mode-button ${activeMode === mode ? 'active' : ''}`}
+        onClick={handleClick}
+        disabled={isSpelGestart}
+      >
+        <span className="mode-icon">{icon}</span>
+        <span className="mode-text">{text}</span>
+      </button>
+      {showTooltip && (
+        <div className="tooltip tooltip-top">{tooltipContent}</div>
+      )}
+    </div>
+  );
+};
+
+export const SpelerInput = ({
+  onSpelerToevoegen,
+  gameMode,
+  setGameMode,
+  isSpelerInputDisabled,
+  isSpelGestart,
   isSerieuzeLeerModusActief = false,
   setIsSerieuzeLeerModusActief,
   leermodusType = 'normaal',
@@ -32,12 +101,6 @@ export const SpelerInput = ({
   
   // Lokale state voor directe feedback
   const [localActiveMode, setLocalActiveMode] = useState<string>('');
-
-  // Tooltip states
-  const [showHighscoreTooltip, setShowHighscoreTooltip] = useState(false);
-  const [showMultiplayerTooltip, setShowMultiplayerTooltip] = useState(false);
-  const [showVrijeLeermodusTooltip, setShowVrijeLeermodusTooltip] = useState(false);
-  const [showLeitnerTooltip, setShowLeitnerTooltip] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,107 +193,70 @@ export const SpelerInput = ({
       <h3 className="mode-selector-title">Kies je spelmodus</h3>
       
       <div className="mode-selector-grid">
-        {/* Bovenste rij */}
-        <div 
-          className="mode-button-container"
-          onMouseEnter={() => setShowHighscoreTooltip(true)}
-          onMouseLeave={() => setShowHighscoreTooltip(false)}
-        >
-          <button
-            className={`mode-button ${activeMode === 'highscore' ? 'active' : ''}`}
-            onClick={handleHighscoreSelect}
-            disabled={isSpelGestart}
-          >
-            <span className="mode-icon">🏆</span>
-            <span className="mode-text">Highscore</span>
-          </button>
-          {showHighscoreTooltip && (
-            <div className="tooltip tooltip-top">
-              <div className="tooltip-content">
-                <h4>🏆 Highscore Modus</h4>
-                <p><strong>Competitie en fun!</strong> Probeer de hoogste score te behalen.</p>
-                <p><strong>Functies:</strong> Punten verdienen, records verbeteren, leaderboards.</p>
-                <p><strong>💡 Perfect voor:</strong> Competitief spelen en records breken.</p>
-              </div>
+        <TooltipButton
+          mode="highscore"
+          activeMode={activeMode}
+          onClick={handleHighscoreSelect}
+          isSpelGestart={isSpelGestart}
+          icon="🏆"
+          text="Highscore"
+          tooltipContent={
+            <div className="tooltip-content">
+              <h4>🏆 Highscore Modus</h4>
+              <p><strong>Competitie en fun!</strong> Probeer de hoogste score te behalen.</p>
+              <p><strong>Functies:</strong> Punten verdienen, records verbeteren, leaderboards.</p>
+              <p><strong>💡 Perfect voor:</strong> Competitief spelen en records breken.</p>
             </div>
-          )}
-        </div>
-
-        <div 
-          className="mode-button-container"
-          onMouseEnter={() => setShowMultiplayerTooltip(true)}
-          onMouseLeave={() => setShowMultiplayerTooltip(false)}
-        >
-          <button
-            className={`mode-button ${activeMode === 'multiplayer' ? 'active' : ''}`}
-            onClick={handleMultiplayerSelect}
-            disabled={isSpelGestart}
-          >
-            <span className="mode-icon">👥</span>
-            <span className="mode-text">Multiplayer</span>
-          </button>
-          {showMultiplayerTooltip && (
-            <div className="tooltip tooltip-top">
-              <div className="tooltip-content">
-                <h4>👥 Multiplayer Modus</h4>
-                <p><strong>Samen spelen!</strong> Speel met meerdere spelers om de beurt.</p>
-                <p><strong>Functies:</strong> Meerdere spelers, om de beurt spelen, gezamenlijke scores.</p>
-                <p><strong>💡 Perfect voor:</strong> Groepsactiviteiten en samen leren.</p>
-              </div>
+          }
+        />
+        <TooltipButton
+          mode="multiplayer"
+          activeMode={activeMode}
+          onClick={handleMultiplayerSelect}
+          isSpelGestart={isSpelGestart}
+          icon="👥"
+          text="Multiplayer"
+          tooltipContent={
+            <div className="tooltip-content">
+              <h4>👥 Multiplayer Modus</h4>
+              <p><strong>Samen spelen!</strong> Speel met meerdere spelers om de beurt.</p>
+              <p><strong>Functies:</strong> Meerdere spelers, om de beurt spelen, gezamenlijke scores.</p>
+              <p><strong>💡 Perfect voor:</strong> Groepsactiviteiten en samen leren.</p>
             </div>
-          )}
-        </div>
-
-        {/* Onderste rij */}
-        <div 
-          className="mode-button-container"
-          onMouseEnter={() => setShowVrijeLeermodusTooltip(true)}
-          onMouseLeave={() => setShowVrijeLeermodusTooltip(false)}
-        >
-          <button
-            className={`mode-button ${activeMode === 'vrije-leermodus' ? 'active' : ''}`}
-            onClick={handleVrijeLeermodusSelect}
-            disabled={isSpelGestart}
-          >
-            <span className="mode-icon">📚</span>
-            <span className="mode-text">Vrije Leermodus</span>
-          </button>
-          {showVrijeLeermodusTooltip && (
-            <div className="tooltip tooltip-top">
-              <div className="tooltip-content">
-                <h4>📚 Vrije Leermodus</h4>
-                <p><strong>Focus op leren!</strong> Geen punten, minder afleiding.</p>
-                <p><strong>Functies:</strong> Eenvoudige herhaling, basis data opslag, leeranalyses.</p>
-                <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
-              </div>
+          }
+        />
+        <TooltipButton
+          mode="vrije-leermodus"
+          activeMode={activeMode}
+          onClick={handleVrijeLeermodusSelect}
+          isSpelGestart={isSpelGestart}
+          icon="📚"
+          text="Vrije Leermodus"
+          tooltipContent={
+            <div className="tooltip-content">
+              <h4>📚 Vrije Leermodus</h4>
+              <p><strong>Focus op leren!</strong> Geen punten, minder afleiding.</p>
+              <p><strong>Functies:</strong> Eenvoudige herhaling, basis data opslag, leeranalyses.</p>
+              <p><strong>💡 Perfect voor:</strong> Snelle leersessies en eenvoudige herhaling.</p>
             </div>
-          )}
-        </div>
-
-        <div 
-          className="mode-button-container"
-          onMouseEnter={() => setShowLeitnerTooltip(true)}
-          onMouseLeave={() => setShowLeitnerTooltip(false)}
-        >
-          <button
-            className={`mode-button ${activeMode === 'leitner' ? 'active' : ''}`}
-            onClick={handleLeitnerSelect}
-            disabled={isSpelGestart}
-          >
-            <span className="mode-icon">🔄</span>
-            <span className="mode-text">Leitner</span>
-          </button>
-          {showLeitnerTooltip && (
-            <div className="tooltip tooltip-top">
-              <div className="tooltip-content">
-                <h4>🔄 Leitner Leermodus</h4>
-                <p><strong>Geavanceerd leren!</strong> Spaced repetition met box systeem.</p>
-                <p><strong>Functies:</strong> Box systeem, gedetailleerde statistieken, optimale herhaling timing.</p>
-                <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
-              </div>
+          }
+        />
+        <TooltipButton
+          mode="leitner"
+          activeMode={activeMode}
+          onClick={handleLeitnerSelect}
+          isSpelGestart={isSpelGestart}
+          icon="🔄"
+          text="Leitner"
+          tooltipContent={
+            <div className="tooltip-content">
+              <h4>🔄 Leitner Leermodus</h4>
+              <p><strong>Geavanceerd leren!</strong> Spaced repetition met box systeem.</p>
+              <p><strong>Functies:</strong> Box systeem, gedetailleerde statistieken, optimale herhaling timing.</p>
+              <p><strong>💡 Perfect voor:</strong> Langdurig leren en systematische kennis opbouw.</p>
             </div>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {/* Speler input form - alleen voor multiplayer en highscore */}
@@ -340,4 +366,4 @@ export const SpelerInput = ({
       )}
     </div>
   );
-}; 
+};
