@@ -190,6 +190,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const opdrachtenPerCategorie = useMemo(() => {
     const categorieen: { [key: string]: { opdrachtId: string; boxId: number; isPaused: boolean; pauseTime?: string }[] } = {};
     
+    // Voeg eerst alle opdrachten uit de boxes toe
     leitnerData.boxes.forEach(box => {
       box.opdrachten.forEach(opdrachtId => {
         const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
@@ -210,6 +211,34 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           });
         }
       });
+    });
+    
+    // Voeg gepauzeerde opdrachten toe die niet in boxes staan
+    pausedOpdrachten.forEach(opdrachtId => {
+      const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
+      if (isPaused) {
+        const pauseTime = leerDataManager.getPauseTime(opdrachtId) || undefined;
+        
+        // Extraheer categorie uit opdrachtId (format: "Hoofdcategorie_Categorie_OpdrachtText")
+        const parts = opdrachtId.split('_');
+        if (parts.length >= 2) {
+          const categorie = `${parts[0]}_${parts[1]}`;
+          if (!categorieen[categorie]) {
+            categorieen[categorie] = [];
+          }
+          
+          // Check of deze opdracht al bestaat (uit boxes)
+          const bestaatAl = categorieen[categorie].some(op => op.opdrachtId === opdrachtId);
+          if (!bestaatAl) {
+            categorieen[categorie].push({
+              opdrachtId,
+              boxId: 0, // Niet in een box
+              isPaused,
+              pauseTime
+            });
+          }
+        }
+      }
     });
     
     return categorieen;
@@ -668,9 +697,14 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                           .map(op => (
                             <div key={op.opdrachtId} className="paused-opdracht-card">
                               <div className="paused-opdracht-info">
-                                <span className="box-indicator">Box {op.boxId}</span>
+                                <span className="box-indicator">
+                                  {op.boxId > 0 ? `Box ${op.boxId}` : 'Niet in box'}
+                                </span>
                                 <span className="pause-time">
                                   Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
+                                </span>
+                                <span className="opdracht-id">
+                                  ID: {op.opdrachtId}
                                 </span>
                               </div>
                               <button 
