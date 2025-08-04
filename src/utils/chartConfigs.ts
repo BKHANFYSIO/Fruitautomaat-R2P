@@ -85,7 +85,7 @@ export const lineChartConfig = {
         drawBorder: false
       },
       ticks: {
-        color: '#666',
+        color: '#e0e0e0',
         font: {
           size: 11
         }
@@ -121,7 +121,7 @@ export const barChartConfig = {
         display: false
       },
       ticks: {
-        display: false, // Verberg de x-as labels
+        display: true, // Toon de x-as labels
         color: '#e0e0e0',
         font: {
           size: 11
@@ -153,7 +153,7 @@ export const radarChartConfig = {
       beginAtZero: true,
       max: 5,
       ticks: {
-        color: '#666',
+        color: '#e0e0e0',
         font: {
           size: 11
         },

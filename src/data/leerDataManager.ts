@@ -6,7 +6,8 @@ import type {
   Opdracht,
   LeitnerData,
   LeitnerOpdrachtInfo,
-  LeitnerAchievement
+  LeitnerAchievement,
+  DagelijkseActiviteit
 } from './types';
 
 // LocalStorage sleutels
@@ -574,6 +575,9 @@ class LeerDataManager {
     const opdrachten = Object.values(leerData.opdrachten);
     const sessies = Object.values(leerData.sessies).filter(s => s.eindTijd);
 
+    // Update dagelijkse activiteit
+    this.updateDagelijkseActiviteit(leerData);
+
     // Maak een map van subcategorie naar hoofdcategorie
     const subNaarHoofdMap = new Map<string, string>();
     alleOpdrachten.forEach(op => {
@@ -637,6 +641,736 @@ class LeerDataManager {
     }
 
     leerData.statistieken.laatsteActiviteit = getDatumString();
+  }
+
+  // Dagelijkse activiteit tracking
+  private updateDagelijkseActiviteit(leerData: LeerData): void {
+    const vandaag = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const opdrachten = Object.values(leerData.opdrachten);
+    const sessies = Object.values(leerData.sessies).filter(s => s.eindTijd);
+
+    // Tel opdrachten van vandaag
+    const opdrachtenVandaag = opdrachten.filter(op => 
+      op.laatsteDatum && op.laatsteDatum.startsWith(vandaag)
+    ).length;
+
+    // Bereken speeltijd van vandaag
+    const speeltijdVandaag = sessies
+      .filter(s => s.eindTijd && s.eindTijd.startsWith(vandaag))
+      .reduce((sum, s) => sum + (s.duur || 0), 0);
+
+    // Bereken gemiddelde score van vandaag
+    const scoresVandaag = opdrachten
+      .filter(op => op.laatsteDatum && op.laatsteDatum.startsWith(vandaag))
+      .map(op => op.gemiddeldeScore);
+
+    const gemiddeldeScoreVandaag = scoresVandaag.length > 0 
+      ? berekenGemiddeldeScore(scoresVandaag)
+      : 0;
+
+    // Tel sessies van vandaag
+    const sessiesVandaag = sessies.filter(s => 
+      s.eindTijd && s.eindTijd.startsWith(vandaag)
+    ).length;
+
+    // Update of maak nieuwe dagelijkse activiteit
+    leerData.statistieken.dagelijkseActiviteit[vandaag] = {
+      datum: vandaag,
+      opdrachten: opdrachtenVandaag,
+      speeltijd: speeltijdVandaag,
+      gemiddeldeScore: gemiddeldeScoreVandaag,
+      sessies: sessiesVandaag
+    };
+  }
+
+  // Tijd-gebaseerde data methodes
+  public getDagelijkseActiviteitData(aantalDagen: number = 30): DagelijkseActiviteit[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const activiteiten = Object.values(leerData.statistieken.dagelijkseActiviteit);
+    const gesorteerdeActiviteiten = activiteiten.sort((a, b) => 
+      new Date(a.datum).getTime() - new Date(b.datum).getTime()
+    );
+
+    return gesorteerdeActiviteiten.slice(-aantalDagen);
+  }
+
+  public getWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    opdrachten: number;
+    speeltijd: number;
+    gemiddeldeScore: number;
+    sessies: number;
+  }[] {
+    const dagelijkseData = this.getDagelijkseActiviteitData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const weekStart = new Date(datum);
+      weekStart.setDate(datum.getDate() - datum.getDay()); // Begin van de week (zondag)
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = {
+          week: weekKey,
+          opdrachten: 0,
+          speeltijd: 0,
+          gemiddeldeScore: 0,
+          sessies: 0,
+          scoreTotaal: 0,
+          scoreAantal: 0
+        };
+      }
+
+      weekData[weekKey].opdrachten += dag.opdrachten;
+      weekData[weekKey].speeltijd += dag.speeltijd;
+      weekData[weekKey].sessies += dag.sessies;
+      
+      if (dag.gemiddeldeScore > 0) {
+        weekData[weekKey].scoreTotaal += dag.gemiddeldeScore;
+        weekData[weekKey].scoreAantal++;
+      }
+    });
+
+    // Bereken gemiddelde scores
+    Object.values(weekData).forEach(week => {
+      week.gemiddeldeScore = week.scoreAantal > 0 
+        ? Math.round((week.scoreTotaal / week.scoreAantal) * 10) / 10 
+        : 0;
+      delete week.scoreTotaal;
+      delete week.scoreAantal;
+    });
+
+    return Object.values(weekData).sort((a, b) => 
+      new Date(a.week).getTime() - new Date(b.week).getTime()
+    );
+  }
+
+  public getMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    opdrachten: number;
+    speeltijd: number;
+    gemiddeldeScore: number;
+    sessies: number;
+  }[] {
+    const dagelijkseData = this.getDagelijkseActiviteitData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const maandKey = `${datum.getFullYear()}-${String(datum.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = {
+          maand: maandKey,
+          opdrachten: 0,
+          speeltijd: 0,
+          gemiddeldeScore: 0,
+          sessies: 0,
+          scoreTotaal: 0,
+          scoreAantal: 0
+        };
+      }
+
+      maandData[maandKey].opdrachten += dag.opdrachten;
+      maandData[maandKey].speeltijd += dag.speeltijd;
+      maandData[maandKey].sessies += dag.sessies;
+      
+      if (dag.gemiddeldeScore > 0) {
+        maandData[maandKey].scoreTotaal += dag.gemiddeldeScore;
+        maandData[maandKey].scoreAantal++;
+      }
+    });
+
+    // Bereken gemiddelde scores
+    Object.values(maandData).forEach(maand => {
+      maand.gemiddeldeScore = maand.scoreAantal > 0 
+        ? Math.round((maand.scoreTotaal / maand.scoreAantal) * 10) / 10 
+        : 0;
+      delete maand.scoreTotaal;
+      delete maand.scoreAantal;
+    });
+
+    return Object.values(maandData).sort((a, b) => 
+      new Date(a.maand).getTime() - new Date(b.maand).getTime()
+    );
+  }
+
+  // Categorie Verdeling data methoden
+  public getCategorieDagelijkseData(aantalDagen: number = 30): {
+    datum: string;
+    [categorie: string]: number | string;
+  }[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const data: { [datum: string]: { [categorie: string]: number } } = {};
+    const eindDatum = new Date();
+    const startDatum = new Date(eindDatum.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+
+    // Genereer alle datums
+    for (let d = new Date(startDatum); d <= eindDatum; d.setDate(d.getDate() + 1)) {
+      const datumString = d.toISOString().split('T')[0];
+      data[datumString] = {};
+    }
+
+    // Verwerk opdracht data per categorie
+    Object.values(leerData.opdrachten).forEach(opdracht => {
+      if (opdracht.laatsteDatum) {
+        const datum = new Date(opdracht.laatsteDatum).toISOString().split('T')[0];
+        if (data[datum]) {
+          data[datum][opdracht.categorie] = (data[datum][opdracht.categorie] || 0) + 1;
+        }
+      }
+    });
+
+    return Object.entries(data).map(([datum, categorieen]) => ({
+      datum,
+      ...categorieen
+    }));
+  }
+
+  public getCategorieWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    [categorie: string]: number | string;
+  }[] {
+    const dagelijkseData = this.getCategorieDagelijkseData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: { [categorie: string]: number } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const weekStart = new Date(date.getTime() - date.getDay() * 24 * 60 * 60 * 1000);
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = {};
+      }
+
+      Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'datum' && typeof value === 'number') {
+          weekData[weekKey][key] = (weekData[weekKey][key] || 0) + value;
+        }
+      });
+    });
+
+    return Object.entries(weekData).map(([week, categorieen]) => ({
+      week,
+      ...categorieen
+    })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+  }
+
+  public getCategorieMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    [categorie: string]: number | string;
+  }[] {
+    const dagelijkseData = this.getCategorieDagelijkseData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: { [categorie: string]: number } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const maandKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = {};
+      }
+
+      Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'datum' && typeof value === 'number') {
+          maandData[maandKey][key] = (maandData[maandKey][key] || 0) + value;
+        }
+      });
+    });
+
+    return Object.entries(maandData).map(([maand, categorieen]) => ({
+      maand,
+      ...categorieen
+    })).sort((a, b) => new Date(a.maand).getTime() - new Date(b.maand).getTime());
+  }
+
+  // Prestatie Analyse data methoden
+  public getPrestatieDagelijkseData(aantalDagen: number = 30): {
+    datum: string;
+    gemiddeldeScore: number;
+    gemiddeldeTijd: number;
+  }[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const data: { [datum: string]: { scores: number[]; tijden: number[] } } = {};
+    const eindDatum = new Date();
+    const startDatum = new Date(eindDatum.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+
+    // Genereer alle datums
+    for (let d = new Date(startDatum); d <= eindDatum; d.setDate(d.getDate() + 1)) {
+      const datumString = d.toISOString().split('T')[0];
+      data[datumString] = { scores: [], tijden: [] };
+    }
+
+    // Verwerk opdracht data
+    Object.values(leerData.opdrachten).forEach(opdracht => {
+      if (opdracht.laatsteDatum) {
+        const datum = new Date(opdracht.laatsteDatum).toISOString().split('T')[0];
+        if (data[datum]) {
+          // Voeg score toe (gebruik gemiddelde score)
+          data[datum].scores.push(opdracht.gemiddeldeScore);
+          // Voeg tijd toe (gebruik totale tijd gedeeld door aantal keer gedaan)
+          if (opdracht.aantalKeerGedaan > 0) {
+            data[datum].tijden.push(opdracht.totaleTijd / opdracht.aantalKeerGedaan);
+          }
+        }
+      }
+    });
+
+    return Object.entries(data).map(([datum, waarden]) => ({
+      datum,
+      gemiddeldeScore: waarden.scores.length > 0 ? 
+        Math.round((waarden.scores.reduce((a, b) => a + b, 0) / waarden.scores.length) * 10) / 10 : 0,
+      gemiddeldeTijd: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) / 60 * 10) / 10 : 0 // Convert to minutes
+    }));
+  }
+
+  public getPrestatieWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    gemiddeldeScore: number;
+    gemiddeldeTijd: number;
+  }[] {
+    const dagelijkseData = this.getPrestatieDagelijkseData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: { scores: number[]; tijden: number[] } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const weekStart = new Date(date.getTime() - date.getDay() * 24 * 60 * 60 * 1000);
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = { scores: [], tijden: [] };
+      }
+
+      weekData[weekKey].scores.push(d.gemiddeldeScore);
+      weekData[weekKey].tijden.push(d.gemiddeldeTijd);
+    });
+
+    return Object.entries(weekData).map(([week, waarden]) => ({
+      week,
+      gemiddeldeScore: waarden.scores.length > 0 ? 
+        Math.round((waarden.scores.reduce((a, b) => a + b, 0) / waarden.scores.length) * 10) / 10 : 0,
+      gemiddeldeTijd: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) * 10) / 10 : 0
+    })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+  }
+
+  public getPrestatieMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    gemiddeldeScore: number;
+    gemiddeldeTijd: number;
+  }[] {
+    const dagelijkseData = this.getPrestatieDagelijkseData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: { scores: number[]; tijden: number[] } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const maandKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = { scores: [], tijden: [] };
+      }
+
+      maandData[maandKey].scores.push(d.gemiddeldeScore);
+      maandData[maandKey].tijden.push(d.gemiddeldeTijd);
+    });
+
+    return Object.entries(maandData).map(([maand, waarden]) => ({
+      maand,
+      gemiddeldeScore: waarden.scores.length > 0 ? 
+        Math.round((waarden.scores.reduce((a, b) => a + b, 0) / waarden.scores.length) * 10) / 10 : 0,
+      gemiddeldeTijd: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) * 10) / 10 : 0
+    })).sort((a, b) => new Date(a.maand).getTime() - new Date(b.maand).getTime());
+  }
+
+  // Sessie Kwaliteit data methoden
+  public getSessieKwaliteitDagelijkseData(aantalDagen: number = 30): {
+    datum: string;
+    aantalSessies: number;
+    gemiddeldeDuur: number;
+  }[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const data: { [datum: string]: { sessies: number[]; tijden: number[] } } = {};
+    const eindDatum = new Date();
+    const startDatum = new Date(eindDatum.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+
+    // Genereer alle datums
+    for (let d = new Date(startDatum); d <= eindDatum; d.setDate(d.getDate() + 1)) {
+      const datumString = d.toISOString().split('T')[0];
+      data[datumString] = { sessies: [], tijden: [] };
+    }
+
+    // Verwerk sessie data
+    Object.values(leerData.sessies).forEach(sessie => {
+      if (sessie.eindTijd) {
+        const datum = new Date(sessie.startTijd).toISOString().split('T')[0];
+        if (data[datum]) {
+          data[datum].sessies.push(1); // Tel elke sessie
+          data[datum].tijden.push(sessie.duur || 0); // Voeg duur toe
+        }
+      }
+    });
+
+    return Object.entries(data).map(([datum, waarden]) => ({
+      datum,
+      aantalSessies: waarden.sessies.length,
+      gemiddeldeDuur: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) / 60 * 10) / 10 : 0 // Convert to minutes
+    }));
+  }
+
+  public getSessieKwaliteitWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    aantalSessies: number;
+    gemiddeldeDuur: number;
+  }[] {
+    const dagelijkseData = this.getSessieKwaliteitDagelijkseData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: { sessies: number[]; tijden: number[] } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const weekStart = new Date(date.getTime() - date.getDay() * 24 * 60 * 60 * 1000);
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = { sessies: [], tijden: [] };
+      }
+
+      weekData[weekKey].sessies.push(d.aantalSessies);
+      weekData[weekKey].tijden.push(d.gemiddeldeDuur);
+    });
+
+    return Object.entries(weekData).map(([week, waarden]) => ({
+      week,
+      aantalSessies: waarden.sessies.reduce((a, b) => a + b, 0),
+      gemiddeldeDuur: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) * 10) / 10 : 0
+    })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+  }
+
+  public getSessieKwaliteitMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    aantalSessies: number;
+    gemiddeldeDuur: number;
+  }[] {
+    const dagelijkseData = this.getSessieKwaliteitDagelijkseData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: { sessies: number[]; tijden: number[] } } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const maandKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = { sessies: [], tijden: [] };
+      }
+
+      maandData[maandKey].sessies.push(d.aantalSessies);
+      maandData[maandKey].tijden.push(d.gemiddeldeDuur);
+    });
+
+    return Object.entries(maandData).map(([maand, waarden]) => ({
+      maand,
+      aantalSessies: waarden.sessies.reduce((a, b) => a + b, 0),
+      gemiddeldeDuur: waarden.tijden.length > 0 ? 
+        Math.round((waarden.tijden.reduce((a, b) => a + b, 0) / waarden.tijden.length) * 10) / 10 : 0
+    })).sort((a, b) => new Date(a.maand).getTime() - new Date(b.maand).getTime());
+  }
+
+  // Top Categorieën data methoden
+  public getTopCategorieDagelijkseData(aantalDagen: number = 30): {
+    datum: string;
+    [categorie: string]: number | string;
+  }[] {
+    const categorieData = this.getCategorieDagelijkseData(aantalDagen);
+    
+    // Bepaal top 5 categorieën over alle data
+    const categorieTotaal: { [categorie: string]: number } = {};
+    categorieData.forEach(d => {
+      Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'datum' && typeof value === 'number') {
+          categorieTotaal[key] = (categorieTotaal[key] || 0) + value;
+        }
+      });
+    });
+
+    const topCategorieen = Object.entries(categorieTotaal)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([categorie]) => categorie);
+
+    // Filter data naar top categorieën
+    return categorieData.map(d => {
+      const filtered: any = { datum: d.datum };
+      topCategorieen.forEach(categorie => {
+        if (d[categorie]) {
+          filtered[categorie] = d[categorie];
+        }
+      });
+      return filtered;
+    });
+  }
+
+  public getTopCategorieWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    [categorie: string]: number | string;
+  }[] {
+    const categorieData = this.getCategorieWeekelijkseData(aantalWeken);
+    
+    // Bepaal top 5 categorieën over alle data
+    const categorieTotaal: { [categorie: string]: number } = {};
+    categorieData.forEach(d => {
+      Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'week' && typeof value === 'number') {
+          categorieTotaal[key] = (categorieTotaal[key] || 0) + value;
+        }
+      });
+    });
+
+    const topCategorieen = Object.entries(categorieTotaal)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([categorie]) => categorie);
+
+    // Filter data naar top categorieën
+    return categorieData.map(d => {
+      const filtered: any = { week: d.week };
+      topCategorieen.forEach(categorie => {
+        if (d[categorie]) {
+          filtered[categorie] = d[categorie];
+        }
+      });
+      return filtered;
+    });
+  }
+
+  public getTopCategorieMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    [categorie: string]: number | string;
+  }[] {
+    const categorieData = this.getCategorieMaandelijkseData(aantalMaanden);
+    
+    // Bepaal top 5 categorieën over alle data
+    const categorieTotaal: { [categorie: string]: number } = {};
+    categorieData.forEach(d => {
+      Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'maand' && typeof value === 'number') {
+          categorieTotaal[key] = (categorieTotaal[key] || 0) + value;
+        }
+      });
+    });
+
+    const topCategorieen = Object.entries(categorieTotaal)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([categorie]) => categorie);
+
+    // Filter data naar top categorieën
+    return categorieData.map(d => {
+      const filtered: any = { maand: d.maand };
+      topCategorieen.forEach(categorie => {
+        if (d[categorie]) {
+          filtered[categorie] = d[categorie];
+        }
+      });
+      return filtered;
+    });
+  }
+
+  public getLeitnerTijdlijnData(aantalDagen: number = 30): {
+    datum: string;
+    nieuweOpdrachten: number;
+    herhalingen: number;
+    totaal: number;
+  }[] {
+    const leerData = this.loadLeerData();
+    const leitnerData = this.loadLeitnerData();
+    if (!leerData || !leitnerData.isLeitnerActief) return [];
+
+    const tijdlijnData: { [datum: string]: any } = {};
+    const opdrachten = Object.values(leerData.opdrachten);
+
+    // Groepeer opdrachten per datum
+    opdrachten.forEach(op => {
+      if (op.laatsteDatum) {
+        const datum = op.laatsteDatum.split('T')[0];
+        if (!tijdlijnData[datum]) {
+          tijdlijnData[datum] = {
+            datum,
+            nieuweOpdrachten: 0,
+            herhalingen: 0,
+            totaal: 0
+          };
+        }
+
+        // Check of dit een Leitner opdracht is
+        const isLeitnerOpdracht = leitnerData.boxes.some(box => 
+          box.opdrachten.includes(op.opdrachtId)
+        );
+
+        if (isLeitnerOpdracht) {
+          if (op.aantalKeerGedaan === 1) {
+            tijdlijnData[datum].nieuweOpdrachten++;
+          } else {
+            tijdlijnData[datum].herhalingen++;
+          }
+        }
+        
+        tijdlijnData[datum].totaal++;
+      }
+    });
+
+    return Object.values(tijdlijnData)
+      .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime())
+      .slice(-aantalDagen);
+  }
+
+  public getLeitnerWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    nieuweOpdrachten: number;
+    herhalingen: number;
+    totaal: number;
+  }[] {
+    const dagelijkseData = this.getLeitnerTijdlijnData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const weekStart = new Date(datum);
+      weekStart.setDate(datum.getDate() - datum.getDay()); // Begin van de week (zondag)
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = {
+          week: weekKey,
+          nieuweOpdrachten: 0,
+          herhalingen: 0,
+          totaal: 0
+        };
+      }
+
+      weekData[weekKey].nieuweOpdrachten += dag.nieuweOpdrachten;
+      weekData[weekKey].herhalingen += dag.herhalingen;
+      weekData[weekKey].totaal += dag.totaal;
+    });
+
+    return Object.values(weekData).sort((a, b) => 
+      new Date(a.week).getTime() - new Date(b.week).getTime()
+    );
+  }
+
+  public getLeitnerMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    nieuweOpdrachten: number;
+    herhalingen: number;
+    totaal: number;
+  }[] {
+    const dagelijkseData = this.getLeitnerTijdlijnData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const maandKey = `${datum.getFullYear()}-${String(datum.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = {
+          maand: maandKey,
+          nieuweOpdrachten: 0,
+          herhalingen: 0,
+          totaal: 0
+        };
+      }
+
+      maandData[maandKey].nieuweOpdrachten += dag.nieuweOpdrachten;
+      maandData[maandKey].herhalingen += dag.herhalingen;
+      maandData[maandKey].totaal += dag.totaal;
+    });
+
+    return Object.values(maandData).sort((a, b) => 
+      new Date(a.maand).getTime() - new Date(b.maand).getTime()
+    );
+  }
+
+  public getSessiePatronenData(aantalDagen: number = 30): {
+    uur: number;
+    sessies: number;
+    totaleTijd: number;
+  }[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const sessies = Object.values(leerData.sessies).filter(s => s.eindTijd);
+    const uurPatronen: { [uur: number]: any } = {};
+
+    // Initialiseer alle uren
+    for (let uur = 0; uur < 24; uur++) {
+      uurPatronen[uur] = {
+        uur,
+        sessies: 0,
+        totaleTijd: 0
+      };
+    }
+
+    // Analyseer sessies
+    sessies.forEach(sessie => {
+      const startTijd = new Date(sessie.startTijd);
+      const uur = startTijd.getHours();
+      
+      uurPatronen[uur].sessies++;
+      if (sessie.duur) {
+        uurPatronen[uur].totaleTijd += sessie.duur;
+      }
+    });
+
+    return Object.values(uurPatronen);
+  }
+
+  public getStreakData(): {
+    huidigeStreak: number;
+    langsteStreak: number;
+    actieveDagen: string[];
+    laatsteActiviteit: string;
+  } {
+    const dagelijkseData = this.getDagelijkseActiviteitData(365);
+    const actieveDagen = dagelijkseData
+      .filter(dag => dag.opdrachten > 0)
+      .map(dag => dag.datum)
+      .sort();
+
+    let huidigeStreak = 0;
+    let langsteStreak = 0;
+    let tempStreak = 0;
+
+    // Bereken streaks
+    for (let i = 0; i < actieveDagen.length; i++) {
+      const huidigeDag = new Date(actieveDagen[i]);
+      const vorigeDag = i > 0 ? new Date(actieveDagen[i - 1]) : null;
+      
+      if (!vorigeDag || (huidigeDag.getTime() - vorigeDag.getTime()) <= 24 * 60 * 60 * 1000) {
+        tempStreak++;
+        huidigeStreak = tempStreak;
+        langsteStreak = Math.max(langsteStreak, tempStreak);
+      } else {
+        tempStreak = 1;
+        huidigeStreak = 1;
+      }
+    }
+
+    return {
+      huidigeStreak,
+      langsteStreak,
+      actieveDagen,
+      laatsteActiviteit: actieveDagen.length > 0 ? actieveDagen[actieveDagen.length - 1] : ''
+    };
   }
 
   private bepaalSterkstePunt(_categorie: string, score: number): string {
@@ -1412,6 +2146,99 @@ class LeerDataManager {
     return totaalOpdrachten;
   }
 
+  // Focus Analyse data methoden
+  public getFocusDagelijkseData(aantalDagen: number = 30, metric: 'tijd' | 'aantal' = 'tijd'): {
+    datum: string;
+    serieuzeModus: number;
+    normaleModus: number;
+  }[] {
+    const leerData = this.loadLeerData();
+    if (!leerData) return [];
+
+    const data: { [datum: string]: { serieuze: number; normaal: number } } = {};
+    const eindDatum = new Date();
+    const startDatum = new Date(eindDatum.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+
+    // Genereer alle datums
+    for (let d = new Date(startDatum); d <= eindDatum; d.setDate(d.getDate() + 1)) {
+      const datumString = d.toISOString().split('T')[0];
+      data[datumString] = { serieuze: 0, normaal: 0 };
+    }
+
+    // Verwerk sessie data
+    Object.values(leerData.sessies).forEach(sessie => {
+      if (!sessie.eindTijd) return;
+      
+      const sessieDatum = new Date(sessie.startTijd).toISOString().split('T')[0];
+      if (!data[sessieDatum]) return;
+
+      const waarde = metric === 'tijd' ? (sessie.duur || 0) : 1;
+      
+      if (sessie.serieuzeModus) {
+        data[sessieDatum].serieuze += waarde;
+      } else {
+        data[sessieDatum].normaal += waarde;
+      }
+    });
+
+    return Object.entries(data).map(([datum, waarden]) => ({
+      datum,
+      serieuzeModus: waarden.serieuze,
+      normaleModus: waarden.normaal
+    }));
+  }
+
+  public getFocusWeekelijkseData(aantalWeken: number = 12, metric: 'tijd' | 'aantal' = 'tijd'): {
+    week: string;
+    serieuzeModus: number;
+    normaleModus: number;
+  }[] {
+    const dagelijkseData = this.getFocusDagelijkseData(aantalWeken * 7, metric);
+    const weekData: { [weekKey: string]: any } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const weekStart = new Date(date.getTime() - date.getDay() * 24 * 60 * 60 * 1000);
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = { week: weekKey, serieuzeModus: 0, normaleModus: 0 };
+      }
+
+      weekData[weekKey].serieuzeModus += d.serieuzeModus;
+      weekData[weekKey].normaleModus += d.normaleModus;
+    });
+
+    return Object.values(weekData).sort((a, b) => 
+      new Date(a.week).getTime() - new Date(b.week).getTime()
+    );
+  }
+
+  public getFocusMaandelijkseData(aantalMaanden: number = 12, metric: 'tijd' | 'aantal' = 'tijd'): {
+    maand: string;
+    serieuzeModus: number;
+    normaleModus: number;
+  }[] {
+    const dagelijkseData = this.getFocusDagelijkseData(aantalMaanden * 31, metric);
+    const maandData: { [maandKey: string]: any } = {};
+
+    dagelijkseData.forEach(d => {
+      const date = new Date(d.datum);
+      const maandKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = { maand: maandKey, serieuzeModus: 0, normaleModus: 0 };
+      }
+
+      maandData[maandKey].serieuzeModus += d.serieuzeModus;
+      maandData[maandKey].normaleModus += d.normaleModus;
+    });
+
+    return Object.values(maandData).sort((a, b) => 
+      new Date(a.maand).getTime() - new Date(b.maand).getTime()
+    );
+  }
+
   getPrestatieHighlights(): {
     besteSessie: { score: number; datum: string; modus: string };
     vooruitgang: { verbetering: number; periode: string };
@@ -1790,16 +2617,20 @@ class LeerDataManager {
     const leitnerData = this.loadLeitnerData();
     const geresetOpdrachten: string[] = [];
     
+    // Converteer categorie naam naar het juiste format voor opdracht IDs
+    // Van "Anatomie - Botten" naar "Anatomie_Botten"
+    const categorieVoorOpdrachtId = categorie.replace(/ - /g, '_');
+    
     // Zoek alle opdrachten van deze categorie in alle boxen
     leitnerData.boxes.forEach(box => {
       const opdrachtenInBox = box.opdrachten.filter(opdrachtId => {
-        // Opdracht ID format: "Categorie_OpdrachtText"
-        return opdrachtId.startsWith(categorie + '_');
+        // Opdracht ID format: "Hoofdcategorie_Categorie_OpdrachtText"
+        return opdrachtId.startsWith(categorieVoorOpdrachtId + '_');
       });
       
       // Verwijder deze opdrachten uit de box
       box.opdrachten = box.opdrachten.filter(opdrachtId => {
-        const isVanCategorie = opdrachtId.startsWith(categorie + '_');
+        const isVanCategorie = opdrachtId.startsWith(categorieVoorOpdrachtId + '_');
         if (isVanCategorie) {
           geresetOpdrachten.push(opdrachtId);
         }

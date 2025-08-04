@@ -146,14 +146,16 @@
 }
 
 .reset-waarschuwing {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border: 1px solid #ffc107;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); /* Dark blue-gray background */
+  border: 2px solid #e74c3c; /* Red border for emphasis */
   border-radius: 6px;
   padding: 12px;
   margin: 15px 0;
-  color: #856404;
+  color: #ffffff; /* White text for maximum contrast */
   font-size: 0.9rem;
   line-height: 1.4;
+  font-weight: 500; /* Slightly bolder for better readability */
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3); /* Red shadow for emphasis */
 }
 
 .reset-bevestig-knop {
