@@ -393,34 +393,6 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
         <div className="modal-body">
-          <div className="snelle-selecties">
-            <h4>Snelle Selecties</h4>
-            <div className="snelle-selectie-knoppen">
-              <button onClick={handleSelectAll} className="snelle-selectie-knop">
-                Selecteer Alles
-              </button>
-              <button onClick={handleDeselectAll} className="snelle-selectie-knop">
-                Deselecteer Alles
-              </button>
-              <button 
-                onClick={() => handleSelecteerBron('systeem')} 
-                className="snelle-selectie-knop"
-                disabled={!heeftSysteemOpdrachten}
-                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
-              >
-                ⚙️ Alleen Systeem
-              </button>
-              <button 
-                onClick={() => handleSelecteerBron('gebruiker')} 
-                className="snelle-selectie-knop"
-                disabled={!heeftGebruikerOpdrachten}
-                title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
-              >
-                👤 Alleen Eigen
-              </button>
-            </div>
-          </div>
-
           {/* Opgeslagen selecties sectie */}
           <div className="opgeslagen-selecties-sectie">
             <h4>📚 Opgeslagen Leitner Selecties</h4>
@@ -476,6 +448,34 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                   Maximum van 5 opgeslagen selecties bereikt. Verwijder eerst een selectie om een nieuwe op te slaan.
                 </p>
               )}
+            </div>
+          </div>
+
+          <div className="snelle-selecties">
+            <h4>Snelle Selecties</h4>
+            <div className="snelle-selectie-knoppen">
+              <button onClick={handleSelectAll} className="snelle-selectie-knop">
+                Selecteer Alles
+              </button>
+              <button onClick={handleDeselectAll} className="snelle-selectie-knop">
+                Deselecteer Alles
+              </button>
+              <button 
+                onClick={() => handleSelecteerBron('systeem')} 
+                className="snelle-selectie-knop"
+                disabled={!heeftSysteemOpdrachten}
+                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
+              >
+                ⚙️ Alleen Systeem
+              </button>
+              <button 
+                onClick={() => handleSelecteerBron('gebruiker')} 
+                className="snelle-selectie-knop"
+                disabled={!heeftGebruikerOpdrachten}
+                title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
+              >
+                👤 Alleen Eigen
+              </button>
             </div>
           </div>
             <div className="categorie-lijst-header">

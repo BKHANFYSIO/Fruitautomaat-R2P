@@ -442,34 +442,6 @@ export const CategorieSelectieModal = ({
 
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
-      <div className="snelle-selecties">
-        <h4>Snelle Selecties</h4>
-        <div className="snelle-selectie-knoppen">
-          <button onClick={() => actieveBulkHandler(alleCategorieen, 'select')} className="snelle-selectie-knop">
-            Alles
-          </button>
-          <button onClick={() => actieveBulkHandler(alleCategorieen, 'deselect')} className="snelle-selectie-knop">
-            Niets
-          </button>
-          <button 
-            onClick={() => handleSelecteerBron('systeem')} 
-            className="snelle-selectie-knop"
-            disabled={!heeftSysteemOpdrachten}
-            title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
-          >
-            ⚙️ Alleen Systeem
-          </button>
-          <button 
-            onClick={() => handleSelecteerBron('gebruiker')} 
-            className="snelle-selectie-knop"
-            disabled={!heeftGebruikerOpdrachten}
-            title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
-          >
-            👤 Alleen Eigen
-          </button>
-        </div>
-      </div>
-      
       {activeTab === 'multiplayer' && (
         <div className="opgeslagen-selecties-sectie">
           <h4>📚 Opgeslagen Selecties</h4>
@@ -606,6 +578,34 @@ export const CategorieSelectieModal = ({
           </select>
         </div>
       )}
+
+      <div className="snelle-selecties">
+        <h4>Snelle Selecties</h4>
+        <div className="snelle-selectie-knoppen">
+          <button onClick={() => actieveBulkHandler(alleCategorieen, 'select')} className="snelle-selectie-knop">
+            Alles
+          </button>
+          <button onClick={() => actieveBulkHandler(alleCategorieen, 'deselect')} className="snelle-selectie-knop">
+            Niets
+          </button>
+          <button 
+            onClick={() => handleSelecteerBron('systeem')} 
+            className="snelle-selectie-knop"
+            disabled={!heeftSysteemOpdrachten}
+            title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
+          >
+            ⚙️ Alleen Systeem
+          </button>
+          <button 
+            onClick={() => handleSelecteerBron('gebruiker')} 
+            className="snelle-selectie-knop"
+            disabled={!heeftGebruikerOpdrachten}
+            title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
+          >
+            👤 Alleen Eigen
+          </button>
+        </div>
+      </div>
 
       <div className="categorie-lijst">
         <div className="categorie-lijst-header">
