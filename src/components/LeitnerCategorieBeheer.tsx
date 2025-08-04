@@ -258,6 +258,16 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
   const handleDeselectAll = () => setGeselecteerdeCategorieen([]);
 
+  const getTotaalAantalOpdrachtenVoorSelectie = (categorieen: string[]) => {
+    return categorieen.reduce((totaal, categorie) => {
+      const [hoofd, sub] = categorie.split(' - ');
+      const relevanteOpdrachten = alleOpdrachten.filter(op => 
+        (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub
+      );
+      return totaal + relevanteOpdrachten.length;
+    }, 0);
+  };
+
   const handleSelecteerBron = (bron: 'systeem' | 'gebruiker') => {
     setGeselecteerdeCategorieen([]); // Eerst alles deselecteren
 
@@ -405,9 +415,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                       <span className="selectie-datum">
                         {new Date(selectie.datum).toLocaleDateString()}
                       </span>
-                      <span className="selectie-aantal">
-                        {selectie.categorieen.length} categorieën
-                      </span>
+                                          <span className="selectie-aantal">
+                      {selectie.categorieen.length} categorieën • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdrachten
+                    </span>
                     </div>
                     <div className="selectie-acties">
                       <button 

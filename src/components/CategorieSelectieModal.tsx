@@ -400,6 +400,13 @@ export const CategorieSelectieModal = ({
     return gefilterdeOpdrachten.filter(opdracht => (opdracht.Hoofdcategorie || 'Overig') === hoofd && opdracht.Categorie === sub).length;
   };
 
+  const getTotaalAantalOpdrachtenVoorSelectie = (categorieen: string[]) => {
+    return categorieen.reduce((totaal, categorie) => {
+      const [hoofd, sub] = categorie.split(' - ');
+      return totaal + getAantalOpdrachten(hoofd, sub);
+    }, 0);
+  };
+
   const getGesorteerdeCategorieen = () => {
     const categorieenMetData = Object.entries(gegroepeerdeCategorieen).map(([hoofd, subs]) => ({
       hoofd,
@@ -455,7 +462,7 @@ export const CategorieSelectieModal = ({
                       {new Date(selectie.datum).toLocaleDateString()}
                     </span>
                     <span className="selectie-aantal">
-                      {selectie.categorieen.length} categorieën
+                      {selectie.categorieen.length} categorieën • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdrachten
                     </span>
                   </div>
                   <div className="selectie-acties">
@@ -513,7 +520,7 @@ export const CategorieSelectieModal = ({
                       {new Date(selectie.datum).toLocaleDateString()}
                     </span>
                     <span className="selectie-aantal">
-                      {selectie.categorieen.length} categorieën
+                      {selectie.categorieen.length} categorieën • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdrachten
                     </span>
                   </div>
                   <div className="selectie-acties">
