@@ -635,6 +635,26 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           {/* Pauze beheer sectie */}
           <div className="pauze-beheer-sectie">
             <h4>⏸️ Gepauzeerde Opdrachten Beheer</h4>
+            <div className="debug-info">
+              <p>Debug info:</p>
+              <p>Aantal gepauzeerde opdrachten: {pausedOpdrachten.length}</p>
+              <p>Aantal categorieën met opdrachten: {Object.keys(opdrachtenPerCategorie).length}</p>
+              <p>Gepauzeerde opdrachten: {JSON.stringify(pausedOpdrachten)}</p>
+              <button 
+                onClick={() => {
+                  // Test: pauzeer een opdracht
+                  const testOpdrachtId = 'Test_Categorie_TestOpdracht';
+                  leerDataManager.pauseOpdracht(testOpdrachtId);
+                  setToastBericht('Test opdracht gepauzeerd!');
+                  setIsToastZichtbaar(true);
+                  // Force re-render
+                  window.location.reload();
+                }}
+                className="test-pause-knop"
+              >
+                🧪 Test: Pauzeer een opdracht
+              </button>
+            </div>
             {pausedOpdrachten.length > 0 ? (
               <div className="paused-opdrachten-list">
                 {Object.entries(opdrachtenPerCategorie)
@@ -668,6 +688,13 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             ) : (
               <div className="geen-paused-melding">
                 <p>Geen gepauzeerde opdrachten. Je kunt opdrachten pauzeren na het voltooien ervan in de Leitner leermodus.</p>
+                <p>Om een opdracht te pauzeren:</p>
+                <ol>
+                  <li>Start een Leitner leermodus sessie</li>
+                  <li>Voltooi een opdracht</li>
+                  <li>Klik op "⏸️ Pauzeer deze opdracht" in de footer</li>
+                  <li>De opdracht verschijnt hier voor beheer</li>
+                </ol>
               </div>
             )}
           </div>
