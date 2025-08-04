@@ -272,6 +272,147 @@
   margin-bottom: 8px;
 }
 
+/* Nieuwe styling voor de verbeterde Leitner uitleg */
+.box-overview {
+  margin: 20px 0;
+}
+
+.box-overview h5 {
+  color: #61dafb;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.box-item {
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.box-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(97, 218, 251, 0.3);
+}
+
+.box-number {
+  display: block;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #61dafb;
+  margin-bottom: 5px;
+}
+
+.box-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  margin-bottom: 3px;
+}
+
+.box-time {
+  display: block;
+  font-size: 0.8rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.scoring-rules {
+  margin: 20px 0;
+}
+
+.scoring-rules h5 {
+  color: #61dafb;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.rule-section {
+  margin-bottom: 20px;
+}
+
+.rule-section h6 {
+  color: #e0e0e0;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.rule-item {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rule-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(97, 218, 251, 0.2);
+}
+
+.score-icon {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.score-label {
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.score-result {
+  font-size: 0.8rem;
+  color: #61dafb;
+  font-weight: 500;
+}
+
+/* Responsive design voor de nieuwe styling */
+@media (max-width: 768px) {
+  .box-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+  }
+  
+  .rule-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .box-item, .rule-item {
+    padding: 10px;
+  }
+  
+  .box-number {
+    font-size: 1.1rem;
+  }
+  
+  .score-icon {
+    font-size: 1.3rem;
+  }
+}
+
 .badge {
   background-color: #f39c12;
   color: #fff;
