@@ -1507,8 +1507,8 @@
 }
 
 .opslaan-selectie-knop {
-  background-color: #61dafb;
-  color: #282c34;
+  background-color: #4CAF50;
+  color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
@@ -1519,7 +1519,7 @@
 }
 
 .opslaan-selectie-knop:hover:not(:disabled) {
-  background-color: #21a1f2;
+  background-color: #45a049;
   transform: translateY(-1px);
 }
 
