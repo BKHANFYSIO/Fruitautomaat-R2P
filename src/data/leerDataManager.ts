@@ -1784,6 +1784,41 @@ class LeerDataManager {
     leerDag.setHours(4, 0, 0, 0);
     return leerDag;
   }
+
+  // Reset alle opdrachten van een specifieke categorie uit het Leitner systeem
+  public resetCategorieInLeitner(categorie: string): { gereset: number; opdrachten: string[] } {
+    const leitnerData = this.loadLeitnerData();
+    const geresetOpdrachten: string[] = [];
+    
+    // Zoek alle opdrachten van deze categorie in alle boxen
+    leitnerData.boxes.forEach(box => {
+      const opdrachtenInBox = box.opdrachten.filter(opdrachtId => {
+        // Opdracht ID format: "Categorie_OpdrachtText"
+        return opdrachtId.startsWith(categorie + '_');
+      });
+      
+      // Verwijder deze opdrachten uit de box
+      box.opdrachten = box.opdrachten.filter(opdrachtId => {
+        const isVanCategorie = opdrachtId.startsWith(categorie + '_');
+        if (isVanCategorie) {
+          geresetOpdrachten.push(opdrachtId);
+        }
+        return !isVanCategorie;
+      });
+    });
+    
+    // Verwijder ook uit opdrachtReviewTimes
+    geresetOpdrachten.forEach(opdrachtId => {
+      delete leitnerData.opdrachtReviewTimes[opdrachtId];
+    });
+    
+    this.saveLeitnerData(leitnerData);
+    
+    return {
+      gereset: geresetOpdrachten.length,
+      opdrachten: geresetOpdrachten
+    };
+  }
 }
 
 // Factory functie

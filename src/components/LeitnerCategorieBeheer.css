@@ -92,8 +92,8 @@
 }
 
 .navigatie-knop {
-  background: linear-gradient(135deg, #61dafb 0%, #21a1f2 100%);
-  color: #282c34;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
   border: none;
   padding: 10px 16px;
   border-radius: 6px;
@@ -101,18 +101,68 @@
   font-weight: 600;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(97, 218, 251, 0.3);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .navigatie-knop:hover {
-  background: linear-gradient(135deg, #21a1f2 0%, #1a8fd8 100%);
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(97, 218, 251, 0.4);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .navigatie-knop:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(97, 218, 251, 0.3);
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+}
+
+/* Reset functionaliteit styling */
+.reset-cell {
+  text-align: center;
+  padding: 8px 4px;
+  width: 60px;
+}
+
+.reset-knop {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.reset-knop:hover {
+  background: linear-gradient(135deg, #ee5a52 0%, #d63031 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
+}
+
+.reset-knop:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.reset-waarschuwing {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 15px 0;
+  color: #856404;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.reset-bevestig-knop {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+}
+
+.reset-bevestig-knop:hover {
+  background: linear-gradient(135deg, #ee5a52 0%, #d63031 100%);
 }
 
 .controls {

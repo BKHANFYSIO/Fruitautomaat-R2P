@@ -191,6 +191,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
+  const [toonResetModal, setToonResetModal] = useState(false);
+  const [resetCategorie, setResetCategorie] = useState<string>('');
 
   const heeftSysteemOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'systeem'), [alleOpdrachten]);
   const heeftGebruikerOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'gebruiker'), [alleOpdrachten]);
@@ -428,6 +430,27 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
   };
 
+  const handleResetCategorie = (categorie: string) => {
+    setResetCategorie(categorie);
+    setToonResetModal(true);
+  };
+
+  const handleBevestigReset = () => {
+    const leerDataManager = getLeerDataManager();
+    const result = leerDataManager.resetCategorieInLeitner(resetCategorie);
+    
+    setToonResetModal(false);
+    setResetCategorie('');
+    
+    // Toon bevestiging
+    setToastBericht(`✅ ${result.gereset} opdrachten van categorie "${resetCategorie}" gereset`);
+    setIsToastZichtbaar(true);
+    setTimeout(() => setIsToastZichtbaar(false), 3000);
+    
+    // Herlaad statistieken
+    berekenStatistieken();
+  };
+
   if (!isOpen) return null;
 
   const renderRij = (stat: CategorieStatistiek) => {
@@ -462,6 +485,17 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         {[0, 1, 2, 3, 4, 5, 6, 7].map(boxId => (
           <td key={boxId} className="box">{stat.perBox[boxId] || 0}</td>
         ))}
+        <td className="reset-cell">
+          {!stat.isHoofd && stat.aanHetLeren > 0 && (
+            <button 
+              onClick={() => handleResetCategorie(stat.uniekeNaam)}
+              className="reset-knop"
+              title={`Reset alle ${stat.aanHetLeren} opdrachten van ${stat.naam}`}
+            >
+              🔄
+            </button>
+          )}
+        </td>
       </tr>
     );
   };
@@ -618,6 +652,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                     Box Verdeling
                     <span className="info-icon" onClick={() => setIsUitlegOpen(true)}>&#9432;</span>
                   </th>
+                  <th rowSpan={2}>Reset</th>
                 </tr>
                 <tr>
                   {[0, 1, 2, 3, 4, 5, 6, 7].map(boxId => (<th key={boxId} className="box-header">B{boxId}</th>))}
@@ -660,6 +695,30 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               </button>
               <button onClick={handleBevestigOpslaan} className="bevestig-knop">
                 Opslaan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Reset modal */}
+      {toonResetModal && (
+        <div className="opslaan-modal-overlay" onClick={() => setToonResetModal(false)}>
+          <div className="opslaan-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>⚠️ Categorie Reset</h4>
+            <p>
+              Weet je zeker dat je alle opdrachten van categorie <strong>"{resetCategorie}"</strong> wilt resetten?
+            </p>
+            <p className="reset-waarschuwing">
+              ⚠️ Dit zal alle opdrachten van deze categorie uit alle boxen verwijderen. 
+              Ze worden niet meer meegenomen in de leeranalyse en je moet opnieuw beginnen.
+            </p>
+            <div className="opslaan-modal-acties">
+              <button onClick={() => setToonResetModal(false)} className="annuleer-knop">
+                Annuleren
+              </button>
+              <button onClick={handleBevestigReset} className="bevestig-knop reset-bevestig-knop">
+                Reset Categorie
               </button>
             </div>
           </div>
