@@ -459,7 +459,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             <span className="badge">{stat.klaarVoorHerhaling}</span>
           ) : ('-')}
         </td>
-        {[0, 1, 2, 3, 4, 5, 6].map(boxId => (
+        {[0, 1, 2, 3, 4, 5, 6, 7].map(boxId => (
           <td key={boxId} className="box">{stat.perBox[boxId] || 0}</td>
         ))}
       </tr>
@@ -604,13 +604,13 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                   <th rowSpan={2} onClick={() => requestSort('aanHetLeren')} className={`sortable ${getSortClass('aanHetLeren')}`}>Leren</th>
                   <th rowSpan={2} onClick={() => requestSort('pogingen')} className={`sortable ${getSortClass('pogingen')}`}>Pogingen</th>
                   <th rowSpan={2} onClick={() => requestSort('klaarVoorHerhaling')} className={`sortable ${getSortClass('klaarVoorHerhaling')}`}>Klaar</th>
-                  <th colSpan={7} className="box-verdeling-header">
+                  <th colSpan={8} className="box-verdeling-header">
                     Box Verdeling
                     <span className="info-icon" onClick={() => setIsUitlegOpen(true)}>&#9432;</span>
                   </th>
                 </tr>
                 <tr>
-                  {[0, 1, 2, 3, 4, 5, 6].map(boxId => (<th key={boxId} className="box-header">B{boxId}</th>))}
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map(boxId => (<th key={boxId} className="box-header">B{boxId}</th>))}
                 </tr>
               </thead>
               <tbody>
