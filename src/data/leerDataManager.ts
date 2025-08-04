@@ -1764,6 +1764,9 @@ class LeerDataManager {
       if (!data.newQuestionsToday) {
         data.newQuestionsToday = { date: getDatumString(), count: 0 };
       }
+      // Pauze functionaliteit compatibiliteit
+      if (!data.pausedOpdrachten) data.pausedOpdrachten = [];
+      if (!data.opdrachtPauseTimes) data.opdrachtPauseTimes = {};
       return data;
     }
     
@@ -1927,7 +1930,7 @@ class LeerDataManager {
       
       box.opdrachten.forEach(opdrachtId => {
         // Sla gepauzeerde opdrachten over
-        if (leitnerData.pausedOpdrachten.includes(opdrachtId)) {
+        if (leitnerData.pausedOpdrachten && leitnerData.pausedOpdrachten.includes(opdrachtId)) {
           return;
         }
         
