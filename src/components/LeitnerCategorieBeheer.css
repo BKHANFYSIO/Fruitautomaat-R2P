@@ -244,6 +244,8 @@
   border-radius: 10px;
   width: 90%;
   max-width: 450px;
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
@@ -390,6 +392,12 @@
 
 /* Responsive design voor de nieuwe styling */
 @media (max-width: 768px) {
+  .box-uitleg-popup-content {
+    max-height: 90vh;
+    width: 95%;
+    padding: 20px;
+  }
+  
   .box-grid {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 8px;
