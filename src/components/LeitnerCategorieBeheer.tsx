@@ -474,12 +474,22 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             <h2>CATEGORIE SELECTIE</h2>
             <h3 className="modal-subtitle">(Leitner)</h3>
           </div>
-          <button onClick={() => window.dispatchEvent(new CustomEvent('openCategorieSelectie'))} className="terug-naar-selectie-knop">
-            ← Andere Modi
-          </button>
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
         <div className="modal-body">
+          {/* Navigatie sectie */}
+          <div className="navigatie-sectie">
+            <p className="navigatie-tekst">
+              Voor het selecteren van categorieën van andere spelmodi ga je naar de algemene categorie selectie.
+            </p>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('openCategorieSelectie'))} 
+              className="navigatie-knop"
+            >
+              🔄 Ga naar Algemene Categorie Selectie
+            </button>
+          </div>
+
           {/* Opgeslagen selecties sectie */}
           <div className="opgeslagen-selecties-sectie">
             <h4>📚 Opgeslagen Leitner Selecties</h4>

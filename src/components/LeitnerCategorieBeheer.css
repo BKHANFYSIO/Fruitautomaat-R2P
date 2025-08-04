@@ -75,6 +75,46 @@
   padding-right: 10px;
 }
 
+.navigatie-sectie {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.navigatie-tekst {
+  color: #e0e0e0;
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.navigatie-knop {
+  background: linear-gradient(135deg, #61dafb 0%, #21a1f2 100%);
+  color: #282c34;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(97, 218, 251, 0.3);
+}
+
+.navigatie-knop:hover {
+  background: linear-gradient(135deg, #21a1f2 0%, #1a8fd8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(97, 218, 251, 0.4);
+}
+
+.navigatie-knop:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(97, 218, 251, 0.3);
+}
+
 .controls {
   margin-bottom: 15px;
   display: flex;
@@ -512,6 +552,21 @@
   .modal-content.leitner-beheer-modal {
     padding: 15px;
     max-height: 90vh;
+  }
+
+  .navigatie-sectie {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .navigatie-tekst {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .navigatie-knop {
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 
   .categorie-table th, .categorie-table td {
