@@ -56,6 +56,7 @@ const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
         <li><b>B4:</b> Herhaling na 7 dagen</li>
         <li><b>B5:</b> Herhaling na 14 dagen</li>
         <li><b>B6:</b> "Geleerd" (herhaling na 45 dagen)</li>
+        <li><b>B7:</b> "Meester" (geen herhaling meer)</li>
       </ul>
       <p><b>Eerste keer beantwoorden:</b></p>
       <ul>
@@ -65,7 +66,7 @@ const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
       </ul>
       <p><b>Bij herhalingen:</b></p>
       <ul>
-        <li><b>Heel Goed:</b> De opdracht gaat één box omhoog</li>
+        <li><b>Heel Goed:</b> De opdracht gaat één box omhoog (maximaal naar Box 7)</li>
         <li><b>Redelijk:</b> De opdracht blijft in dezelfde box</li>
         <li><b>Niet Goed:</b> De opdracht gaat terug naar Box 1 (of blijft in Box 0)</li>
       </ul>
