@@ -310,6 +310,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [isLeeranalyseOpen, setIsLeeranalyseOpen] = useState(false);
   const [openLeeranalyseToAchievements, setOpenLeeranalyseToAchievements] = useState(false);
   const [nieuweAchievement, setNieuweAchievement] = useState<Achievement | null>(null);
+  const [laatsteBeoordeeldeOpdracht, setLaatsteBeoordeeldeOpdracht] = useState<{ opdracht: any; type: string; box?: number } | null>(null);
 
   const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
 
@@ -820,6 +821,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     
     if (isAanHetSpinnen || gefilterdeOpdrachten.length === 0 || !heeftVoldoendeSpelers()) return;
 
+    // Reset de laatste beoordeelde opdracht bij een nieuwe spin
+    setLaatsteBeoordeeldeOpdracht(null);
+
     // 1. Kies speler
     let gekozenSpeler: Speler;
     if (isSerieuzeLeerModusActief && gameMode === 'single') {
@@ -1074,10 +1078,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd]);
 
   const handlePauseOpdracht = useCallback(() => {
-    if (huidigeOpdracht && isSerieuzeLeerModusActief && leermodusType === 'leitner') {
+    const opdrachtOmTePauzeren = huidigeOpdracht || laatsteBeoordeeldeOpdracht;
+    if (opdrachtOmTePauzeren && isSerieuzeLeerModusActief && leermodusType === 'leitner') {
       const leerDataManager = getLeerDataManager();
-      const opdrachtId = `${huidigeOpdracht.opdracht.Hoofdcategorie || 'Overig'}_${huidigeOpdracht.opdracht.Categorie}_${huidigeOpdracht.opdracht.Opdracht.substring(0, 20)}`;
+      const opdrachtId = `${opdrachtOmTePauzeren.opdracht.Hoofdcategorie || 'Overig'}_${opdrachtOmTePauzeren.opdracht.Categorie}_${opdrachtOmTePauzeren.opdracht.Opdracht.substring(0, 20)}`;
       leerDataManager.pauseOpdracht(opdrachtId);
+      
+      // Reset de laatste beoordeelde opdracht
+      setLaatsteBeoordeeldeOpdracht(null);
       
       // Toon notificatie
       setNotificatie({
@@ -1090,7 +1098,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         setNotificatie(prev => ({ ...prev, zichtbaar: false }));
       }, 3000);
     }
-  }, [huidigeOpdracht, isSerieuzeLeerModusActief, leermodusType]);
+  }, [huidigeOpdracht, laatsteBeoordeeldeOpdracht, isSerieuzeLeerModusActief, leermodusType]);
 
   const handleBeoordeling = useCallback((prestatie: 'Heel Goed' | 'Redelijk' | 'Niet Goed') => {
     if (!huidigeOpdracht || !huidigeSpeler || !huidigeSpinAnalyse) {
@@ -1126,6 +1134,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
     // In serieuze leer-modus worden geen punten gegeven
     if (gameMode === 'single' && isSerieuzeLeerModusActief) {
+      // Sla de laatste beoordeelde opdracht op voor pauze functionaliteit
+      setLaatsteBeoordeeldeOpdracht(huidigeOpdracht);
+      
       // Ga direct naar volgende beurt zonder punten
       const volgendeBeurtNummer = aantalBeurtenGespeeld + 1;
       setAantalBeurtenGespeeld(volgendeBeurtNummer);
@@ -1791,6 +1802,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             isGeluidActief={isGeluidActief}
             gamePhase={gamePhase}
             huidigeOpdracht={huidigeOpdracht}
+            laatsteBeoordeeldeOpdracht={laatsteBeoordeeldeOpdracht}
             isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
             leermodusType={leermodusType}
             onPauseOpdracht={handlePauseOpdracht}

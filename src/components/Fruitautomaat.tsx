@@ -28,6 +28,7 @@ interface FruitautomaatProps {
   welcomeMessage?: React.ReactNode;
   // Pauze functionaliteit props
   huidigeOpdracht?: { opdracht: any; type: string; box?: number } | null;
+  laatsteBeoordeeldeOpdracht?: { opdracht: any; type: string; box?: number } | null;
   isSerieuzeLeerModusActief?: boolean;
   leermodusType?: 'normaal' | 'leitner';
   onPauseOpdracht?: () => void;
@@ -48,6 +49,7 @@ export const Fruitautomaat = ({
   children,
   welcomeMessage,
   huidigeOpdracht,
+  laatsteBeoordeeldeOpdracht,
   isSerieuzeLeerModusActief = false,
   leermodusType,
   onPauseOpdracht
@@ -130,7 +132,7 @@ export const Fruitautomaat = ({
         {children}
         
         {/* Pauze knop - alleen tonen na beoordeling in Leitner modus */}
-        {gamePhase === 'ended' && huidigeOpdracht && isSerieuzeLeerModusActief && leermodusType === 'leitner' && onPauseOpdracht && (
+        {(gamePhase === 'ended' || gamePhase === 'idle') && (huidigeOpdracht || laatsteBeoordeeldeOpdracht) && isSerieuzeLeerModusActief && leermodusType === 'leitner' && onPauseOpdracht && (
           <div className="pause-opdracht-footer">
             <button 
               className="pause-opdracht-footer-knop" 
