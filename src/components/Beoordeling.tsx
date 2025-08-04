@@ -19,18 +19,6 @@ export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht,
     }
   };
 
-  const canPauseOpdracht = currentOpdracht && isLeerModus && (isLeitnerMode || (isSerieuzeLeerModusActief && leermodusType === 'leitner'));
-
-  // Debug informatie
-  console.log('Beoordeling Debug:', {
-    currentOpdracht: !!currentOpdracht,
-    isLeitnerMode,
-    isLeerModus,
-    isSerieuzeLeerModusActief,
-    leermodusType,
-    canPauseOpdracht
-  });
-
   return (
     <div className="beoordeling-container">
       <div className="beoordeling-knoppen">
@@ -44,21 +32,6 @@ export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht,
           Heel Goed <span className="percentage">{isLeerModus ? '(5/5)' : '(100%)'}</span>
         </button>
       </div>
-      
-      {canPauseOpdracht && (
-        <div className="pause-opdracht-sectie">
-          <button 
-            className="pause-opdracht-knop" 
-            onClick={handlePauseOpdracht}
-            title="Pauzeer deze opdracht - deze komt niet terug tot de pauze wordt gestopt"
-          >
-            ⏸️ Pauzeer deze opdracht
-          </button>
-          <p className="pause-uitleg">
-            Deze opdracht komt niet terug tot de pauze wordt gestopt
-          </p>
-        </div>
-      )}
     </div>
   );
 }; 

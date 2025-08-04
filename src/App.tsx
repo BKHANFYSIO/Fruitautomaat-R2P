@@ -1073,6 +1073,25 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setGamePhase('ended');
   }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd]);
 
+  const handlePauseOpdracht = useCallback(() => {
+    if (huidigeOpdracht && isSerieuzeLeerModusActief && leermodusType === 'leitner') {
+      const leerDataManager = getLeerDataManager();
+      const opdrachtId = `${huidigeOpdracht.opdracht.Hoofdcategorie || 'Overig'}_${huidigeOpdracht.opdracht.Categorie}_${huidigeOpdracht.opdracht.Opdracht.substring(0, 20)}`;
+      leerDataManager.pauseOpdracht(opdrachtId);
+      
+      // Toon notificatie
+      setNotificatie({
+        zichtbaar: true,
+        bericht: 'Opdracht gepauzeerd! Deze komt niet terug tot de pauze wordt gestopt.',
+        type: 'succes'
+      });
+      
+      setTimeout(() => {
+        setNotificatie(prev => ({ ...prev, zichtbaar: false }));
+      }, 3000);
+    }
+  }, [huidigeOpdracht, isSerieuzeLeerModusActief, leermodusType]);
+
   const handleBeoordeling = useCallback((prestatie: 'Heel Goed' | 'Redelijk' | 'Niet Goed') => {
     if (!huidigeOpdracht || !huidigeSpeler || !huidigeSpinAnalyse) {
       setGamePhase('idle');
@@ -1771,6 +1790,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             spinAnalyse={huidigeSpinAnalyse}
             isGeluidActief={isGeluidActief}
             gamePhase={gamePhase}
+            huidigeOpdracht={huidigeOpdracht}
+            isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+            leermodusType={leermodusType}
+            onPauseOpdracht={handlePauseOpdracht}
             welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>
