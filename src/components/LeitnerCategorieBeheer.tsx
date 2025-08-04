@@ -47,9 +47,9 @@ const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
     <div className="box-uitleg-popup-content" onClick={(e) => e.stopPropagation()}>
       <button onClick={onClose} className="box-uitleg-popup-close">&times;</button>
       <h4>Uitleg van de Boxen</h4>
-      <p>Het Leitner-systeem helpt je efficiënt te leren door opdrachten slim te herhalen. De box bepaalt wanneer je een opdracht opnieuw ziet:</p>
+      <p>Het Leitner-systeem helpt je efficiënt te leren door opdrachten slim te herhalen. Nieuwe opdrachten beginnen buiten de boxen en worden na de eerste keer beantwoorden in een box geplaatst.</p>
       <ul>
-        <li><b>B0:</b> Nieuw (herhaling na 10 min)</li>
+        <li><b>B0:</b> Eerste herhaling (na 10 minuten)</li>
         <li><b>B1:</b> Herhaling na 1 dag</li>
         <li><b>B2:</b> Herhaling na 2 dagen</li>
         <li><b>B3:</b> Herhaling na 4 dagen</li>
@@ -57,11 +57,17 @@ const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
         <li><b>B5:</b> Herhaling na 14 dagen</li>
         <li><b>B6:</b> "Geleerd" (herhaling na 45 dagen)</li>
       </ul>
-      <p>Na elke opdracht verplaatst deze op basis van je antwoord:</p>
+      <p><b>Eerste keer beantwoorden:</b></p>
       <ul>
-        <li><b>Heel Goed:</b> De opdracht gaat één box omhoog.</li>
-        <li><b>Redelijk:</b> De opdracht blijft in dezelfde box.</li>
-        <li><b>Niet Goed:</b> De opdracht gaat terug naar Box 1 (of blijft in Box 0).</li>
+        <li><b>Heel Goed:</b> Opdracht gaat naar Box 1</li>
+        <li><b>Redelijk:</b> Opdracht gaat naar Box 0</li>
+        <li><b>Niet Goed:</b> Opdracht gaat naar Box 0</li>
+      </ul>
+      <p><b>Bij herhalingen:</b></p>
+      <ul>
+        <li><b>Heel Goed:</b> De opdracht gaat één box omhoog</li>
+        <li><b>Redelijk:</b> De opdracht blijft in dezelfde box</li>
+        <li><b>Niet Goed:</b> De opdracht gaat terug naar Box 1 (of blijft in Box 0)</li>
       </ul>
     </div>
   </div>
