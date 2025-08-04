@@ -191,6 +191,58 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
+  
+  // Gepauzeerde opdrachten functionaliteit
+  const leerDataManager = getLeerDataManager();
+  const leitnerData = leerDataManager.loadLeitnerData();
+  const pausedOpdrachten = leerDataManager.getPausedOpdrachten();
+  
+  // Groepeer gepauzeerde opdrachten per categorie
+  const gepauzeerdeOpdrachtenPerCategorie = useMemo(() => {
+    const categorieen: { [key: string]: { opdrachtId: string; boxId: number; pauseTime?: string }[] } = {};
+    
+    leitnerData.boxes.forEach(box => {
+      box.opdrachten.forEach(opdrachtId => {
+        const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
+        if (isPaused) {
+          const pauseTime = leerDataManager.getPauseTime(opdrachtId) || undefined;
+          
+          // Extraheer categorie uit opdrachtId (format: "Hoofdcategorie_Categorie_OpdrachtText")
+          const parts = opdrachtId.split('_');
+          if (parts.length >= 2) {
+            const categorie = `${parts[0]}_${parts[1]}`;
+            if (!categorieen[categorie]) {
+              categorieen[categorie] = [];
+            }
+            categorieen[categorie].push({
+              opdrachtId,
+              boxId: box.boxId,
+              pauseTime
+            });
+          }
+        }
+      });
+    });
+    
+    return categorieen;
+  }, [leitnerData, pausedOpdrachten]);
+
+  const handleResumeOpdracht = (opdrachtId: string) => {
+    leerDataManager.resumeOpdracht(opdrachtId);
+    setToastBericht('Opdracht hervat!');
+    setIsToastZichtbaar(true);
+  };
+
+  const formatPauseTime = (pauseTime: string) => {
+    const date = new Date(pauseTime);
+    return date.toLocaleDateString('nl-NL', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
   const [toonResetModal, setToonResetModal] = useState(false);
   const [resetCategorie, setResetCategorie] = useState<string>('');
 
@@ -581,6 +633,40 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               )}
             </div>
           </div>
+
+          {/* Gepauzeerde opdrachten sectie */}
+          {pausedOpdrachten.length > 0 && (
+            <div className="paused-opdrachten-section">
+              <h4>⏸️ Gepauzeerde Opdrachten ({pausedOpdrachten.length})</h4>
+              <div className="paused-opdrachten-list">
+                {Object.entries(gepauzeerdeOpdrachtenPerCategorie)
+                  .filter(([_, opdrachten]) => opdrachten.length > 0)
+                  .map(([categorie, opdrachten]) => (
+                    <div key={categorie} className="categorie-paused-group">
+                      <h6>{categorie.replace('_', ' - ')}</h6>
+                      <div className="paused-opdrachten-grid">
+                        {opdrachten.map(op => (
+                          <div key={op.opdrachtId} className="paused-opdracht-card">
+                            <div className="paused-opdracht-info">
+                              <span className="box-indicator">Box {op.boxId}</span>
+                              <span className="pause-time">
+                                Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
+                              </span>
+                            </div>
+                            <button 
+                              onClick={() => handleResumeOpdracht(op.opdrachtId)}
+                              className="resume-knop"
+                            >
+                              ▶️ Hervatten
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
           <div className="snelle-selecties">
             <h4>Snelle Selecties</h4>

@@ -731,106 +731,25 @@ export const CategorieSelectieModal = ({
   );
 
   const renderLeitnerTabContent = () => {
-    const leerDataManager = getLeerDataManager();
-    const leitnerData = leerDataManager.loadLeitnerData();
-    const pausedOpdrachten = leerDataManager.getPausedOpdrachten();
-    
-    // Groepeer opdrachten per categorie met pauze status
-    const opdrachtenPerCategorie = useMemo(() => {
-      const categorieen: { [key: string]: { opdrachtId: string; boxId: number; isPaused: boolean; pauseTime?: string }[] } = {};
-      
-      leitnerData.boxes.forEach(box => {
-        box.opdrachten.forEach(opdrachtId => {
-          const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
-                     const pauseTime = isPaused ? leerDataManager.getPauseTime(opdrachtId) || undefined : undefined;
-          
-          // Extraheer categorie uit opdrachtId (format: "Hoofdcategorie_Categorie_OpdrachtText")
-          const parts = opdrachtId.split('_');
-          if (parts.length >= 2) {
-            const categorie = `${parts[0]}_${parts[1]}`;
-            if (!categorieen[categorie]) {
-              categorieen[categorie] = [];
-            }
-            categorieen[categorie].push({
-              opdrachtId,
-              boxId: box.boxId,
-              isPaused,
-              pauseTime
-            });
-          }
-        });
-      });
-      
-      return categorieen;
-    }, [leitnerData, pausedOpdrachten]);
-
-    const handleResumeOpdracht = (opdrachtId: string) => {
-      leerDataManager.resumeOpdracht(opdrachtId);
-      setToastBericht('Opdracht hervat!');
-      setIsToastZichtbaar(true);
-    };
-
-    const formatPauseTime = (pauseTime: string) => {
-      const date = new Date(pauseTime);
-      return date.toLocaleDateString('nl-NL', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    };
-
     return (
       <div className="leitner-tab-content">
         <div className="leitner-overview">
           <h4>📚 Leitner Systeem Overzicht</h4>
           <p>Beheer je opdrachten en pauzeer functionaliteit.</p>
           
-          {pausedOpdrachten.length > 0 && (
-            <div className="paused-opdrachten-section">
-              <h5>⏸️ Gepauzeerde Opdrachten ({pausedOpdrachten.length})</h5>
-              <div className="paused-opdrachten-list">
-                {Object.entries(opdrachtenPerCategorie)
-                  .filter(([_, opdrachten]) => opdrachten.some(op => op.isPaused))
-                  .map(([categorie, opdrachten]) => (
-                    <div key={categorie} className="categorie-paused-group">
-                      <h6>{categorie.replace('_', ' - ')}</h6>
-                      <div className="paused-opdrachten-grid">
-                        {opdrachten
-                          .filter(op => op.isPaused)
-                          .map(op => (
-                            <div key={op.opdrachtId} className="paused-opdracht-card">
-                              <div className="paused-opdracht-info">
-                                <span className="box-indicator">Box {op.boxId}</span>
-                                <span className="pause-time">
-                                  Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
-                                </span>
-                              </div>
-                              <button 
-                                onClick={() => handleResumeOpdracht(op.opdrachtId)}
-                                className="resume-knop"
-                              >
-                                ▶️ Hervatten
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-          
           <div className="leitner-actions">
             <button onClick={onOpenLeitnerBeheer} className="snelle-selectie-knop">
               📊 Open Leitner Beheer
             </button>
-            {pausedOpdrachten.length === 0 && (
-              <p className="no-paused-message">
-                Geen gepauzeerde opdrachten. Je kunt opdrachten pauzeren na het voltooien ervan.
-              </p>
-            )}
+            <p className="leitner-info">
+              In het Leitner Beheer kun je:
+            </p>
+            <ul className="leitner-features">
+              <li>📊 Bekijk gedetailleerde statistieken per categorie</li>
+              <li>⏸️ Beheer gepauzeerde opdrachten</li>
+              <li>🔄 Reset categorieën indien nodig</li>
+              <li>💾 Sla categorie selecties op</li>
+            </ul>
           </div>
         </div>
       </div>
