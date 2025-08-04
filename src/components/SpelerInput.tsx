@@ -35,6 +35,25 @@ const TooltipButton = ({
   const [showTooltip, setShowTooltip] = useState(false);
   const pressTimer = useRef<number | null>(null);
 
+  // Effect om tooltip te sluiten bij klikken buiten de knop
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showTooltip && isTouchDevice()) {
+        // Check of de klik buiten de knop container was
+        const target = event.target as Element;
+        const container = target.closest('.mode-button-container');
+        if (!container) {
+          setShowTooltip(false);
+        }
+      }
+    };
+
+    if (showTooltip && isTouchDevice()) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showTooltip]);
+
   const handlePressStart = () => {
     pressTimer.current = window.setTimeout(() => {
       setShowTooltip(true);
@@ -45,28 +64,36 @@ const TooltipButton = ({
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
+      // Tooltip blijft open totdat gebruiker ergens anders tikt
+      // We verbergen hem niet automatisch meer
     }
-    // Verberg de tooltip na een korte vertraging, zodat de gebruiker de inhoud kan zien
-    setTimeout(() => setShowTooltip(false), 2000);
   };
 
   const handleClick = () => {
-    if (!showTooltip) {
-      onClick();
+    // Als tooltip open is, sluit deze eerst
+    if (showTooltip) {
+      setShowTooltip(false);
+      return;
     }
+    // Anders voer de normale klik actie uit
+    onClick();
   };
 
-  // Detecteer of het een touch-apparaat is
-  const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  // Detecteer of het een touch-apparaat is - vereenvoudigde versie
+  const isTouchDevice = () => {
+    // Alleen checken voor touch events, niet voor viewport width
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  };
 
   return (
     <div
       className="mode-button-container"
-      onMouseEnter={!isTouchDevice() ? () => setShowTooltip(true) : undefined}
-      onMouseLeave={!isTouchDevice() ? () => setShowTooltip(false) : undefined}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
       onTouchStart={isTouchDevice() ? handlePressStart : undefined}
       onTouchEnd={isTouchDevice() ? handlePressEnd : undefined}
       onTouchCancel={isTouchDevice() ? handlePressEnd : undefined}
+      onMouseDown={() => setShowTooltip(false)}
     >
       <button
         className={`mode-button ${activeMode === mode ? 'active' : ''}`}
@@ -199,7 +226,7 @@ export const SpelerInput = ({
           onClick={handleHighscoreSelect}
           isSpelGestart={isSpelGestart}
           icon="🏆"
-          text="Highscore"
+          text="Highscore Modus"
           tooltipContent={
             <div className="tooltip-content">
               <h4>🏆 Highscore Modus</h4>
@@ -215,7 +242,7 @@ export const SpelerInput = ({
           onClick={handleMultiplayerSelect}
           isSpelGestart={isSpelGestart}
           icon="👥"
-          text="Multiplayer"
+          text="Multiplayer Modus"
           tooltipContent={
             <div className="tooltip-content">
               <h4>👥 Multiplayer Modus</h4>
@@ -247,7 +274,7 @@ export const SpelerInput = ({
           onClick={handleLeitnerSelect}
           isSpelGestart={isSpelGestart}
           icon="🔄"
-          text="Leitner"
+          text="Leitner Leermodus"
           tooltipContent={
             <div className="tooltip-content">
               <h4>🔄 Leitner Leermodus</h4>

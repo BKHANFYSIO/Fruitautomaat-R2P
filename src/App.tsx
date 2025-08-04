@@ -761,8 +761,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     // Vang het geval af waar geen opdrachten beschikbaar zijn
     if (gefilterdeOpdrachten.length === 0) {
       const melding = isSerieuzeLeerModusActief && leermodusType === 'leitner' 
-        ? 'Selecteer eerst de categorieën die je wilt leren in het "Leitner Beheer" scherm.'
-        : 'Selecteer eerst categorieën in de "Instellingen".';
+        ? 'Selecteer eerst de categorieën die je wilt leren. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".'
+        : 'Selecteer eerst categorieën. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".';
         
       setNotificatie({ 
         zichtbaar: true, 
@@ -1781,24 +1781,17 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                     </p>
                     <p>Je leerdata wordt automatisch opgeslagen op dit device.</p>
                     <p>Geen naam vereist - focus op leren!</p>
-                    <p><strong>Stap 1:</strong> Pas in "Instellingen" de spelregels, opdrachten en categorieën aan.</p>
+                    <p><strong>Stap 1:</strong> Kies een spelmodus</p>
+                    <p><strong>Stap 2:</strong> Selecteer of pas geselecteerde categorieën aan</p>
+                    <p><strong>Stap 3:</strong> Start het spel door rechts op de spin te klikken</p>
                     <p><strong>Tip:</strong> Gebruik de knop rechtsboven voor een volledige schermweergave.</p>
                   </>
                 ) : (
                   <>
-                    <p>
-                      <strong>Stap 1:</strong>{' '}
-                      {isMobieleWeergave
-                        ? 'Open het menu (🏆) en voeg spelers toe.'
-                        : 'Voeg links in het menu spelers toe.'
-                      }
-                      {gameMode === 'multi' && spelers.length === 1 && (
-                        <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
-                          {' '}(Minimaal 2 spelers vereist voor multiplayer)
-                        </span>
-                      )}
-                    </p>
-                    <p><strong>Stap 2:</strong> Pas in "Instellingen" de spelregels, opdrachten en categorieën aan.</p>
+                    <p><strong>Stap 1:</strong> Kies een spelmodus</p>
+                    <p><strong>Stap 2:</strong> Voeg spelers toe (Highscore en Multiplayer)</p>
+                    <p><strong>Stap 3:</strong> Selecteer of pas geselecteerde categorieën aan</p>
+                    <p><strong>Stap 4:</strong> Start het spel door rechts op de spin te klikken</p>
                     <p><strong>Tip:</strong> Gebruik de knop rechtsboven voor een volledige schermweergave.</p>
                   </>
                 )}

@@ -344,6 +344,30 @@
   /* Debug styling om te zien of tooltip wordt gerenderd */
   min-height: 50px;
   display: block !important;
+  /* Voeg background toe voor betere zichtbaarheid */
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+/* Toon tooltips alleen op desktop/laptop */
+@media (max-width: 768px) {
+  .tooltip {
+    display: none !important;
+  }
+}
+
+/* Verberg tooltips op apparaten zonder hover ondersteuning */
+@media (hover: none) {
+  .tooltip {
+    display: none !important;
+  }
+}
+
+/* Verberg tooltips op apparaten met coarse pointer (touch) */
+@media (pointer: coarse) {
+  .tooltip {
+    display: none !important;
+  }
 }
 
 .tooltip-top {
