@@ -27,6 +27,7 @@ interface ActieDashboardProps {
   opgespaardeBonusPunten: number;
   isSerieuzeLeerModusActief?: boolean;
   aantalBeurtenGespeeld?: number;
+  leermodusType?: 'normaal' | 'leitner';
 }
 
 export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
@@ -48,7 +49,8 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
   onGebruikExtraSpin,
   isJokerSpinActief,
   isSerieuzeLeerModusActief = false,
-  aantalBeurtenGespeeld = 0
+  aantalBeurtenGespeeld = 0,
+  leermodusType
 }, ref) => {
 
   const [gekozenPartner, setGekozenPartner] = useState('');
@@ -61,7 +63,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
 
   if (gamePhase === 'partner_choice') {
     if (andereSpelers.length === 0) {
-      return <div ref={ref}><Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht?.opdracht} isLeitnerMode={huidigeOpdracht?.type === 'herhaling'} /></div>
+      return <div ref={ref}><Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht?.opdracht} isLeitnerMode={huidigeOpdracht?.type === 'herhaling'} isSerieuzeLeerModusActief={isSerieuzeLeerModusActief} leermodusType={leermodusType} /></div>
     }
     return (
       <div className="actie-dashboard" ref={ref}>
@@ -165,7 +167,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
             </div>
             <div className="assessment-wrapper">
               <h3>Beoordeel de prestatie:</h3>
-              <Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht.opdracht} isLeitnerMode={huidigeOpdracht.type === 'herhaling'} />
+              <Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht.opdracht} isLeitnerMode={huidigeOpdracht.type === 'herhaling'} isSerieuzeLeerModusActief={isSerieuzeLeerModusActief} leermodusType={leermodusType} />
             </div>
           </div>
         </div>

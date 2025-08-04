@@ -6,9 +6,11 @@ interface BeoordelingProps {
   isLeerModus?: boolean;
   currentOpdracht?: { Hoofdcategorie?: string; Categorie: string; Opdracht: string };
   isLeitnerMode?: boolean;
+  isSerieuzeLeerModusActief?: boolean;
+  leermodusType?: 'normaal' | 'leitner';
 }
 
-export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht, isLeitnerMode = false }: BeoordelingProps) => {
+export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht, isLeitnerMode = false, isSerieuzeLeerModusActief = false, leermodusType }: BeoordelingProps) => {
   const handlePauseOpdracht = () => {
     if (currentOpdracht && isLeitnerMode) {
       const leerDataManager = getLeerDataManager();
@@ -17,13 +19,15 @@ export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht,
     }
   };
 
-  const canPauseOpdracht = currentOpdracht && isLeitnerMode && isLeerModus;
+  const canPauseOpdracht = currentOpdracht && isLeerModus && (isLeitnerMode || (isSerieuzeLeerModusActief && leermodusType === 'leitner'));
 
   // Debug informatie
   console.log('Beoordeling Debug:', {
     currentOpdracht: !!currentOpdracht,
     isLeitnerMode,
     isLeerModus,
+    isSerieuzeLeerModusActief,
+    leermodusType,
     canPauseOpdracht
   });
 

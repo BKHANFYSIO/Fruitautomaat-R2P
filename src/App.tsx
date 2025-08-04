@@ -1820,6 +1820,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                 isGeluidActief={isGeluidActief}
                 isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
                 aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+                leermodusType={leermodusType}
               />
             )}
           </Fruitautomaat>
