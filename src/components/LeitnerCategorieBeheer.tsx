@@ -15,7 +15,7 @@ const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
     const bronnen = new Set(relevanteOpdrachten.map(op => op.bron));
     
     let iconen = '';
-    if (bronnen.has('systeem')) iconen += '⚙️';
+    if (bronnen.has('systeem')) iconen += '🏛️';
     if (bronnen.has('gebruiker')) iconen += '👤';
     
     return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
@@ -385,10 +385,10 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         <div className="modal-header">
           <div className="modal-title-container">
             <h2>CATEGORIE SELECTIE</h2>
-            <h3 className="modal-subtitle">Voor Leitner Leermodus</h3>
+            <h3 className="modal-subtitle">(Leitner)</h3>
           </div>
           <button onClick={() => window.dispatchEvent(new CustomEvent('openCategorieSelectie'))} className="terug-naar-selectie-knop">
-            ← Categorie Selectie Andere Modi
+            ← Andere Modi
           </button>
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
@@ -466,7 +466,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                 disabled={!heeftSysteemOpdrachten}
                 title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
               >
-                ⚙️ Alleen Systeem
+                🏛️ Alleen Systeem
               </button>
               <button 
                 onClick={() => handleSelecteerBron('gebruiker')} 
@@ -492,7 +492,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                         disabled={!heeftSysteemOpdrachten}
                         title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
                     >
-                    ⚙️ Systeem
+                    🏛️ Systeem
                     </button>
                     <button 
                         onClick={() => setOpdrachtBronFilter('gebruiker')} 

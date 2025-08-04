@@ -30,7 +30,7 @@ const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
   const bronnen = new Set(relevanteOpdrachten.map(op => op.bron));
   
   let iconen = '';
-  if (bronnen.has('systeem')) iconen += '⚙️';
+  if (bronnen.has('systeem')) iconen += '🏛️';
   if (bronnen.has('gebruiker')) iconen += '👤';
   
   return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
@@ -588,14 +588,14 @@ export const CategorieSelectieModal = ({
           <button onClick={() => actieveBulkHandler(alleCategorieen, 'deselect')} className="snelle-selectie-knop">
             Niets
           </button>
-          <button 
-            onClick={() => handleSelecteerBron('systeem')} 
-            className="snelle-selectie-knop"
-            disabled={!heeftSysteemOpdrachten}
-            title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
-          >
-            ⚙️ Alleen Systeem
-          </button>
+                        <button 
+                onClick={() => handleSelecteerBron('systeem')} 
+                className="snelle-selectie-knop"
+                disabled={!heeftSysteemOpdrachten}
+                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
+              >
+                🏛️ Alleen Systeem
+              </button>
           <button 
             onClick={() => handleSelecteerBron('gebruiker')} 
             className="snelle-selectie-knop"
@@ -616,14 +616,14 @@ export const CategorieSelectieModal = ({
               <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
                 Allemaal
               </button>
-              <button 
-                onClick={() => setOpdrachtBronFilter('systeem')} 
-                className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
-                disabled={!heeftSysteemOpdrachten}
-                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
-              >
-                ⚙️ Systeem
-              </button>
+                                  <button 
+                        onClick={() => setOpdrachtBronFilter('systeem')} 
+                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
+                        disabled={!heeftSysteemOpdrachten}
+                        title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
+                    >
+                    🏛️ Systeem
+                    </button>
               <button 
                 onClick={() => setOpdrachtBronFilter('gebruiker')} 
                 className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}
