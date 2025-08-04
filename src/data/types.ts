@@ -157,6 +157,9 @@ export interface LeitnerData {
   langsteStreak: number;
   laatsteVoltooiingsDatum: string;
   newQuestionsToday: { date: string; count: number };
+  // Pauze functionaliteit
+  pausedOpdrachten: string[]; // Array van opdrachtIds die gepauzeerd zijn
+  opdrachtPauseTimes: { [opdrachtId: string]: string }; // Wanneer de pauze is gestart
 }
 
 export interface LeitnerOpdrachtInfo {

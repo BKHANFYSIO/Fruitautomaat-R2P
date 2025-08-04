@@ -61,7 +61,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
 
   if (gamePhase === 'partner_choice') {
     if (andereSpelers.length === 0) {
-      return <div ref={ref}><Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} /></div>
+      return <div ref={ref}><Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht?.opdracht} isLeitnerMode={huidigeOpdracht?.type === 'herhaling'} /></div>
     }
     return (
       <div className="actie-dashboard" ref={ref}>
@@ -165,7 +165,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
             </div>
             <div className="assessment-wrapper">
               <h3>Beoordeel de prestatie:</h3>
-              <Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} />
+              <Beoordeling onBeoordeel={handleBeoordeling} isLeerModus={isSerieuzeLeerModusActief} currentOpdracht={huidigeOpdracht.opdracht} isLeitnerMode={huidigeOpdracht.type === 'herhaling'} />
             </div>
           </div>
         </div>

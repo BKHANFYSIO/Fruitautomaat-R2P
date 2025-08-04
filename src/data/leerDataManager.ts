@@ -1798,7 +1798,10 @@ class LeerDataManager {
       huidigeStreak: 0,
       langsteStreak: 0,
       laatsteVoltooiingsDatum: '',
-      newQuestionsToday: { date: getDatumString(), count: 0 }
+      newQuestionsToday: { date: getDatumString(), count: 0 },
+      // Pauze functionaliteit
+      pausedOpdrachten: [],
+      opdrachtPauseTimes: {}
     };
   }
 
@@ -1923,6 +1926,11 @@ class LeerDataManager {
       const intervalInMinuten = leitnerData.boxIntervallen[box.boxId] || 1440;
       
       box.opdrachten.forEach(opdrachtId => {
+        // Sla gepauzeerde opdrachten over
+        if (leitnerData.pausedOpdrachten.includes(opdrachtId)) {
+          return;
+        }
+        
         const laatsteReviewString = leitnerData.opdrachtReviewTimes[opdrachtId];
         // FIX: Sla opdrachten over zonder geldige reviewtijd
         if (!laatsteReviewString) {
@@ -2644,6 +2652,43 @@ class LeerDataManager {
       gereset: geresetOpdrachten.length,
       opdrachten: geresetOpdrachten
     };
+  }
+
+  // Pauze functionaliteit
+  public pauseOpdracht(opdrachtId: string): void {
+    const leitnerData = this.loadLeitnerData();
+    
+    // Voeg toe aan gepauzeerde opdrachten als nog niet gepauzeerd
+    if (!leitnerData.pausedOpdrachten.includes(opdrachtId)) {
+      leitnerData.pausedOpdrachten.push(opdrachtId);
+      leitnerData.opdrachtPauseTimes[opdrachtId] = new Date().toISOString();
+      this.saveLeitnerData(leitnerData);
+    }
+  }
+
+  public resumeOpdracht(opdrachtId: string): void {
+    const leitnerData = this.loadLeitnerData();
+    
+    // Verwijder uit gepauzeerde opdrachten
+    leitnerData.pausedOpdrachten = leitnerData.pausedOpdrachten.filter(id => id !== opdrachtId);
+    delete leitnerData.opdrachtPauseTimes[opdrachtId];
+    
+    this.saveLeitnerData(leitnerData);
+  }
+
+  public isOpdrachtPaused(opdrachtId: string): boolean {
+    const leitnerData = this.loadLeitnerData();
+    return leitnerData.pausedOpdrachten.includes(opdrachtId);
+  }
+
+  public getPausedOpdrachten(): string[] {
+    const leitnerData = this.loadLeitnerData();
+    return leitnerData.pausedOpdrachten;
+  }
+
+  public getPauseTime(opdrachtId: string): string | null {
+    const leitnerData = this.loadLeitnerData();
+    return leitnerData.opdrachtPauseTimes[opdrachtId] || null;
   }
 }
 
