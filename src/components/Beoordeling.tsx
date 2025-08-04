@@ -17,7 +17,15 @@ export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht,
     }
   };
 
-  const canPauseOpdracht = currentOpdracht && isLeitnerMode;
+  const canPauseOpdracht = currentOpdracht && isLeitnerMode && isLeerModus;
+
+  // Debug informatie
+  console.log('Beoordeling Debug:', {
+    currentOpdracht: !!currentOpdracht,
+    isLeitnerMode,
+    isLeerModus,
+    canPauseOpdracht
+  });
 
   return (
     <div className="beoordeling-container">
