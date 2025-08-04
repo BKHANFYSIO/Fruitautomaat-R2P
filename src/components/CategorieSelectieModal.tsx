@@ -735,20 +735,20 @@ export const CategorieSelectieModal = ({
       <div className="leitner-tab-content">
         <div className="leitner-overview">
           <h4>📚 Leitner Systeem Overzicht</h4>
-          <p>Beheer je opdrachten en pauzeer functionaliteit.</p>
+          <p>Beheer je opdrachten en pauzeer functionaliteit via de aparte Leitner modal.</p>
           
           <div className="leitner-actions">
             <button onClick={onOpenLeitnerBeheer} className="snelle-selectie-knop">
               📊 Open Leitner Beheer
             </button>
             <p className="leitner-info">
-              In het Leitner Beheer kun je:
+              In de Leitner Beheer modal kun je:
             </p>
             <ul className="leitner-features">
-              <li>📊 Bekijk gedetailleerde statistieken per categorie</li>
-              <li>⏸️ Beheer gepauzeerde opdrachten</li>
-              <li>🔄 Reset categorieën indien nodig</li>
-              <li>💾 Sla categorie selecties op</li>
+              <li>📚 Opgeslagen Leitner selecties beheren</li>
+              <li>⏸️ Gepauzeerde opdrachten herstellen</li>
+              <li>📊 Gedetailleerde statistieken bekijken</li>
+              <li>🔄 Categorieën resetten</li>
             </ul>
           </div>
         </div>

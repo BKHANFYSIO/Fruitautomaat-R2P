@@ -181,45 +181,33 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   opdrachtBronFilter,
   setOpdrachtBronFilter,
 }) => {
-  const [statistieken, setStatistieken] = useState<CategorieStatistiek[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'naam', direction: 'ascending' });
-  const [isUitlegOpen, setIsUitlegOpen] = useState(false);
-  const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
-  const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenLeitnerSelectie[]>([]);
-  const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
-  const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
-  const [toastBericht, setToastBericht] = useState('');
-  const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
-  
-  // Gepauzeerde opdrachten functionaliteit
+  // Leitner data hooks voor pauze functionaliteit
   const leerDataManager = getLeerDataManager();
   const leitnerData = leerDataManager.loadLeitnerData();
   const pausedOpdrachten = leerDataManager.getPausedOpdrachten();
   
-  // Groepeer gepauzeerde opdrachten per categorie
-  const gepauzeerdeOpdrachtenPerCategorie = useMemo(() => {
-    const categorieen: { [key: string]: { opdrachtId: string; boxId: number; pauseTime?: string }[] } = {};
+  // Groepeer opdrachten per categorie met pauze status
+  const opdrachtenPerCategorie = useMemo(() => {
+    const categorieen: { [key: string]: { opdrachtId: string; boxId: number; isPaused: boolean; pauseTime?: string }[] } = {};
     
     leitnerData.boxes.forEach(box => {
       box.opdrachten.forEach(opdrachtId => {
         const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
-        if (isPaused) {
-          const pauseTime = leerDataManager.getPauseTime(opdrachtId) || undefined;
-          
-          // Extraheer categorie uit opdrachtId (format: "Hoofdcategorie_Categorie_OpdrachtText")
-          const parts = opdrachtId.split('_');
-          if (parts.length >= 2) {
-            const categorie = `${parts[0]}_${parts[1]}`;
-            if (!categorieen[categorie]) {
-              categorieen[categorie] = [];
-            }
-            categorieen[categorie].push({
-              opdrachtId,
-              boxId: box.boxId,
-              pauseTime
-            });
+        const pauseTime = isPaused ? leerDataManager.getPauseTime(opdrachtId) || undefined : undefined;
+        
+        // Extraheer categorie uit opdrachtId (format: "Hoofdcategorie_Categorie_OpdrachtText")
+        const parts = opdrachtId.split('_');
+        if (parts.length >= 2) {
+          const categorie = `${parts[0]}_${parts[1]}`;
+          if (!categorieen[categorie]) {
+            categorieen[categorie] = [];
           }
+          categorieen[categorie].push({
+            opdrachtId,
+            boxId: box.boxId,
+            isPaused,
+            pauseTime
+          });
         }
       });
     });
@@ -243,6 +231,16 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       minute: '2-digit'
     });
   };
+  const [statistieken, setStatistieken] = useState<CategorieStatistiek[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'naam', direction: 'ascending' });
+  const [isUitlegOpen, setIsUitlegOpen] = useState(false);
+  const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
+  const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenLeitnerSelectie[]>([]);
+  const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
+  const [nieuweSelectieNaam, setNieuweSelectieNaam] = useState('');
+  const [toastBericht, setToastBericht] = useState('');
+  const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
   const [toonResetModal, setToonResetModal] = useState(false);
   const [resetCategorie, setResetCategorie] = useState<string>('');
 
@@ -634,39 +632,45 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             </div>
           </div>
 
-          {/* Gepauzeerde opdrachten sectie */}
-          {pausedOpdrachten.length > 0 && (
-            <div className="paused-opdrachten-section">
-              <h4>⏸️ Gepauzeerde Opdrachten ({pausedOpdrachten.length})</h4>
+          {/* Pauze beheer sectie */}
+          <div className="pauze-beheer-sectie">
+            <h4>⏸️ Gepauzeerde Opdrachten Beheer</h4>
+            {pausedOpdrachten.length > 0 ? (
               <div className="paused-opdrachten-list">
-                {Object.entries(gepauzeerdeOpdrachtenPerCategorie)
-                  .filter(([_, opdrachten]) => opdrachten.length > 0)
+                {Object.entries(opdrachtenPerCategorie)
+                  .filter(([_, opdrachten]) => opdrachten.some(op => op.isPaused))
                   .map(([categorie, opdrachten]) => (
                     <div key={categorie} className="categorie-paused-group">
                       <h6>{categorie.replace('_', ' - ')}</h6>
                       <div className="paused-opdrachten-grid">
-                        {opdrachten.map(op => (
-                          <div key={op.opdrachtId} className="paused-opdracht-card">
-                            <div className="paused-opdracht-info">
-                              <span className="box-indicator">Box {op.boxId}</span>
-                              <span className="pause-time">
-                                Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
-                              </span>
+                        {opdrachten
+                          .filter(op => op.isPaused)
+                          .map(op => (
+                            <div key={op.opdrachtId} className="paused-opdracht-card">
+                              <div className="paused-opdracht-info">
+                                <span className="box-indicator">Box {op.boxId}</span>
+                                <span className="pause-time">
+                                  Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
+                                </span>
+                              </div>
+                              <button 
+                                onClick={() => handleResumeOpdracht(op.opdrachtId)}
+                                className="resume-knop"
+                              >
+                                ▶️ Hervatten
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleResumeOpdracht(op.opdrachtId)}
-                              className="resume-knop"
-                            >
-                              ▶️ Hervatten
-                            </button>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </div>
                   ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="geen-paused-melding">
+                <p>Geen gepauzeerde opdrachten. Je kunt opdrachten pauzeren na het voltooien ervan in de Leitner leermodus.</p>
+              </div>
+            )}
+          </div>
 
           <div className="snelle-selecties">
             <h4>Snelle Selecties</h4>
