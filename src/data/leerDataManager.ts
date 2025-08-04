@@ -1300,7 +1300,7 @@ class LeerDataManager {
     );
   }
 
-  public getSessiePatronenData(aantalDagen: number = 30): {
+  public getSessiePatronenData(): {
     uur: number;
     sessies: number;
     totaleTijd: number;
@@ -2623,11 +2623,6 @@ class LeerDataManager {
     
     // Zoek alle opdrachten van deze categorie in alle boxen
     leitnerData.boxes.forEach(box => {
-      const opdrachtenInBox = box.opdrachten.filter(opdrachtId => {
-        // Opdracht ID format: "Hoofdcategorie_Categorie_OpdrachtText"
-        return opdrachtId.startsWith(categorieVoorOpdrachtId + '_');
-      });
-      
       // Verwijder deze opdrachten uit de box
       box.opdrachten = box.opdrachten.filter(opdrachtId => {
         const isVanCategorie = opdrachtId.startsWith(categorieVoorOpdrachtId + '_');

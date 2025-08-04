@@ -208,29 +208,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   // }, [leitnerData]);
 
 
-  // Chart data generatie - alle useMemo hooks bovenaan
-  const scoreTrendData = useMemo(() => {
-    if (!leerData) return null;
 
-    const opdrachten = Object.values(leerData.opdrachten);
-    const sortedOpdrachten = opdrachten
-      .sort((a, b) => new Date(a.laatsteDatum).getTime() - new Date(b.laatsteDatum).getTime())
-      .slice(-10); // Laatste 10 opdrachten
-
-    return {
-      labels: sortedOpdrachten.map(op => formatChartDate(op.laatsteDatum)),
-      datasets: [
-        {
-          label: 'Score per Opdracht',
-          data: sortedOpdrachten.map(op => op.gemiddeldeScore),
-          borderColor: chartColors.primary,
-          backgroundColor: chartColors.primary + '20',
-          tension: 0.4,
-          fill: true
-        }
-      ]
-    };
-  }, [leerData]);
 
   // Activiteit data (opdrachten vs speeltijd)
   const activiteitData = useMemo(() => {
@@ -254,17 +232,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     }
   }, [leerData, activiteitTijdsRange]);
 
-  const weekelijkseData = useMemo(() => {
-    if (!leerData) return null;
-    const leerDataManager = getLeerDataManager();
-    return leerDataManager.getWeekelijkseData(12);
-  }, [leerData]);
 
-  const maandelijkseData = useMemo(() => {
-    if (!leerData) return null;
-    const leerDataManager = getLeerDataManager();
-    return leerDataManager.getMaandelijkseData(12);
-  }, [leerData]);
 
   // Leerpatronen data (nieuwe opdrachten vs herhalingen)
   const leerpatronenData = useMemo(() => {
@@ -874,7 +842,6 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                       const modusStats = leerDataManager.getStatistiekenPerModus();
                       const totaalNormaal = modusStats.normaal.sessies;
                       const totaalLeitner = modusStats.leitner.sessies;
-                      const totaalSessies = totaalNormaal + totaalLeitner;
                       
                       // Bereken opdrachten per modus
                       const normaalOpdrachten = leerDataManager.getOpdrachtenPerModus('normaal');
