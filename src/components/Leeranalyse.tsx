@@ -6,8 +6,7 @@ import {
   lineChartConfig, 
   barChartConfig, 
   doughnutChartConfig,
-  chartColors,
-  formatChartDate
+  chartColors
 } from '../utils/chartConfigs';
 import './Leeranalyse.css';
 
@@ -840,8 +839,6 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                     {(() => {
                       const leerDataManager = getLeerDataManager();
                       const modusStats = leerDataManager.getStatistiekenPerModus();
-                      const totaalNormaal = modusStats.normaal.sessies;
-                      const totaalLeitner = modusStats.leitner.sessies;
                       
                       // Bereken opdrachten per modus
                       const normaalOpdrachten = leerDataManager.getOpdrachtenPerModus('normaal');
