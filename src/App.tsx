@@ -25,6 +25,8 @@ import { Leeranalyse } from './components/Leeranalyse';
 import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
 import { DevPanel } from './components/DevPanel';
 import { LimietBereiktModal } from './components/LimietBereiktModal';
+import { FilterDashboard } from './components/FilterDashboard';
+import { CriteriaModal } from './components/CriteriaModal';
 
 // Hooks
 import { useAudio } from './hooks/useAudio';
@@ -45,6 +47,11 @@ type Notificatie = {
 
 type OpdrachtBronFilter = 'alle' | 'systeem' | 'gebruiker';
 
+interface Filters {
+  bronnen: ('systeem' | 'gebruiker')[];
+  opdrachtTypes: string[];
+}
+
 function App() {
   // Refs
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -60,6 +67,28 @@ function App() {
       leerDataManager.setAlleOpdrachten(opdrachten);
     }
   }, [opdrachten]);
+
+  // Filters state
+  const [filters, setFilters] = useState<Filters>(() => {
+    const savedFilters = localStorage.getItem('opdrachtFilters');
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        // Zorg ervoor dat de structuur klopt
+        if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Fout bij het parsen van filters uit localStorage", e);
+      }
+    }
+    return { bronnen: [], opdrachtTypes: [] };
+  });
+
+  // Effect to save filters to localStorage
+  useEffect(() => {
+    localStorage.setItem('opdrachtFilters', JSON.stringify(filters));
+  }, [filters]);
   
   // Settings context
   const {
@@ -160,8 +189,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
-const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>('alle');
 const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
 
@@ -552,7 +581,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         const leerDataManager = getLeerDataManager();
         
         // Haal altijd het aantal nieuwe opdrachten op
-        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachten, geselecteerdeLeitnerCategorieen);
+        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachtenVoorSelectie, geselecteerdeLeitnerCategorieen);
         setAantalNieuweLeitnerOpdrachten(nieuweOpdrachtenCount);
 
         // Bepaal of de Box 0 override actief moet zijn
@@ -613,34 +642,51 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setLimietWaarschuwingGenegeerd(false); // Reset limiet waarschuwing
   };
 
-  // Memoized opdrachten voor het filter, rekening houdend met de bron
-  const opdrachtenVoorFilter = useMemo(() => {
-    if (opdrachtBronFilter === 'alle') {
-      return opdrachten;
-    }
-    return opdrachten.filter(op => op.bron === opdrachtBronFilter);
-  }, [opdrachten, opdrachtBronFilter]);
+  // Volledig gefilterde opdrachten op basis van bron en type
+  const opdrachtenVoorSelectie = useMemo(() => {
+    return opdrachten.filter(op => {
+      // Stap 1: Filter op bron
+      const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes(op.bron as 'systeem' | 'gebruiker');
+      if (!bronMatch) return false;
+
+      // Stap 2: Filter op opdrachtType
+      // Als er geen types zijn geselecteerd, tonen we alles (van de gekozen bron)
+      if (filters.opdrachtTypes.length === 0) return true;
+      
+      // Anders, controleer of het type van de opdracht in de geselecteerde lijst staat
+      return filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+    });
+  }, [opdrachten, filters]);
 
   const alleUniekeCategorieen = useMemo(() => {
     const uniekeNamen = new Set<string>();
-    opdrachtenVoorFilter.forEach(op => {
+    opdrachtenVoorSelectie.forEach(op => {
       const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
       uniekeNamen.add(uniekeIdentifier);
     });
     return [...uniekeNamen];
-  }, [opdrachtenVoorFilter]);
+  }, [opdrachtenVoorSelectie]);
 
   const berekenAantalOpdrachten = (geselecteerde: string[]) => {
-    return opdrachten.filter(op => {
+    return opdrachtenVoorSelectie.filter(op => {
       const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
       return geselecteerde.includes(uniekeIdentifier);
     }).length;
   };
 
-  const aantalOpdrachtenHighscore = useMemo(() => berekenAantalOpdrachten(geselecteerdeHighscoreCategorieen), [geselecteerdeHighscoreCategorieen, opdrachten]);
-  const aantalOpdrachtenMultiplayer = useMemo(() => berekenAantalOpdrachten(geselecteerdeMultiplayerCategorieen), [geselecteerdeMultiplayerCategorieen, opdrachten]);
-  const aantalOpdrachtenLeitner = useMemo(() => berekenAantalOpdrachten(geselecteerdeLeitnerCategorieen), [geselecteerdeLeitnerCategorieen, opdrachten]);
-  const aantalOpdrachtenNormaal = useMemo(() => berekenAantalOpdrachten(geselecteerdeCategorieen), [geselecteerdeCategorieen, opdrachten]);
+  const aantalOpdrachtenHighscore = useMemo(() => berekenAantalOpdrachten(geselecteerdeHighscoreCategorieen), [geselecteerdeHighscoreCategorieen, opdrachtenVoorSelectie]);
+  const aantalOpdrachtenMultiplayer = useMemo(() => berekenAantalOpdrachten(geselecteerdeMultiplayerCategorieen), [geselecteerdeMultiplayerCategorieen, opdrachtenVoorSelectie]);
+  const aantalOpdrachtenLeitner = useMemo(() => berekenAantalOpdrachten(geselecteerdeLeitnerCategorieen), [geselecteerdeLeitnerCategorieen, opdrachtenVoorSelectie]);
+  const aantalOpdrachtenNormaal = useMemo(() => berekenAantalOpdrachten(geselecteerdeCategorieen), [geselecteerdeCategorieen, opdrachtenVoorSelectie]);
+
+  // Effect om geselecteerde categorieën op te schonen als ze niet meer beschikbaar zijn na filteren
+  useEffect(() => {
+    const beschikbareIds = new Set(alleUniekeCategorieen);
+    setGeselecteerdeCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
+    setGeselecteerdeLeitnerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
+    setGeselecteerdeMultiplayerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
+    setGeselecteerdeHighscoreCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
+  }, [alleUniekeCategorieen]);
 
 
 
@@ -718,20 +764,35 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       return [];
     }
 
-    return opdrachten.filter((opdracht) => {
+    return opdrachtenVoorSelectie.filter((opdracht) => {
       const uniekeIdentifier = `${opdracht.Hoofdcategorie || 'Overig'} - ${opdracht.Categorie}`;
       return actieveSelectie.includes(uniekeIdentifier);
     });
   }, [
-    opdrachten, 
+    opdrachtenVoorSelectie,
     gameMode,
     isSerieuzeLeerModusActief,
-      leermodusType,
+    leermodusType,
     geselecteerdeCategorieen, 
     geselecteerdeLeitnerCategorieen, 
     geselecteerdeMultiplayerCategorieen, 
     geselecteerdeHighscoreCategorieen
   ]);
+
+  const actieveCategorieSelectie = useMemo(() => {
+    switch (gameMode) {
+      case 'multi':
+        return geselecteerdeMultiplayerCategorieen;
+      case 'single':
+        if (isSerieuzeLeerModusActief) {
+          return leermodusType === 'leitner' ? geselecteerdeLeitnerCategorieen : geselecteerdeCategorieen;
+        } else {
+          return geselecteerdeHighscoreCategorieen;
+        }
+      default:
+        return geselecteerdeCategorieen;
+    }
+  }, [gameMode, isSerieuzeLeerModusActief, leermodusType, geselecteerdeCategorieen, geselecteerdeLeitnerCategorieen, geselecteerdeMultiplayerCategorieen, geselecteerdeHighscoreCategorieen]);
 
   // Effect om de beurt te resetten als de huidige opdracht ongeldig wordt door categoriewijziging
   useEffect(() => {
@@ -917,7 +978,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     let boxNummer: number | undefined = undefined;
 
     if (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner') {
-      const result = selectLeitnerOpdracht(opdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
+      const result = selectLeitnerOpdracht(gefilterdeOpdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
       
       if (result.limietBereikt && !limietWaarschuwingGenegeerd) {
         setIsLimietModalOpen(true);
@@ -987,7 +1048,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     // Bepaal de indices voor de rollen
     const categorieItems = [
       ...new Set(
-        opdrachten.map(o => 
+        gefilterdeOpdrachten.map(o => 
           o.Hoofdcategorie 
             ? `${o.Hoofdcategorie}: ${o.Categorie}` 
             : o.Categorie
@@ -998,7 +1059,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       ? `${gekozenOpdracht.Hoofdcategorie}: ${gekozenOpdracht.Categorie}` 
       : gekozenOpdracht.Categorie;
     
-    const opdrachtTeksten = opdrachten.map(o => o.Opdracht);
+    const opdrachtTeksten = gefilterdeOpdrachten.map(o => o.Opdracht);
     
     // Bepaal speler naam index
     let spelerNaamIndex: number;
@@ -1521,6 +1582,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           isOpen={isInstellingenOpen}
           onClose={() => setIsInstellingenOpen(false)}
           onVerwijderGebruikerOpdrachten={verwijderGebruikerOpdrachten}
+          // Filters
+          opdrachten={opdrachten}
+          filters={filters}
+          setFilters={setFilters}
           // Geavanceerd
           bonusOpdrachten={bonusOpdrachten}
           setBonusOpdrachten={setBonusOpdrachten}
@@ -1575,9 +1640,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             setIsCategorieSelectieOpen(false);
             setIsCategorieBeheerOpen(false); // Reset Leitner modal state
           }}
-        opdrachten={opdrachten}
-        opdrachtBronFilter={opdrachtBronFilter}
-        setOpdrachtBronFilter={setOpdrachtBronFilter}
+        opdrachten={opdrachtenVoorSelectie}
         geselecteerdeCategorieen={geselecteerdeCategorieen}
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
@@ -1603,9 +1666,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           geselecteerdeCategorieen={geselecteerdeLeitnerCategorieen}
           setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
           alleCategorieen={alleUniekeCategorieen}
-          alleOpdrachten={opdrachten}
-          opdrachtBronFilter={opdrachtBronFilter}
-          setOpdrachtBronFilter={setOpdrachtBronFilter}
+          alleOpdrachten={opdrachtenVoorSelectie}
         />
       )}
 
@@ -1617,6 +1678,15 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           setIsLimietModalOpen(false);
         }}
         maxVragen={maxNewLeitnerQuestionsPerDay}
+      />
+
+      <CriteriaModal 
+        isOpen={isCriteriaModalOpen}
+        onClose={() => setIsCriteriaModalOpen(false)}
+        opdrachten={opdrachten}
+        filters={filters}
+        setFilters={setFilters}
+        actieveCategorieSelectie={actieveCategorieSelectie}
       />
 
       {isMobieleWeergave && (
@@ -1766,6 +1836,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             </div>
           )}
 
+          <FilterDashboard 
+            filters={filters}
+            setFilters={setFilters}
+            opdrachten={opdrachten}
+            onOpenCriteriaModal={() => setIsCriteriaModalOpen(true)}
+            actieveCategorieSelectie={actieveCategorieSelectie}
+          />
+
           {/* Sessie beëindigen knop - alleen in leermodus tijdens actief spel */}
           {isSpelGestart && gameMode === 'single' && isSerieuzeLeerModusActief && (
             <div className="spel-controle-knoppen">
@@ -1821,8 +1899,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           
           <Fruitautomaat
             titel="Return2Performance"
-            key={opdrachten.length}
-            opdrachten={opdrachten}
+            key={opdrachtenVoorSelectie.length}
+            opdrachten={opdrachtenVoorSelectie}
             spelers={spelers}
             isSpinning={isAanHetSpinnen}
             resultaat={spinResultaat}

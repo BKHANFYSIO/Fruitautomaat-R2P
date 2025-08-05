@@ -49,6 +49,7 @@ export const useOpdrachten = (defaultFilePath: string) => {
     return json.map(row => {
       const tijdslimiet = Number(row["Tijdslimiet (sec)"]) || Number(row.Tijdslimiet);
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
+      const opdrachtType = row.OpdrachtType || row.opdrachtType || 'Onbekend';
 
       const hoofdcategorie = row.Hoofdcategorie?.trim();
       const categorie = row.Categorie?.trim();
@@ -61,6 +62,7 @@ export const useOpdrachten = (defaultFilePath: string) => {
         Tijdslimiet: !isNaN(tijdslimiet) && tijdslimiet > 0 ? tijdslimiet : 0,
         Extra_Punten: !isNaN(extraPunten) ? extraPunten : 0,
         bron,
+        opdrachtType: opdrachtType ? capitalize(opdrachtType) : 'Onbekend',
       };
     });
   }, []);

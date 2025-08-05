@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { BonusOpdrachtBeheer } from './BonusOpdrachtBeheer';
 import { AiOpgaveGenerator } from './AiOpgaveGenerator';
 import { Leeranalyse } from './Leeranalyse';
@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import './Instellingen.css';
 import { generateCertificaat } from '../utils/certificaatGenerator';
 import { getLeerDataManager } from '../data/leerDataManager';
+import type { Opdracht } from '../data/types';
 import { useSettings } from '../context/SettingsContext';
 
 
@@ -489,8 +490,6 @@ export const Instellingen = React.memo(({
           <div className="settings-group">
             <h4>Opdrachtenbeheer</h4>
             <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-              Je kunt de standaard opdrachten gebruiken, maar ook zelf opdrachten toevoegen of overschrijven. 
-              <br /><br />
               <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
               Kies vervolgens of je wilt aanvullen of overschrijven.
             </p>
@@ -506,7 +505,8 @@ export const Instellingen = React.memo(({
                       Opdracht: 'Voorbeeld Opdracht', 
                       Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
                       Tijdslimiet: 60,
-                      "Extra_Punten (max 2)": 0
+                      "Extra_Punten (max 2)": 0,
+                      OpdrachtType: 'Feitenkennis'
                     }
                   ];
                   const worksheet = XLSX.utils.json_to_sheet(data);

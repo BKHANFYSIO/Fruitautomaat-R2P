@@ -24,25 +24,24 @@
 
 .instellingen-header {
   display: flex;
-  /* justify-content: space-between; */ /* Verwijderd */
   align-items: center;
   border-bottom: 1px solid #4a5568;
-  padding: 10px 10px 10px 10px; /* Padding boven toegevoegd voor betere verticale centrering */
+  padding: 10px 10px 10px 10px;
   margin-bottom: 20px;
-  position: relative; /* Voor positionering van de knop */
+  position: relative;
 }
 
 .instellingen-header h2 {
   margin: 0;
-  flex-grow: 1; /* Neemt de beschikbare ruimte in */
-  text-align: center; /* Centreert de titel */
-  padding: 0 40px; /* Voorkomt dat tekst onder de knoppen komt */
+  flex-grow: 1;
+  text-align: center;
+  padding: 0 40px;
 }
 
 .instellingen-body {
   display: flex;
   flex-direction: column;
-  gap: 25px; /* Ruimte tussen de groepen */
+  gap: 25px;
 }
 
 .settings-group {
@@ -62,7 +61,7 @@
 }
 
 .settings-group label {
-  display: flex; /* Gebruik flexbox voor uitlijning */
+  display: flex;
   align-items: center;
   margin-bottom: 10px;
   cursor: pointer;
@@ -71,15 +70,15 @@
 .settings-group input[type="checkbox"],
 .settings-group input[type="radio"] {
   margin-right: 10px;
-  width: 18px; /* Grotere checkbox */
+  width: 18px;
   height: 18px;
 }
 
 .settings-group .setting-description {
   font-size: 0.9rem;
-  color: #a0aec0; /* Grijsachtige kleur */
+  color: #a0aec0;
   margin-top: -5px;
-  margin-left: 28px; /* Uitlijnen met de tekst van de checkbox */
+  margin-left: 28px;
   margin-bottom: 10px;
 }
 
@@ -108,8 +107,6 @@
 .file-upload-label:hover {
   background-color: #90cdf4;
 }
-
-/* De .sluit-knop styling is verplaatst naar Modal.css als .modal-close-button */
 
 .settings-group .harmonica-knop {
   background-color: #4a5568;
@@ -151,8 +148,8 @@
 }
 
 .settings-group .harmonica-content.open {
-  max-height: 50vh; /* Maximaal 50% van de viewport hoogte */
-  overflow-y: auto; /* Scrollbar tonen als de inhoud te hoog is */
+  max-height: 50vh;
+  overflow-y: auto;
   padding-top: 10px;
   padding-bottom: 10px;
   margin-top: 15px;
@@ -175,7 +172,6 @@
   background-color: #48bb78 !important;
 }
 
-/* BestandsUploader styling */
 .download-template-knop {
   background-color: #63b3ed;
   color: #1a202c;
@@ -223,11 +219,10 @@
 .file-upload-label.instellingen-knop {
   background-color: #a0aec0;
   color: #1a202c;
-  display: inline-block; /* Belangrijk voor padding en centreren */
-  line-height: normal; /* Zorgt voor correcte verticale uitlijning */
+  display: inline-block;
+  line-height: normal;
 } 
 
-/* Data Beheer Knoppen */
 .data-beheer-knoppen {
   display: flex;
   flex-direction: column;
@@ -292,7 +287,6 @@
   background-color: #8e44ad;
 }
 
-/* Leer-modus Knoppen */
 .leer-modus-knoppen {
   display: flex;
   flex-direction: column;
@@ -348,7 +342,6 @@
     line-height: 1.4;
   }
 
-  /* Serieuze Modus Waarschuwing Modal */
   .serieuze-modus-modal-overlay {
     position: fixed;
     top: 0;
@@ -477,7 +470,6 @@
   box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
 }
 
-/* CategorieFilter styling */
 .categorie-filter-container {
   margin: 20px 0;
   padding: 15px;
@@ -572,4 +564,44 @@
 
 .sub-categorie-label {
     font-weight: normal;
+}
+
+.filter-sectie {
+  margin-top: 15px;
+}
+
+.filter-sectie label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.filter-sectie select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #2d3748;
+  border: 1px solid #4a5568;
+  color: white;
+}
+
+.opdracht-type-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.opdracht-type-checkboxes label {
+  display: flex;
+  align-items: center;
+  font-weight: normal;
+  background-color: #4a5568;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.opdracht-type-checkboxes label:hover {
+  background-color: #5a6578;
 }

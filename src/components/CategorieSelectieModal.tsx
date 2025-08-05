@@ -52,8 +52,6 @@ interface CategorieSelectieModalProps {
   onBulkCategorieSelectie: (categorieen: string[], type: 'select' | 'deselect') => void;
   highScoreLibrary?: { [key: string]: { score: number; spelerNaam: string } };
   onHighScoreSelect?: (categories: string[]) => void;
-  opdrachtBronFilter: 'alle' | 'systeem' | 'gebruiker';
-  setOpdrachtBronFilter: (filter: 'alle' | 'systeem' | 'gebruiker') => void;
   onOpenLeitnerBeheer: () => void;
   // Nieuwe props voor Leitner
   geselecteerdeLeitnerCategorieen?: string[];
@@ -75,8 +73,6 @@ export const CategorieSelectieModal = ({
   geselecteerdeCategorieen,
   onCategorieSelectie,
   onBulkCategorieSelectie,
-  opdrachtBronFilter,
-  setOpdrachtBronFilter,
   onOpenLeitnerBeheer,
   highScoreLibrary,
   onHighScoreSelect,
@@ -222,17 +218,12 @@ export const CategorieSelectieModal = ({
   };
 
   const actieveCategorieSelectie = getActieveCategorieSelectie();
-  const actieveCategorieHandler = getActieveCategorieHandler();
+    const actieveCategorieHandler = getActieveCategorieHandler();
   const actieveBulkHandler = getActieveBulkHandler();
-
-  const gefilterdeOpdrachten = useMemo(() => {
-    if (opdrachtBronFilter === 'alle') return opdrachten;
-    return opdrachten.filter(op => op.bron === opdrachtBronFilter);
-  }, [opdrachten, opdrachtBronFilter]);
 
   const gegroepeerdeCategorieen = useMemo(() => {
     const groepen: Record<string, string[]> = { 'Overig': [] };
-    gefilterdeOpdrachten.forEach(opdracht => {
+    opdrachten.forEach(opdracht => {
       const hoofdCat = opdracht.Hoofdcategorie || 'Overig';
       if (!groepen[hoofdCat]) {
         groepen[hoofdCat] = [];
@@ -245,7 +236,7 @@ export const CategorieSelectieModal = ({
       delete groepen['Overig'];
     }
     return groepen;
-  }, [gefilterdeOpdrachten]);
+  }, [opdrachten]);
 
   
 
@@ -397,7 +388,7 @@ export const CategorieSelectieModal = ({
   };
 
   const getAantalOpdrachten = (hoofd: string, sub: string) => {
-    return gefilterdeOpdrachten.filter(opdracht => (opdracht.Hoofdcategorie || 'Overig') === hoofd && opdracht.Categorie === sub).length;
+    return opdrachten.filter(opdracht => (opdracht.Hoofdcategorie || 'Overig') === hoofd && opdracht.Categorie === sub).length;
   };
 
   const getTotaalAantalOpdrachtenVoorSelectie = (categorieen: string[]) => {
@@ -617,30 +608,6 @@ export const CategorieSelectieModal = ({
       <div className="categorie-lijst">
         <div className="categorie-lijst-header">
           <h4>Categorieën</h4>
-          <div className="bron-filter">
-            <p className="filter-uitleg">Toon alleen de opdrachten van een specifieke bron.</p>
-            <div className="bron-filter-knoppen">
-              <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
-                Allemaal
-              </button>
-                                  <button 
-                        onClick={() => setOpdrachtBronFilter('systeem')} 
-                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
-                        disabled={!heeftSysteemOpdrachten}
-                        title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
-                    >
-                    🏛️ Systeem
-                    </button>
-              <button 
-                onClick={() => setOpdrachtBronFilter('gebruiker')} 
-                className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}
-                disabled={!heeftGebruikerOpdrachten}
-                title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Filter op eigen opdrachten'}
-              >
-                👤 Eigen
-              </button>
-            </div>
-          </div>
         </div>
         
         <table className="categorie-table">

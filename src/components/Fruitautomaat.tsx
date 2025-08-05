@@ -4,9 +4,11 @@ import Rol from './Rol';
 import { Hendel } from './Hendel'; // Importeer Hendel
 import { useAudio } from '../hooks/useAudio';
 import { useSettings } from '../context/SettingsContext';
+import { opdrachtTypeIconen } from '../data/constants';
 import './Fruitautomaat.css';
 
 type RolItem = { symbool?: string; img?: string };
+
 
 interface FruitautomaatProps {
   titel: string;
@@ -99,8 +101,11 @@ export const Fruitautomaat = ({
   }, [opdrachten]);
   const opdrachtTeksten = useMemo(() => opdrachten.map(o => o.Opdracht), [opdrachten]);
   const spelerNamen = useMemo(() => {
+    if (isSerieuzeLeerModusActief && spelers.length === 0) {
+      return ["Jij"];
+    }
     return spelers.map(s => s.naam);
-  }, [spelers]);
+  }, [spelers, isSerieuzeLeerModusActief]);
   
   const isBonusRondeActief = gamePhase === 'bonus_round';
 
@@ -139,6 +144,17 @@ export const Fruitautomaat = ({
           </div>
         )}
         {children}
+
+        {huidigeOpdracht && gamePhase !== 'spinning' && (
+          <div className="opdracht-info-footer">
+            <span className="info-item" title={`Bron: ${huidigeOpdracht.opdracht.bron || 'Onbekend'}`}>
+              {huidigeOpdracht.opdracht.bron === 'systeem' ? '🏛️' : '👤'}
+            </span>
+            <span className="info-item" title={`Type: ${huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}`}>
+              {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}
+            </span>
+          </div>
+        )}
         
         {/* Pauze knop - alleen tonen na beoordeling in Leitner modus */}
         {(gamePhase === 'ended' || gamePhase === 'idle') && (huidigeOpdracht || laatsteBeoordeeldeOpdracht) && isSerieuzeLeerModusActief && leermodusType === 'leitner' && onPauseOpdracht && (

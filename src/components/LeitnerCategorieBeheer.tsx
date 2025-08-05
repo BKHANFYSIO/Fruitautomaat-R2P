@@ -151,8 +151,6 @@ interface LeitnerCategorieBeheerProps {
   setGeselecteerdeCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   alleCategorieen: string[];
   alleOpdrachten: Opdracht[];
-  opdrachtBronFilter: 'alle' | 'systeem' | 'gebruiker';
-  setOpdrachtBronFilter: (filter: 'alle' | 'systeem' | 'gebruiker') => void;
 }
 
 interface CategorieStatistiek {
@@ -178,8 +176,6 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   geselecteerdeCategorieen,
   setGeselecteerdeCategorieen,
   alleOpdrachten,
-  opdrachtBronFilter,
-  setOpdrachtBronFilter,
 }) => {
   // Leitner data hooks voor pauze functionaliteit
   const leerDataManager = getLeerDataManager();
@@ -363,10 +359,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     }
   }, []);
 
-  const gefilterdeOpdrachten = useMemo(() => {
-    if (opdrachtBronFilter === 'alle') return alleOpdrachten;
-    return alleOpdrachten.filter(op => op.bron === opdrachtBronFilter);
-  }, [alleOpdrachten, opdrachtBronFilter]);
+  const gefilterdeOpdrachten = alleOpdrachten;
 
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
@@ -971,30 +964,6 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           </div>
             <div className="categorie-lijst-header">
                 <h4>Categorieën</h4>
-                <div className="bron-filter">
-                <p className="filter-uitleg">Toon alleen de opdrachten van een specifieke bron.</p>
-                <div className="bron-filter-knoppen">
-                    <button onClick={() => setOpdrachtBronFilter('alle')} className={`snelle-selectie-knop ${opdrachtBronFilter === 'alle' ? 'actief' : ''}`}>
-                    Allemaal
-                    </button>
-                    <button 
-                        onClick={() => setOpdrachtBronFilter('systeem')} 
-                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'systeem' ? 'actief' : ''}`}
-                        disabled={!heeftSysteemOpdrachten}
-                        title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Filter op systeemopdrachten'}
-                    >
-                    🏛️ Systeem
-                    </button>
-                    <button 
-                        onClick={() => setOpdrachtBronFilter('gebruiker')} 
-                        className={`snelle-selectie-knop ${opdrachtBronFilter === 'gebruiker' ? 'actief' : ''}`}
-                        disabled={!heeftGebruikerOpdrachten}
-                        title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Filter op eigen opdrachten'}
-                    >
-                    👤 Eigen
-                    </button>
-                </div>
-                </div>
             </div>
           {isLoading ? (
             <p>Statistieken laden...</p>

@@ -1,49 +1,119 @@
-.criteria-content {
+.criteria-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050; /* Hoger dan de instellingen modal */
+  backdrop-filter: blur(5px);
+}
+
+.criteria-modal-content {
+  background-color: #2d3748;
+  padding: 25px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  border: 1px solid #4a5568;
 }
 
-.criteria-intro {
-  font-style: italic;
-  font-size: 0.9rem;
-  color: #ccc;
-  font-weight: 300;
-  margin-top: 5px;
-  margin-bottom: 0;
+.criteria-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
 }
 
-.criteria-sectie {
-  padding: 15px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-}
-
-.criteria-sectie h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #a0cff1; /* Lichtblauw, passend bij het thema */
-  border-bottom: 1px solid #444;
-  padding-bottom: 5px;
-}
-
-.criteria-sectie ul {
-  list-style-type: '✓  '; /* Gebruik een vinkje als bullet point */
-  padding-left: 20px;
+.criteria-modal-header h3 {
   margin: 0;
+  color: #63b3ed;
 }
 
-.criteria-sectie li {
-  margin-bottom: 8px;
+.criteria-modal-close {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 2rem;
+  cursor: pointer;
 }
 
-@media (min-width: 1024px) {
-  .criteria-content {
-    flex-direction: row;
-    align-items: flex-start;
-  }
+.criteria-modal-body {
+  overflow-y: auto;
+}
 
-  .criteria-sectie {
-    flex: 1;
-  }
-} 
+.criteria-modal-body p {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto; /* Voor als er veel types zijn */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: center;
+  border: 1px solid #4a5568;
+}
+
+thead {
+  background-color: #384355;
+  position: sticky;
+  top: 0;
+}
+
+th {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+th:first-child, td:first-child {
+  text-align: left;
+  font-weight: bold;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #384355;
+}
+
+.clickable-header {
+  cursor: pointer;
+}
+
+.clickable-header .filter-icon {
+  font-size: 1.6rem;
+}
+
+.totaal-rij {
+  font-weight: bold;
+  background-color: #1a202c !important;
+  border-top: 2px solid #63b3ed;
+}
+
+.totaal-rij.actief {
+  background-color: #2c5282 !important;
+  border-top: none;
+}
+
+.cell-actief {
+  color: #aadeff;
+  font-weight: bold;
+}

@@ -8,6 +8,7 @@ export interface Opdracht {
   Tijdslimiet: number;
   Extra_Punten: number;
   bron?: 'systeem' | 'gebruiker';
+  opdrachtType?: string;
 }
 
 export interface Speler {
