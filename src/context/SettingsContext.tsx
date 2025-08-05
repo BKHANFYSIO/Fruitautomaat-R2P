@@ -44,6 +44,8 @@ interface SettingsContextType {
   setMaxNewLeitnerQuestionsPerDay: (aantal: number) => void;
   isMaxNewQuestionsLimitActief: boolean;
   setIsMaxNewQuestionsLimitActief: (actief: boolean) => void;
+  negeerBox0Wachttijd: boolean;
+  setNegeerBox0Wachttijd: (negeer: boolean) => void;
   
   // Dev settings
   isBox0IntervalVerkort: boolean;
@@ -113,6 +115,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>(() => loadFromStorage('leermodusType', 'normaal'));
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
+  const [negeerBox0Wachttijd, setNegeerBox0Wachttijd] = useState(() => loadFromStorage('negeerBox0Wachttijd', true));
 
   // Dev settings
   const [isBox0IntervalVerkort, setIsBox0IntervalVerkort] = useState(() => loadFromStorage('isBox0IntervalVerkort', false));
@@ -187,6 +190,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [isMaxNewQuestionsLimitActief]);
 
   useEffect(() => {
+    saveToStorage('negeerBox0Wachttijd', negeerBox0Wachttijd);
+  }, [negeerBox0Wachttijd]);
+
+  useEffect(() => {
     saveToStorage('isBox0IntervalVerkort', isBox0IntervalVerkort);
   }, [isBox0IntervalVerkort]);
 
@@ -238,6 +245,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setMaxNewLeitnerQuestionsPerDay,
     isMaxNewQuestionsLimitActief,
     setIsMaxNewQuestionsLimitActief,
+    negeerBox0Wachttijd,
+    setNegeerBox0Wachttijd,
     
     // Dev settings
     isBox0IntervalVerkort,

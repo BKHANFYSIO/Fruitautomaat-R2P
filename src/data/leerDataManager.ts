@@ -1919,12 +1919,11 @@ class LeerDataManager {
     return nieuweAchievement;
   }
 
-  getLeitnerOpdrachtenVoorVandaag(): { opdrachtId: string; boxId: number }[] {
+  getLeitnerOpdrachtenVoorVandaag(negeerBox0WachttijdAlsLeeg: boolean = false): { opdrachtId: string; boxId: number }[] {
     const leitnerData = this.loadLeitnerData();
     if (!leitnerData.isLeitnerActief) return [];
 
     const nu = new Date();
-    const huidigeLeerDag = this.getLeerDag(nu);
     const beschikbareOpdrachten: { opdrachtId: string; boxId: number }[] = [];
 
     leitnerData.boxes.forEach(box => {
@@ -1937,7 +1936,6 @@ class LeerDataManager {
         }
         
         const laatsteReviewString = leitnerData.opdrachtReviewTimes[opdrachtId];
-        // FIX: Sla opdrachten over zonder geldige reviewtijd
         if (!laatsteReviewString) {
           return;
         }
@@ -1945,17 +1943,13 @@ class LeerDataManager {
         const laatsteReviewDatum = new Date(laatsteReviewString);
 
         if (box.boxId === 0) {
-          // Box 0 gebruikt de op minuten gebaseerde logica
           const minutenSindsLaatsteReview = Math.floor((nu.getTime() - laatsteReviewDatum.getTime()) / (1000 * 60));
           if (minutenSindsLaatsteReview >= intervalInMinuten) {
             beschikbareOpdrachten.push({ opdrachtId, boxId: box.boxId });
           }
         } else {
-          // Box 1 en hoger gebruiken de op dagen gebaseerde logica
-          const laatsteLeerDag = this.getLeerDag(laatsteReviewDatum);
           const dagenInMilliseconden = 1000 * 60 * 60 * 24;
-          const verstrekenDagen = Math.floor((huidigeLeerDag.getTime() - laatsteLeerDag.getTime()) / dagenInMilliseconden);
-          
+          const verstrekenDagen = Math.floor((nu.getTime() - laatsteReviewDatum.getTime()) / dagenInMilliseconden);
           const intervalInDagen = Math.ceil(intervalInMinuten / 1440);
 
           if (verstrekenDagen >= intervalInDagen) {
@@ -1964,6 +1958,18 @@ class LeerDataManager {
         }
       });
     });
+
+    // Nieuwe logica: als er geen opdrachten zijn, en de instelling is aan, voeg Box 0 opdrachten toe.
+    if (beschikbareOpdrachten.length === 0 && negeerBox0WachttijdAlsLeeg) {
+      const box0 = leitnerData.boxes.find(box => box.boxId === 0);
+      if (box0) {
+        box0.opdrachten.forEach(opdrachtId => {
+          if (!leitnerData.pausedOpdrachten || !leitnerData.pausedOpdrachten.includes(opdrachtId)) {
+            beschikbareOpdrachten.push({ opdrachtId, boxId: box0.boxId });
+          }
+        });
+      }
+    }
 
     return beschikbareOpdrachten;
   }
@@ -2640,16 +2646,6 @@ class LeerDataManager {
     this.saveLeitnerData(leitnerData);
 
     return { toegevoegd: tePlaatsenOpdrachten.length, categorieen: [...new Set(toegevoegdeCategorieen)] };
-  }
-
-  // Nieuwe hulpfunctie om de "leerdag" te bepalen (start om 4 uur 's nachts)
-  private getLeerDag(date: Date): Date {
-    const leerDag = new Date(date);
-    if (date.getHours() < 4) {
-      leerDag.setDate(leerDag.getDate() - 1);
-    }
-    leerDag.setHours(4, 0, 0, 0);
-    return leerDag;
   }
 
   // Reset alle opdrachten van een specifieke categorie uit het Leitner systeem

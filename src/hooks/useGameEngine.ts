@@ -15,7 +15,7 @@ const shuffle = <T,>(array: T[]): T[] => {
 };
 
 export const useGameEngine = () => {
-  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief } = useSettings();
+  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd } = useSettings();
 
   // Game state
   const [spelers, setSpelers] = useState<Speler[]>([]);
@@ -147,9 +147,15 @@ export const useGameEngine = () => {
       
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       
-      const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => {
+      // Bepaal of we de Box 0 wachttijd moeten negeren
+      const moetNegeren = negeerBox0Wachttijd && herhalingenVoorVandaag.length === 0 && leerDataManager.getNieuweOpdrachten(opdrachten, geselecteerdeCategorieen).length === 0;
+      
+      const effectieveHerhalingen = moetNegeren 
+        ? leerDataManager.getLeitnerOpdrachtenVoorVandaag(true)
+        : herhalingenVoorVandaag;
+
+      const gefilterdeHerhalingen = effectieveHerhalingen.filter(item => {
         const hoofdcategorie = item.opdrachtId.split('_')[0];
-        // Check of de hoofdcategorie voorkomt in een van de geselecteerde categorieën
         const isIncluded = geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
         return isIncluded;
       });

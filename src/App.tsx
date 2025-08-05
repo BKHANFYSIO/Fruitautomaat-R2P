@@ -90,8 +90,6 @@ function App() {
     // setIsMaxNewQuestionsLimitActief, // Gebruikt in useGameEngine
     isBox0IntervalVerkort,
     setIsBox0IntervalVerkort,
-    isRolTijdVerkort,
-    setIsRolTijdVerkort,
   } = useSettings();
 
   // Game engine hook
@@ -152,7 +150,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Dev mode state
   const [isDevMode, setIsDevMode] = useState(false);
   const [forceResult, setForceResult] = useState<(string | null)[]>([null, null, null]);
-  const [isBeoordelingDirect, setIsBeoordelingDirect] = useState(false);
+  const [isBeoordelingDirect] = useState(false);
 
   const { width } = useWindowSize();
   const isMobieleWeergave = forceerMobieleWeergave || width <= 1280;
@@ -400,55 +398,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setIsBox0IntervalVerkort(false);
       alert("Box 0 interval gereset naar 10 minuten.");
     }
-  };
-
-  const handleToggleRolTijd = () => {
-    setIsRolTijdVerkort(!isRolTijdVerkort);
-    alert(isRolTijdVerkort ? "Rol animatie gereset naar normale snelheid." : "Rol animatie verkort voor snelle testing.");
-  };
-
-  const handleShowBeoordelingDirect = () => {
-    // Stel de nieuwe state in
-    setIsBeoordelingDirect(true);
-
-    // Controleer of er een huidige opdracht is
-    if (!huidigeOpdracht) {
-      // Maak een dummy opdracht voor testing
-      const dummyOpdracht = {
-        opdracht: {
-          Hoofdcategorie: 'Test',
-          Categorie: 'Test Categorie',
-          Opdracht: 'Dit is een test opdracht voor de beoordeling',
-          Antwoordsleutel: 'Dit is een test antwoord',
-          Tijdslimiet: 60,
-          Extra_Punten: 0,
-          bron: 'systeem' as const
-        },
-        type: 'nieuw' as const,
-        box: undefined
-      };
-      
-      setHuidigeOpdracht(dummyOpdracht);
-      setHuidigeSpeler({ naam: 'Test Speler', score: 0, extraSpins: 0, beurten: 0 });
-      setHuidigeSpinAnalyse({
-        bonusPunten: 0,
-        actie: 'geen',
-        beschrijving: 'Test spin voor beoordeling',
-        winnendeSymbolen: [],
-        verdiendeSpins: 0
-      });
-    }
-
-    // Stop de spin animatie als die nog bezig is
-    setIsAanHetSpinnen(false);
-    
-    // Forceer de assessment fase om de beoordeling direct te tonen
-    setGamePhase('assessment');
-    
-    alert("Beoordeling wordt nu direct getoond. Je kunt de opdracht beoordelen zonder te wachten op de spin animatie.");
-    
-    // Reset de state na een korte vertraging
-    setTimeout(() => setIsBeoordelingDirect(false), 100);
   };
   // --- EINDE DEV PANEL FUNCTIES ---
 

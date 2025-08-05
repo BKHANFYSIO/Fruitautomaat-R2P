@@ -82,6 +82,8 @@ export const Instellingen = React.memo(({
     setMaxNewLeitnerQuestionsPerDay,
     isMaxNewQuestionsLimitActief,
     setIsMaxNewQuestionsLimitActief,
+    negeerBox0Wachttijd,
+    setNegeerBox0Wachttijd,
   } = useSettings();
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
@@ -435,6 +437,18 @@ export const Instellingen = React.memo(({
                           </p>
                         </>
                       )}
+                      
+                      <label style={{ marginTop: '15px' }}>
+                        <input
+                          type="checkbox"
+                          checked={negeerBox0Wachttijd}
+                          onChange={(e) => setNegeerBox0Wachttijd(e.target.checked)}
+                        />
+                        Negeer Box 0 wachttijd als er geen andere opdrachten zijn
+                      </label>
+                      <p className="setting-description">
+                        Als er geen nieuwe opdrachten of reguliere herhalingen beschikbaar zijn, maakt deze optie de opdrachten in Box 0 direct herhaalbaar, zelfs als de wachttijd nog niet voorbij is.
+                      </p>
                       
                       <button
                         className="instellingen-knop"
