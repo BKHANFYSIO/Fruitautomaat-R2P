@@ -362,7 +362,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     });
     
     // Forceer een re-render om stats bij te werken
-    setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen));
+    const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen);
+    setLeitnerStats(stats);
     
     alert('Dagelijkse herhalingen voltooid en achievements gecontroleerd!');
   };
@@ -386,7 +387,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const leerDataManager = getLeerDataManager();
     localStorage.removeItem('fruitautomaat_leitner_' + leerDataManager.getSpelerId());
     // Forceer re-render van stats
-    setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+    setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
     alert('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.');
   };
 
