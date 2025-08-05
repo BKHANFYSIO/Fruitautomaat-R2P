@@ -2084,16 +2084,20 @@ class LeerDataManager {
   } {
     const leitnerData = this.loadLeitnerData();
     const opdrachtenPerBox: { [boxId: number]: number } = {};
+    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
     
     // Initialiseer alle boxes
     for (let i = 0; i <= 7; i++) {
       opdrachtenPerBox[i] = 0;
     }
     
-    // Tel opdrachten per box
+    // Tel opdrachten per box (exclusief gepauzeerde)
     if (leitnerData && leitnerData.boxes) {
       leitnerData.boxes.forEach(box => {
-        opdrachtenPerBox[box.boxId] = box.opdrachten.length;
+        const actieveOpdrachten = box.opdrachten.filter(opdrachtId => 
+          !pausedOpdrachten.includes(opdrachtId)
+        );
+        opdrachtenPerBox[box.boxId] = actieveOpdrachten.length;
       });
     }
     
@@ -2357,6 +2361,7 @@ class LeerDataManager {
     let totaalOpdrachten = 0;
     let vandaagBeschikbaar = 0;
     const nu = new Date();
+    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
 
     leitnerData.boxes.forEach(box => {
       // Voeg een check toe om zeker te zijn dat box.opdrachten een array is
@@ -2367,6 +2372,12 @@ class LeerDataManager {
         if (typeof opdrachtId !== 'string' || !opdrachtId.includes('_')) {
           return false;
         }
+        
+        // Sluit gepauzeerde opdrachten uit
+        if (pausedOpdrachten.includes(opdrachtId)) {
+          return false;
+        }
+        
         const parts = opdrachtId.split('_');
         if (parts.length < 2) return false;
 
@@ -2401,6 +2412,7 @@ class LeerDataManager {
   getLeitnerBoxVerdelingVoorCategorie(categorie: string): { [boxId: number]: number } {
     const leitnerData = this.loadLeitnerData();
     const verdeling: { [boxId: number]: number } = {};
+    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
 
     if (!leitnerData.isLeitnerActief) {
       // Als Leitner niet actief is, retourneer een lege verdeling
@@ -2412,7 +2424,7 @@ class LeerDataManager {
 
     leitnerData.boxes.forEach(box => {
       const count = box.opdrachten.filter(opdrachtId => 
-        opdrachtId.startsWith(categorie + '_')
+        opdrachtId.startsWith(categorie + '_') && !pausedOpdrachten.includes(opdrachtId)
       ).length;
       verdeling[box.boxId] = count;
     });
