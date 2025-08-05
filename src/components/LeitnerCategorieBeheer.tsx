@@ -261,13 +261,13 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     });
   };
 
-  const toggleAccordion = (categorie: string) => {
-    setOpenAccordionItems(prev => 
-      prev.includes(categorie) 
-        ? prev.filter(item => item !== categorie)
-        : [...prev, categorie]
-    );
-  };
+  // const toggleAccordion = (categorie: string) => {
+  //   setOpenAccordionItems(prev => 
+  //     prev.includes(categorie) 
+  //       ? prev.filter(item => item !== categorie)
+  //       : [...prev, categorie]
+  //   );
+  // };
 
   const toggleHoofdCategorieAccordion = (hoofdCategorie: string) => {
     setOpenHoofdCategorieItems(prev => 
@@ -335,7 +335,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   };
   const [statistieken, setStatistieken] = useState<CategorieStatistiek[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+  // const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   const [openHoofdCategorieItems, setOpenHoofdCategorieItems] = useState<string[]>([]);
   const [openSubCategorieItems, setOpenSubCategorieItems] = useState<string[]>([]);
   const [isPauzeBeheerOpen, setIsPauzeBeheerOpen] = useState(false);

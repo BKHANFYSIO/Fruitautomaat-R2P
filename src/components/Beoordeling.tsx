@@ -1,23 +1,18 @@
 import './Beoordeling.css';
-import { getLeerDataManager } from '../data/leerDataManager';
 
 interface BeoordelingProps {
   onBeoordeel: (prestatie: 'Heel Goed' | 'Redelijk' | 'Niet Goed') => void;
   isLeerModus?: boolean;
-  currentOpdracht?: { Hoofdcategorie?: string; Categorie: string; Opdracht: string };
-  isLeitnerMode?: boolean;
-  isSerieuzeLeerModusActief?: boolean;
-  leermodusType?: 'normaal' | 'leitner';
 }
 
-export const Beoordeling = ({ onBeoordeel, isLeerModus = false, currentOpdracht, isLeitnerMode = false, isSerieuzeLeerModusActief = false, leermodusType }: BeoordelingProps) => {
-  const handlePauseOpdracht = () => {
-    if (currentOpdracht && isLeitnerMode) {
-      const leerDataManager = getLeerDataManager();
-      const opdrachtId = `${currentOpdracht.Hoofdcategorie || 'Overig'}_${currentOpdracht.Categorie}_${currentOpdracht.Opdracht.substring(0, 20)}`;
-      leerDataManager.pauseOpdracht(opdrachtId);
-    }
-  };
+export const Beoordeling = ({ onBeoordeel, isLeerModus = false }: BeoordelingProps) => {
+  // const handlePauseOpdracht = () => {
+  //   if (currentOpdracht && isLeitnerMode) {
+  //     const leerDataManager = getLeerDataManager();
+  //     const opdrachtId = `${currentOpdracht.Hoofdcategorie || 'Overig'}_${currentOpdracht.Categorie}_${currentOpdracht.Opdracht.substring(0, 20)}`;
+  //     leerDataManager.pauseOpdracht(opdrachtId);
+  //   }
+  // };
 
   return (
     <div className="beoordeling-container">

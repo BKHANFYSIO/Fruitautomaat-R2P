@@ -85,9 +85,9 @@ function App() {
     leermodusType,
     setLeermodusType,
     maxNewLeitnerQuestionsPerDay,
-    setMaxNewLeitnerQuestionsPerDay,
-    isMaxNewQuestionsLimitActief,
-    setIsMaxNewQuestionsLimitActief,
+    // setMaxNewLeitnerQuestionsPerDay, // Gebruikt in useGameEngine
+    // isMaxNewQuestionsLimitActief, // Gebruikt in useGameEngine
+    // setIsMaxNewQuestionsLimitActief, // Gebruikt in useGameEngine
     isBox0IntervalVerkort,
     setIsBox0IntervalVerkort,
     isRolTijdVerkort,
@@ -1915,7 +1915,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                 isGeluidActief={isGeluidActief}
                 isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
                 aantalBeurtenGespeeld={aantalBeurtenGespeeld}
-                leermodusType={leermodusType}
+
               />
             )}
           </Fruitautomaat>

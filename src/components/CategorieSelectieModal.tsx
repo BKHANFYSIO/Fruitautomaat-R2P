@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Opdracht } from '../data/types';
-import { getLeerDataManager } from '../data/leerDataManager';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 
 // Toast melding component

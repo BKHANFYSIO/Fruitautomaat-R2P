@@ -1399,20 +1399,7 @@ class LeerDataManager {
     return allIds;
   }
 
-  private getAllLeitnerOpdrachtIdsIncludingPaused(): Set<string> {
-    const leitnerData = this.loadLeitnerData();
-    const allIds = new Set<string>();
-    if (leitnerData.isLeitnerActief) {
-      leitnerData.boxes.forEach(box => {
-        box.opdrachten.forEach(id => allIds.add(id));
-      });
-      // Voeg ook gepauzeerde opdrachten toe
-      if (leitnerData.pausedOpdrachten) {
-        leitnerData.pausedOpdrachten.forEach(id => allIds.add(id));
-      }
-    }
-    return allIds;
-  }
+
 
   // Achievement system
   private checkAchievements(leerData: LeerData): Achievement[] {
