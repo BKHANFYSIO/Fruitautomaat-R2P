@@ -27,10 +27,11 @@ export const Hendel = ({ onSpin, disabled }: HendelProps) => {
       title={disabled ? "Beoordeel eerst de prestatie voordat je opnieuw kunt draaien." : "Trek aan de hendel om te spinnen!"}
     >
       <div 
-        className={`hendel-arm ${isPulled ? 'pulled' : ''} ${disabled ? 'disabled' : ''}`}
+        className={`hendel-grip ${isPulled ? 'pulled' : ''} ${disabled ? 'disabled' : ''}`}
         onClick={handlePull}
       >
         <div className="hendel-knop"></div>
+        <div className="hendel-stick"></div>
       </div>
     </div>
   );

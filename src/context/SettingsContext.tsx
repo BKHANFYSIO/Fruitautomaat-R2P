@@ -112,7 +112,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Learning mode settings
   const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(() => loadFromStorage('isSerieuzeLeerModusActief', false));
   const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(() => loadFromStorage('isLeerFeedbackActief', true));
-  const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>(() => loadFromStorage('leermodusType', 'normaal'));
+  const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>(() => loadFromStorage('leermodusType', 'leitner'));
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
   const [negeerBox0Wachttijd, setNegeerBox0Wachttijd] = useState(() => loadFromStorage('negeerBox0Wachttijd', true));

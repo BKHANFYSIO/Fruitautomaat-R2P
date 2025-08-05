@@ -85,11 +85,9 @@ function App() {
     leermodusType,
     setLeermodusType,
     maxNewLeitnerQuestionsPerDay,
-    // setMaxNewLeitnerQuestionsPerDay, // Gebruikt in useGameEngine
-    // isMaxNewQuestionsLimitActief, // Gebruikt in useGameEngine
-    // setIsMaxNewQuestionsLimitActief, // Gebruikt in useGameEngine
     isBox0IntervalVerkort,
     setIsBox0IntervalVerkort,
+    negeerBox0Wachttijd,
   } = useSettings();
 
   // Game engine hook
@@ -118,10 +116,42 @@ function App() {
   } = useGameEngine();
 
   // UI state
-const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>([]);
-const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>([]);
-const [geselecteerdeMultiplayerCategorieen, setGeselecteerdeMultiplayerCategorieen] = useState<string[]>([]);
-const [geselecteerdeHighscoreCategorieen, setGeselecteerdeHighscoreCategorieen] = useState<string[]>([]);
+const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>(() => {
+  try {
+    const saved = localStorage.getItem('geselecteerdeCategorieen_normaal');
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error("Failed to parse geselecteerdeCategorieen_normaal from localStorage", error);
+    return [];
+  }
+});
+const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>(() => {
+  try {
+    const saved = localStorage.getItem('geselecteerdeCategorieen_leitner');
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error("Failed to parse geselecteerdeCategorieen_leitner from localStorage", error);
+    return [];
+  }
+});
+const [geselecteerdeMultiplayerCategorieen, setGeselecteerdeMultiplayerCategorieen] = useState<string[]>(() => {
+  try {
+    const saved = localStorage.getItem('geselecteerdeCategorieen_multiplayer');
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error("Failed to parse geselecteerdeCategorieen_multiplayer from localStorage", error);
+    return [];
+  }
+});
+const [geselecteerdeHighscoreCategorieen, setGeselecteerdeHighscoreCategorieen] = useState<string[]>(() => {
+  try {
+    const saved = localStorage.getItem('geselecteerdeCategorieen_highscore');
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error("Failed to parse geselecteerdeCategorieen_highscore from localStorage", error);
+    return [];
+  }
+});
 const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
@@ -134,6 +164,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>('alle');
 const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
+const [spinPendingConfirmation, setSpinPendingConfirmation] = useState(false);
 
 
 
@@ -319,6 +350,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [laatsteBeoordeeldeOpdracht, setLaatsteBeoordeeldeOpdracht] = useState<{ opdracht: any; type: string; box?: number } | null>(null);
 
   const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+  const [aantalNieuweLeitnerOpdrachten, setAantalNieuweLeitnerOpdrachten] = useState(0);
+  const [isBox0OverrideActief, setIsBox0OverrideActief] = useState(false);
 
   // --- DEV PANEL FUNCTIES ---
   const handleSimuleerVoltooiing = () => {
@@ -515,24 +548,32 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Effect om Leitner statistieken te berekenen
   useEffect(() => {
     const updateStats = () => {
-      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief) {
+      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief && opdrachten.length > 0) {
         const leerDataManager = getLeerDataManager();
-        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen);
+        
+        // Haal altijd het aantal nieuwe opdrachten op
+        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachten, geselecteerdeLeitnerCategorieen);
+        setAantalNieuweLeitnerOpdrachten(nieuweOpdrachtenCount);
+
+        // Bepaal of de Box 0 override actief moet zijn
+        const reguliereStats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: false });
+        const moetOverrideActiefZijn = negeerBox0Wachttijd && nieuweOpdrachtenCount === 0 && reguliereStats.reguliereHerhalingenBeschikbaar === 0;
+        setIsBox0OverrideActief(moetOverrideActiefZijn);
+        
+        // Haal de uiteindelijke statistieken op, met de override-logica indien nodig
+        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: moetOverrideActiefZijn });
         setLeitnerStats(stats);
       } else {
-        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
+        setAantalNieuweLeitnerOpdrachten(0);
+        setIsBox0OverrideActief(false);
       }
     };
 
-    // Voer de update direct uit bij de eerste render of wanneer afhankelijkheden veranderen
     updateStats();
-
-    // Stel een interval in om de stats periodiek bij te werken (bijv. elke 5 seconden)
-    const intervalId = setInterval(updateStats, 5000);
-
-    // Ruim het interval op wanneer de component unmount of de afhankelijkheden veranderen
+    const intervalId = setInterval(updateStats, 5000); 
     return () => clearInterval(intervalId);
-  }, [leermodusType, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, aantalBeurtenGespeeld]);
+  }, [leermodusType, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, opdrachten, negeerBox0Wachttijd]);
 
   // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
   useEffect(() => {
@@ -603,41 +644,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
 
 
-  // Effect om categorie-selecties te laden uit localStorage of te initialiseren
-  useEffect(() => {
-    // Probeer eerst opgeslagen selecties te laden
-    const normaleSelectie = localStorage.getItem('geselecteerdeCategorieen_normaal');
-    if (normaleSelectie) {
-      setGeselecteerdeCategorieen(JSON.parse(normaleSelectie));
-    } else if (opdrachten.length > 0) {
-      // Alleen initialiseren als er geen opgeslagen data is EN opdrachten geladen zijn
-      setGeselecteerdeCategorieen([]);
-    }
 
-    const leitnerSelectie = localStorage.getItem('geselecteerdeCategorieen_leitner');
-    if (leitnerSelectie) {
-      setGeselecteerdeLeitnerCategorieen(JSON.parse(leitnerSelectie));
-    } else if (opdrachten.length > 0) {
-      // Alleen initialiseren als er geen opgeslagen data is
-      setGeselecteerdeLeitnerCategorieen([]);
-    }
-
-    const multiplayerSelectie = localStorage.getItem('geselecteerdeCategorieen_multiplayer');
-    if (multiplayerSelectie) {
-      setGeselecteerdeMultiplayerCategorieen(JSON.parse(multiplayerSelectie));
-    } else if (opdrachten.length > 0) {
-      // Alleen initialiseren als er geen opgeslagen data is
-      setGeselecteerdeMultiplayerCategorieen([]);
-    }
-
-    const highscoreSelectie = localStorage.getItem('geselecteerdeCategorieen_highscore');
-    if (highscoreSelectie) {
-      setGeselecteerdeHighscoreCategorieen(JSON.parse(highscoreSelectie));
-    } else if (opdrachten.length > 0) {
-      // Alleen initialiseren als er geen opgeslagen data is
-      setGeselecteerdeHighscoreCategorieen([]);
-    }
-  }, [opdrachten, alleUniekeCategorieen]);
 
   // Effect om normale categorie-selectie op te slaan
   useEffect(() => {
@@ -910,9 +917,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     let boxNummer: number | undefined = undefined;
 
     if (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner') {
-      const result = selectLeitnerOpdracht(opdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode);
+      const result = selectLeitnerOpdracht(opdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
       
       if (result.limietBereikt && !limietWaarschuwingGenegeerd) {
+        setSpinPendingConfirmation(true); // Onthoud dat de spin onderbroken is
         setIsLimietModalOpen(true);
         setIsAanHetSpinnen(false);
         setGamePhase('idle');
@@ -1608,12 +1616,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         onConfirm={() => {
           setLimietWaarschuwingGenegeerd(true);
           setIsLimietModalOpen(false);
-          // Probeer de spin opnieuw nu de waarschuwing is genegeerd
-          if (huidigeSpeler) {
-            voerSpinUit(huidigeSpeler);
-          } else {
-            handleSpin();
-          }
+          setSpinPendingConfirmation(false); // Reset de pending state
         }}
         maxVragen={maxNewLeitnerQuestionsPerDay}
       />
@@ -1729,7 +1732,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                       <span className="knop-details">{geselecteerdeLeitnerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenLeitner} Opdr.</span>
                     </button>
                     <div className="leitner-stats-info">
-                      <p>Klaar voor herhaling: <strong>{leitnerStats.vandaagBeschikbaar}</strong> opdrachten</p>
+                      <p>Nieuwe opdrachten: <strong>{aantalNieuweLeitnerOpdrachten}</strong></p>
+                      <p>
+                        {isBox0OverrideActief ? 'Box 0 (wachttijd genegeerd):' : 'Klaar voor herhaling:'}
+                        <strong> {leitnerStats.vandaagBeschikbaar}</strong> opdrachten
+                      </p>
                     </div>
                     {leitnerStats.vandaagBeschikbaar > 0 && (
                       <p className="leitner-priority">

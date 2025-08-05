@@ -1979,18 +1979,7 @@ class LeerDataManager {
     herhalingItems: { opdrachtId: string; boxId: number }[],
     geselecteerdeCategorieen: string[]
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number } {
-    if (!this.loadLeitnerData().isLeitnerActief) {
-      // Als Leitner niet actief is, kies willekeurig uit alle opdrachten
-      const beschikbareOpdrachten = alleOpdrachten.filter(op => {
-        const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
-        return geselecteerdeCategorieen.includes(uniekeIdentifier);
-      });
-      if (beschikbareOpdrachten.length === 0) return { opdracht: null, type: 'geen' };
-      const gekozenOpdracht = beschikbareOpdrachten[Math.floor(Math.random() * beschikbareOpdrachten.length)];
-      return { opdracht: gekozenOpdracht, type: 'nieuw' };
-    }
-
-    // 1. Probeer een herhalingsopdracht te vinden
+    // 1. Geef altijd voorrang aan de aangeleverde herhalingItems.
     if (herhalingItems.length > 0) {
       const shuffledHerhalingen = herhalingItems.sort(() => 0.5 - Math.random());
 
@@ -2009,14 +1998,14 @@ class LeerDataManager {
       }
     }
 
-    // 2. Geen (vindbare) herhalingen, probeer een nieuwe opdracht
+    // 2. Als er GEEN herhalingen zijn, zoek dan naar een nieuwe opdracht.
     const nieuweOpdrachten = this.getNieuweOpdrachten(alleOpdrachten, geselecteerdeCategorieen);
     if (nieuweOpdrachten.length > 0) {
       const gekozenOpdracht = nieuweOpdrachten[Math.floor(Math.random() * nieuweOpdrachten.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
 
-    // 3. Geen herhalingen en geen nieuwe opdrachten
+    // 3. Geen herhalingen en geen nieuwe opdrachten beschikbaar.
     return { opdracht: null, type: 'geen' };
   }
 
@@ -2048,6 +2037,33 @@ class LeerDataManager {
       
       return true;
     });
+  }
+
+  // Nieuwe, efficiënte functie om alleen het aantal te tellen
+  getNieuweLeitnerOpdrachtenCount(
+    alleOpdrachten: Opdracht[],
+    geselecteerdeCategorieen: string[]
+  ): number {
+    const leitnerOpdrachtIds = this.getAllLeitnerOpdrachtIds();
+    const leitnerData = this.loadLeitnerData();
+    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
+    
+    let count = 0;
+    for (const op of alleOpdrachten) {
+      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+      if (!geselecteerdeCategorieen.includes(uniekeIdentifier)) {
+        continue;
+      }
+      const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+      const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+      
+      if (leitnerOpdrachtIds.has(opdrachtId) || pausedOpdrachten.includes(opdrachtId)) {
+        continue;
+      }
+      
+      count++;
+    }
+    return count;
   }
 
   getLeitnerOpdrachtInfo(opdrachtId: string): LeitnerOpdrachtInfo | null {
@@ -2357,37 +2373,34 @@ class LeerDataManager {
     };
   }
 
-  getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen: string[]): {
+  getLeitnerStatistiekenVoorCategorieen(
+    geselecteerdeCategorieen: string[],
+    opties: { negeerBox0WachttijdAlsLeeg?: boolean } = {}
+  ): {
     totaalOpdrachten: number;
     opdrachtenPerBox: { [boxId: number]: number };
     vandaagBeschikbaar: number;
+    reguliereHerhalingenBeschikbaar: number;
   } {
+    const { negeerBox0WachttijdAlsLeeg = false } = opties;
     const leitnerData = this.loadLeitnerData();
     const opdrachtenPerBox: { [boxId: number]: number } = {};
     let totaalOpdrachten = 0;
     let vandaagBeschikbaar = 0;
+    let reguliereHerhalingenBeschikbaar = 0;
     const nu = new Date();
     const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
 
     leitnerData.boxes.forEach(box => {
-      // Voeg een check toe om zeker te zijn dat box.opdrachten een array is
       if (!Array.isArray(box.opdrachten)) return;
 
       const gefilterdeOpdrachten = box.opdrachten.filter(opdrachtId => {
-        // Maak de check robuuster: controleer of opdrachtId een valide string is
-        if (typeof opdrachtId !== 'string' || !opdrachtId.includes('_')) {
-          return false;
-        }
-        
-        // Sluit gepauzeerde opdrachten uit
-        if (pausedOpdrachten.includes(opdrachtId)) {
-          return false;
-        }
+        if (typeof opdrachtId !== 'string' || !opdrachtId.includes('_')) return false;
+        if (pausedOpdrachten.includes(opdrachtId)) return false;
         
         const parts = opdrachtId.split('_');
         if (parts.length < 2) return false;
 
-        // Construeer de unieke categorie identifier: "Hoofdcategorie - Subcategorie"
         const uniekeCategorieIdentifier = `${parts[0]} - ${parts[1]}`;
         return geselecteerdeCategorieen.includes(uniekeCategorieIdentifier);
       });
@@ -2395,23 +2408,41 @@ class LeerDataManager {
       opdrachtenPerBox[box.boxId] = gefilterdeOpdrachten.length;
       totaalOpdrachten += gefilterdeOpdrachten.length;
 
-      // Correcte berekening voor vandaag beschikbaar
       const interval = leitnerData.boxIntervallen[box.boxId] || 1440;
       gefilterdeOpdrachten.forEach(opdrachtId => {
         const laatsteReview = new Date(leitnerData.opdrachtReviewTimes[opdrachtId] || 0);
-        const minutenSindsLaatsteReview = Math.floor(
-          (nu.getTime() - laatsteReview.getTime()) / (1000 * 60)
-        );
+        const minutenSindsLaatsteReview = Math.floor((nu.getTime() - laatsteReview.getTime()) / (1000 * 60));
+        
         if (minutenSindsLaatsteReview >= interval) {
           vandaagBeschikbaar++;
+          if (box.boxId > 0) {
+            reguliereHerhalingenBeschikbaar++;
+          }
         }
       });
     });
 
+    // Speciale logica voor negeren van Box 0 wachttijd
+    if (negeerBox0WachttijdAlsLeeg && reguliereHerhalingenBeschikbaar === 0) {
+      const box0 = leitnerData.boxes.find(box => box.boxId === 0);
+      if (box0) {
+        const gefilterdeBox0Opdrachten = box0.opdrachten.filter(opdrachtId => {
+            if (typeof opdrachtId !== 'string' || !opdrachtId.includes('_')) return false;
+            if (pausedOpdrachten.includes(opdrachtId)) return false;
+            const parts = opdrachtId.split('_');
+            if (parts.length < 2) return false;
+            const uniekeCategorieIdentifier = `${parts[0]} - ${parts[1]}`;
+            return geselecteerdeCategorieen.includes(uniekeCategorieIdentifier);
+        });
+        vandaagBeschikbaar = gefilterdeBox0Opdrachten.length;
+      }
+    }
+
     return {
       totaalOpdrachten,
       opdrachtenPerBox,
-      vandaagBeschikbaar
+      vandaagBeschikbaar,
+      reguliereHerhalingenBeschikbaar
     };
   }
 

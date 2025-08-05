@@ -140,14 +140,14 @@ export const useGameEngine = () => {
     opdrachten: Opdracht[],
     geselecteerdeCategorieen: string[],
     isSerieuzeLeerModusActief: boolean,
-    gameMode: 'single' | 'multi'
+    gameMode: 'single' | 'multi',
+    limietGenegeerd: boolean // Nieuwe parameter
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number, limietBereikt?: boolean } => {
     if (isSerieuzeLeerModusActief && gameMode === 'single') {
       const leerDataManager = getLeerDataManager();
       
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
       
-      // Bepaal of we de Box 0 wachttijd moeten negeren
       const moetNegeren = negeerBox0Wachttijd && herhalingenVoorVandaag.length === 0 && leerDataManager.getNieuweOpdrachten(opdrachten, geselecteerdeCategorieen).length === 0;
       
       const effectieveHerhalingen = moetNegeren 
@@ -166,12 +166,17 @@ export const useGameEngine = () => {
       if (result.type === 'nieuw') {
         const newQuestionsToday = leerDataManager.getNewQuestionsTodayCount();
         if (isMaxNewQuestionsLimitActief && newQuestionsToday >= maxNewLeitnerQuestionsPerDay) {
-          // Limiet bereikt, geef geen nieuwe opdracht.
-          return { ...result, opdracht: null, type: 'geen', limietBereikt: true };
+          if (limietGenegeerd) {
+            // Limiet is genegeerd, ga door met het selecteren van de opdracht.
+            return { ...result, limietBereikt: false }; 
+          } else {
+            // Limiet is bereikt en NIET genegeerd. Blokkeer en toon modal.
+            return { ...result, opdracht: null, type: 'geen', limietBereikt: true };
+          }
         }
       }
       
-      return result;
+      return { ...result, limietBereikt: false };
     } else {
       // Standaard selectie voor multiplayer of niet-serieuze modus
       const beschikbareOpdrachten = opdrachten.filter(
@@ -182,7 +187,7 @@ export const useGameEngine = () => {
       const gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
-  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief]);
+  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd]);
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,
