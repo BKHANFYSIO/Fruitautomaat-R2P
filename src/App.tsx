@@ -164,7 +164,6 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 const [opdrachtBronFilter, setOpdrachtBronFilter] = useState<OpdrachtBronFilter>('alle');
 const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
-const [spinPendingConfirmation, setSpinPendingConfirmation] = useState(false);
 
 
 
@@ -349,7 +348,7 @@ const [spinPendingConfirmation, setSpinPendingConfirmation] = useState(false);
   const [nieuweAchievement, setNieuweAchievement] = useState<Achievement | null>(null);
   const [laatsteBeoordeeldeOpdracht, setLaatsteBeoordeeldeOpdracht] = useState<{ opdracht: any; type: string; box?: number } | null>(null);
 
-  const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+  const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
   const [aantalNieuweLeitnerOpdrachten, setAantalNieuweLeitnerOpdrachten] = useState(0);
   const [isBox0OverrideActief, setIsBox0OverrideActief] = useState(false);
 
@@ -920,7 +919,6 @@ const [spinPendingConfirmation, setSpinPendingConfirmation] = useState(false);
       const result = selectLeitnerOpdracht(opdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
       
       if (result.limietBereikt && !limietWaarschuwingGenegeerd) {
-        setSpinPendingConfirmation(true); // Onthoud dat de spin onderbroken is
         setIsLimietModalOpen(true);
         setIsAanHetSpinnen(false);
         setGamePhase('idle');
@@ -1616,7 +1614,6 @@ const [spinPendingConfirmation, setSpinPendingConfirmation] = useState(false);
         onConfirm={() => {
           setLimietWaarschuwingGenegeerd(true);
           setIsLimietModalOpen(false);
-          setSpinPendingConfirmation(false); // Reset de pending state
         }}
         maxVragen={maxNewLeitnerQuestionsPerDay}
       />
