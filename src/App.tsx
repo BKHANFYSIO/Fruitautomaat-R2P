@@ -45,7 +45,7 @@ type Notificatie = {
   type: 'succes' | 'fout';
 }
 
-type OpdrachtBronFilter = 'alle' | 'systeem' | 'gebruiker';
+// type OpdrachtBronFilter = 'alle' | 'systeem' | 'gebruiker'; // Niet gebruikt
 
 interface Filters {
   bronnen: ('systeem' | 'gebruiker')[];
@@ -1582,10 +1582,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           isOpen={isInstellingenOpen}
           onClose={() => setIsInstellingenOpen(false)}
           onVerwijderGebruikerOpdrachten={verwijderGebruikerOpdrachten}
-          // Filters
-          opdrachten={opdrachten}
-          filters={filters}
-          setFilters={setFilters}
           // Geavanceerd
           bonusOpdrachten={bonusOpdrachten}
           setBonusOpdrachten={setBonusOpdrachten}

@@ -63,7 +63,14 @@ export const SpelActies = ({ opdracht }: SpelActiesProps) => {
 
   return (
     <div className="spel-acties">
-      <CriteriaModal isOpen={isCriteriaZichtbaar} onClose={() => setIsCriteriaZichtbaar(false)} />
+      <CriteriaModal 
+        isOpen={isCriteriaZichtbaar} 
+        onClose={() => setIsCriteriaZichtbaar(false)} 
+        opdrachten={[]}
+        filters={{ bronnen: [], opdrachtTypes: [] }}
+        setFilters={() => {}}
+        actieveCategorieSelectie={[]}
+      />
       <AiPromptModal isOpen={isAiPromptZichtbaar} onClose={() => setIsAiPromptZichtbaar(false)} prompt={aiPrompt} />
 
       <div className="actie-knoppen">

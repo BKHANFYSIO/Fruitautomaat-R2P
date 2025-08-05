@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BonusOpdrachtBeheer } from './BonusOpdrachtBeheer';
 import { AiOpgaveGenerator } from './AiOpgaveGenerator';
 import { Leeranalyse } from './Leeranalyse';
@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 import './Instellingen.css';
 import { generateCertificaat } from '../utils/certificaatGenerator';
 import { getLeerDataManager } from '../data/leerDataManager';
-import type { Opdracht } from '../data/types';
+// import type { Opdracht } from '../data/types'; // Niet gebruikt
 import { useSettings } from '../context/SettingsContext';
 
 
