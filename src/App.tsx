@@ -152,6 +152,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Dev mode state
   const [isDevMode, setIsDevMode] = useState(false);
   const [forceResult, setForceResult] = useState<(string | null)[]>([null, null, null]);
+  const [isBeoordelingDirect, setIsBeoordelingDirect] = useState(false);
 
   const { width } = useWindowSize();
   const isMobieleWeergave = forceerMobieleWeergave || width <= 1280;
@@ -407,6 +408,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   };
 
   const handleShowBeoordelingDirect = () => {
+    // Stel de nieuwe state in
+    setIsBeoordelingDirect(true);
+
     // Controleer of er een huidige opdracht is
     if (!huidigeOpdracht) {
       // Maak een dummy opdracht voor testing
@@ -442,6 +446,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setGamePhase('assessment');
     
     alert("Beoordeling wordt nu direct getoond. Je kunt de opdracht beoordelen zonder te wachten op de spin animatie.");
+    
+    // Reset de state na een korte vertraging
+    setTimeout(() => setIsBeoordelingDirect(false), 100);
   };
   // --- EINDE DEV PANEL FUNCTIES ---
 
@@ -507,6 +514,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const scrollStates: GamePhase[] = ['assessment', 'partner_choice', 'double_or_nothing', 'bonus_round'];
 
     if (scrollStates.includes(gamePhase)) {
+      const vertraging = isBeoordelingDirect ? 0 : 2000;
+      
       const timer = setTimeout(() => {
         const element = actieDashboardRef.current;
         if (element) {
@@ -517,11 +526,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         }
-      }, 2000); // Wacht 2 seconden
+      }, vertraging);
 
       return () => clearTimeout(timer);
     }
-  }, [gamePhase]);
+  }, [gamePhase, isBeoordelingDirect]);
 
 
   // Effect om te waarschuwen bij het verlaten van de pagina
@@ -1866,6 +1875,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
             leermodusType={leermodusType}
             onPauseOpdracht={handlePauseOpdracht}
+            isBeoordelingDirect={isBeoordelingDirect}
             welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>

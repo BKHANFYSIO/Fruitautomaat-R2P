@@ -33,6 +33,7 @@ interface FruitautomaatProps {
   isSerieuzeLeerModusActief?: boolean;
   leermodusType?: 'normaal' | 'leitner';
   onPauseOpdracht?: () => void;
+  isBeoordelingDirect?: boolean;
 }
 
 export const Fruitautomaat = ({ 
@@ -53,7 +54,8 @@ export const Fruitautomaat = ({
   laatsteBeoordeeldeOpdracht,
   isSerieuzeLeerModusActief = false,
   leermodusType,
-  onPauseOpdracht
+  onPauseOpdracht,
+  isBeoordelingDirect = false
 }: FruitautomaatProps) => {
   const { isRolTijdVerkort } = useSettings();
   
@@ -65,7 +67,7 @@ export const Fruitautomaat = ({
   const [playRolStop] = useAudio('/sounds/rol-stop.mp3', isGeluidActief);
 
   useEffect(() => {
-    if (isSpinning) {
+    if (isSpinning && !isBeoordelingDirect) {
       setActiveSpin({
         jackpot1: true, jackpot2: true, jackpot3: true,
         categorie: true, opdracht: true, naam: true,
@@ -82,7 +84,7 @@ export const Fruitautomaat = ({
       setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, baseDelay + interval * 4);
       setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, baseDelay + interval * 5);
     }
-  }, [isSpinning, playRolStop, isRolTijdVerkort]);
+  }, [isSpinning, playRolStop, isRolTijdVerkort, isBeoordelingDirect]);
 
   const categorieItems = useMemo(() => {
     return [
