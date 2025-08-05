@@ -390,10 +390,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const huidigeInterval = leitnerData.boxIntervallen[0];
     
     if (huidigeInterval === 10) {
-      // Verander naar 1 minuut
-      leerDataManager.setTijdelijkInterval(0, 1);
+      // Verander naar 15 seconden (0.25 minuten)
+      leerDataManager.setTijdelijkInterval(0, 0.25);
       setIsBox0IntervalVerkort(true);
-      alert("Box 0 interval gewijzigd van 10 minuten naar 1 minuut. Opdrachten in box 0 zijn nu klaar voor herhaling na 1 minuut.");
+      alert("Box 0 interval gewijzigd van 10 minuten naar 15 seconden. Opdrachten in box 0 zijn nu klaar voor herhaling na 15 seconden.");
     } else {
       // Reset naar 10 minuten
       leerDataManager.setTijdelijkInterval(0, 10);
@@ -565,13 +565,24 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   // Effect om Leitner statistieken te berekenen
   useEffect(() => {
-    if (leermodusType === 'leitner' && isSerieuzeLeerModusActief) {
-      const leerDataManager = getLeerDataManager();
-      const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen);
-      setLeitnerStats(stats);
-    } else {
-      setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
-    }
+    const updateStats = () => {
+      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief) {
+        const leerDataManager = getLeerDataManager();
+        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen);
+        setLeitnerStats(stats);
+      } else {
+        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0 });
+      }
+    };
+
+    // Voer de update direct uit bij de eerste render of wanneer afhankelijkheden veranderen
+    updateStats();
+
+    // Stel een interval in om de stats periodiek bij te werken (bijv. elke 5 seconden)
+    const intervalId = setInterval(updateStats, 5000);
+
+    // Ruim het interval op wanneer de component unmount of de afhankelijkheden veranderen
+    return () => clearInterval(intervalId);
   }, [leermodusType, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, aantalBeurtenGespeeld]);
 
   // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
@@ -1850,10 +1861,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             resetLeitner={handleResetLeitner}
             forceHerhalingen={handleForceHerhalingen}
             toggleBox0Interval={handleToggleBox0Interval}
-            toggleRolTijd={handleToggleRolTijd}
             isBox0IntervalVerkort={isBox0IntervalVerkort}
-            isRolTijdVerkort={isRolTijdVerkort}
-            showBeoordelingDirect={handleShowBeoordelingDirect}
           />}
           {warning && <div className="app-warning">{warning}</div>}
           

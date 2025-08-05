@@ -400,7 +400,10 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           
           categorieOpdrachten.forEach(opdrachtId => {
             const reviewTijd = leitnerData.opdrachtReviewTimes[opdrachtId];
-            if (reviewTijd) {
+            // Controleer of de opdracht niet gepauzeerd is
+            const isPaused = leerDataManager.isOpdrachtPaused(opdrachtId);
+
+            if (reviewTijd && !isPaused) {
               const msSindsReview = new Date().getTime() - new Date(reviewTijd).getTime();
               const minutenSindsReview = msSindsReview / 60000;
               if (minutenSindsReview >= (leitnerData.boxIntervallen[box.boxId] || 10)) {

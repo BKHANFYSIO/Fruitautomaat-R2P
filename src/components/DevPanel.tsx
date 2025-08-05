@@ -9,10 +9,7 @@ interface DevPanelProps {
   resetLeitner: () => void;
   forceHerhalingen: (boxId: number, aantal: number) => void;
   toggleBox0Interval: () => void;
-  toggleRolTijd: () => void;
   isBox0IntervalVerkort: boolean;
-  isRolTijdVerkort: boolean;
-  showBeoordelingDirect: () => void;
 }
 
 export const DevPanel: React.FC<DevPanelProps> = ({ 
@@ -23,10 +20,7 @@ export const DevPanel: React.FC<DevPanelProps> = ({
   resetLeitner, 
   forceHerhalingen,
   toggleBox0Interval,
-  toggleRolTijd,
-  isBox0IntervalVerkort,
-  isRolTijdVerkort,
-  showBeoordelingDirect
+  isBox0IntervalVerkort
 }) => {
 
   const handleChange = (index: number, value: string) => {
@@ -79,17 +73,7 @@ export const DevPanel: React.FC<DevPanelProps> = ({
           
           <h4>Interval Test</h4>
           <button onClick={toggleBox0Interval}>
-            {isBox0IntervalVerkort ? 'Reset Box 0 Interval (1min → 10min)' : 'Toggle Box 0 Interval (10min → 1min)'}
-          </button>
-          
-          <h4>Rol Animatie Test</h4>
-          <button onClick={toggleRolTijd}>
-            {isRolTijdVerkort ? 'Reset Rol Tijd (snel → normaal)' : 'Verkort Rol Tijd (normaal → snel)'}
-          </button>
-          
-          <h4>Beoordeling Test</h4>
-          <button onClick={showBeoordelingDirect}>
-            Toon Beoordeling Direct
+            {isBox0IntervalVerkort ? 'Reset Box 0 Interval (15sec → 10min)' : 'Toggle Box 0 Interval (10min → 15sec)'}
           </button>
         </div>
       </div>
