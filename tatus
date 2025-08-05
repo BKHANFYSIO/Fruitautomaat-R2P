@@ -1,0 +1,338 @@
+warning: in the working copy of 'src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/DevPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/LeitnerCategorieBeheer.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/LeitnerCategorieBeheer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/leerDataManager.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/hooks/useGameEngine.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/App.tsx b/src/App.tsx[m
+[1mindex 6287a35..3187b2e 100644[m
+[1m--- a/src/App.tsx[m
+[1m+++ b/src/App.tsx[m
+[36m@@ -82,9 +82,16 @@[m [mfunction App() {[m
+     setIsSerieuzeLeerModusActief,[m
+     isLeerFeedbackActief,[m
+     setIsLeerFeedbackActief,[m
+[31m-      leermodusType,[m
+[31m-  setLeermodusType,[m
+[31m-  maxNewLeitnerQuestionsPerDay,[m
+[32m+[m[32m    leermodusType,[m
+[32m+[m[32m    setLeermodusType,[m
+[32m+[m[32m    maxNewLeitnerQuestionsPerDay,[m
+[32m+[m[32m    setMaxNewLeitnerQuestionsPerDay,[m
+[32m+[m[32m    isMaxNewQuestionsLimitActief,[m
+[32m+[m[32m    setIsMaxNewQuestionsLimitActief,[m
+[32m+[m[32m    isBox0IntervalVerkort,[m
+[32m+[m[32m    setIsBox0IntervalVerkort,[m
+[32m+[m[32m    isRolTijdVerkort,[m
+[32m+[m[32m    setIsRolTijdVerkort,[m
+   } = useSettings();[m
+ [m
+   // Game engine hook[m
+[36m@@ -375,6 +382,45 @@[m [mconst [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f[m
+     [m
+     alert(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. De app is nu in Leermodus en de juiste categorieën zijn geselecteerd. Start een opdracht om een herhaling te krijgen.`);[m
+   };[m
+[32m+[m
+[32m+[m[32m  const handleToggleBox0Interval = () => {[m
+[32m+[m[32m    const leerDataManager = getLeerDataManager();[m
+[32m+[m[32m    const leitnerData = leerDataManager.loadLeitnerData();[m
+[32m+[m[32m    const huidigeInterval = leitnerData.boxIntervallen[0];[m
+[32m+[m[41m    [m
+[32m+[m[32m    if (huidigeInterval === 10) {[m
+[32m+[m[32m      // Verander naar 1 minuut[m
+[32m+[m[32m      leerDataManager.setTijdelijkInterval(0, 1);[m
+[32m+[m[32m      setIsBox0IntervalVerkort(true);[m
+[32m+[m[32m      alert("Box 0 interval gewijzigd van 10 minuten naar 1 minuut. Opdrachten in box 0 zijn nu klaar voor herhaling na 1 minuut.");[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m      // Reset naar 10 minuten[m
+[32m+[m[32m      leerDataManager.setTijdelijkInterval(0, 10);[m
+[32m+[m[32m      setIsBox0IntervalVerkort(false);[m
+[32m+[m[32m      alert("Box 0 interval gereset naar 10 minuten.");[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const handleToggleRolTijd = () => {[m
+[32m+[m[32m    setIsRolTijdVerkort(!isRolTijdVerkort);[m
+[32m+[m[32m    alert(isRolTijdVerkort ? "Rol animatie gereset naar normale snelheid." : "Rol animatie verkort voor snelle testing.");[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const handleShowBeoordelingDirect = () => {[m
+[32m+[m[32m    // Controleer of er een huidige opdracht is[m
+[32m+[m[32m    if (!huidigeOpdracht) {[m
+[32m+[m[32m      alert("Er is geen opdracht om te beoordelen. Doe eerst een spin om een opdracht te krijgen.");[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Stop de spin animatie als die nog bezig is[m
+[32m+[m[32m    setIsAanHetSpinnen(false);[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Forceer de assessment fase om de beoordeling direct te tonen[m
+[32m+[m[32m    setGamePhase('assessment');[m
+[32m+[m[41m    [m
+[32m+[m[32m    alert("Beoordeling wordt nu direct getoond. Je kunt de opdracht beoordelen zonder te wachten op de spin animatie.");[m
+[32m+[m[32m  };[m
+   // --- EINDE DEV PANEL FUNCTIES ---[m
+ [m
+ [m
+[36m@@ -401,19 +447,6 @@[m [mconst [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f[m
+     }[m
+   }, []);[m
+ [m
+[31m-  // Effect om de 'd' toets te detecteren voor dev mode[m
+[31m-  useEffect(() => {[m
+[31m-    if (import.meta.env.DEV) {[m
+[31m-      const handleKeyDown = (e: KeyboardEvent) => {[m
+[31m-        if (e.key === 'd') {[m
+[31m-          setIsDevMode(prev => !prev);[m
+[31m-        }[m
+[31m-      };[m
+[31m-      window.addEventListener('keydown', handleKeyDown);[m
+[31m-      return () => window.removeEventListener('keydown', handleKeyDown);[m
+[31m-    }[m
+[31m-  }, []);[m
+[31m-[m
+   // Effect om categorie selectie te openen via custom event[m
+   useEffect(() => {[m
+     const handleOpenCategorieSelectie = () => {[m
+[36m@@ -1785,6 +1818,11 @@[m [mconst [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f[m
+             forcePromotie={handleForcePromotie}[m
+             resetLeitner={handleResetLeitner}[m
+             forceHerhalingen={handleForceHerhalingen}[m
+[32m+[m[32m            toggleBox0Interval={handleToggleBox0Interval}[m
+[32m+[m[32m            toggleRolTijd={handleToggleRolTijd}[m
+[32m+[m[32m            isBox0IntervalVerkort={isBox0IntervalVerkort}[m
+[32m+[m[32m            isRolTijdVerkort={isRolTijdVerkort}[m
+[32m+[m[32m            showBeoordelingDirect={handleShowBeoordelingDirect}[m
+           />}[m
+           {warning && <div className="app-warning">{warning}</div>}[m
+           [m
+[1mdiff --git a/src/components/DevPanel.tsx b/src/components/DevPanel.tsx[m
+[1mindex 9399d63..6d5a6ca 100644[m
+[1m--- a/src/components/DevPanel.tsx[m
+[1m+++ b/src/components/DevPanel.tsx[m
+[36m@@ -8,6 +8,11 @@[m [minterface DevPanelProps {[m
+   forcePromotie: (boxNummer: number) => void;[m
+   resetLeitner: () => void;[m
+   forceHerhalingen: (boxId: number, aantal: number) => void;[m
+[32m+[m[32m  toggleBox0Interval: () => void;[m
+[32m+[m[32m  toggleRolTijd: () => void;[m
+[32m+[m[32m  isBox0IntervalVerkort: boolean;[m
+[32m+[m[32m  isRolTijdVerkort: boolean;[m
+[32m+[m[32m  showBeoordelingDirect: () => void;[m
+ }[m
+ [m
+ export const DevPanel: React.FC<DevPanelProps> = ({ [m
+[36m@@ -16,7 +21,12 @@[m [mexport const DevPanel: React.FC<DevPanelProps> = ({[m
+   simuleerVoltooiing, [m
+   forcePromotie, [m
+   resetLeitner, [m
+[31m-  forceHerhalingen[m
+[32m+[m[32m  forceHerhalingen,[m
+[32m+[m[32m  toggleBox0Interval,[m
+[32m+[m[32m  toggleRolTijd,[m
+[32m+[m[32m  isBox0IntervalVerkort,[m
+[32m+[m[32m  isRolTijdVerkort,[m
+[32m+[m[32m  showBeoordelingDirect[m
+ }) => {[m
+ [m
+   const handleChange = (index: number, value: string) => {[m
+[36m@@ -66,6 +76,21 @@[m [mexport const DevPanel: React.FC<DevPanelProps> = ({[m
+           <button onClick={() => forceHerhalingen(0, 5)}>Forceer 5 naar Box 0</button>[m
+           <button onClick={() => forceHerhalingen(1, 3)}>Forceer 3 naar Box 1</button>[m
+           <button onClick={() => forceHerhalingen(2, 3)}>Forceer 3 naar Box 2</button>[m
+[32m+[m[41m          [m
+[32m+[m[32m          <h4>Interval Test</h4>[m
+[32m+[m[32m          <button onClick={toggleBox0Interval}>[m
+[32m+[m[32m            {isBox0IntervalVerkort ? 'Reset Box 0 Interval (1min → 10min)' : 'Toggle Box 0 Interval (10min → 1min)'}[m
+[32m+[m[32m          </button>[m
+[32m+[m[41m          [m
+[32m+[m[32m          <h4>Rol Animatie Test</h4>[m
+[32m+[m[32m          <button onClick={toggleRolTijd}>[m
+[32m+[m[32m            {isRolTijdVerkort ? 'Reset Rol Tijd (snel → normaal)' : 'Verkort Rol Tijd (normaal → snel)'}[m
+[32m+[m[32m          </button>[m
+[32m+[m[41m          [m
+[32m+[m[32m          <h4>Beoordeling Test</h4>[m
+[32m+[m[32m          <button onClick={showBeoordelingDirect}>[m
+[32m+[m[32m            Toon Beoordeling Direct[m
+[32m+[m[32m          </button>[m
+         </div>[m
+       </div>[m
+     </div>[m
+[1mdiff --git a/src/components/Fruitautomaat.tsx b/src/components/Fruitautomaat.tsx[m
+[1mindex 572a73a..02228a4 100644[m
+[1m--- a/src/components/Fruitautomaat.tsx[m
+[1m+++ b/src/components/Fruitautomaat.tsx[m
+[36m@@ -3,6 +3,7 @@[m [mimport type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/[m
+ import Rol from './Rol';[m
+ import { Hendel } from './Hendel'; // Importeer Hendel[m
+ import { useAudio } from '../hooks/useAudio';[m
+[32m+[m[32mimport { useSettings } from '../context/SettingsContext';[m
+ import './Fruitautomaat.css';[m
+ [m
+ type RolItem = { symbool?: string; img?: string };[m
+[36m@@ -54,6 +55,8 @@[m [mexport const Fruitautomaat = ({[m
+   leermodusType,[m
+   onPauseOpdracht[m
+ }: FruitautomaatProps) => {[m
+[32m+[m[32m  const { isRolTijdVerkort } = useSettings();[m
+[32m+[m[41m  [m
+   const [activeSpin, setActiveSpin] = useState({[m
+     jackpot1: false, jackpot2: false, jackpot3: false,[m
+     categorie: false, opdracht: false, naam: false,[m
+[36m@@ -68,14 +71,18 @@[m [mexport const Fruitautomaat = ({[m
+         categorie: true, opdracht: true, naam: true,[m
+       });[m
+ [m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); playRolStop(); }, 1000);[m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); playRolStop(); }, 1500);[m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); playRolStop(); }, 2000);[m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); playRolStop(); }, 2500);[m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, 3000);[m
+[31m-      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, 3500);[m
+[32m+[m[32m      // Gebruik verkorte tijd als de instelling actief is[m
+[32m+[m[32m      const baseDelay = isRolTijdVerkort ? 200 : 1000;[m
+[32m+[m[32m      const interval = isRolTijdVerkort ? 100 : 500;[m
+[32m+[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); playRolStop(); }, baseDelay);[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); playRolStop(); }, baseDelay + interval);[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); playRolStop(); }, baseDelay + interval * 2);[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); playRolStop(); }, baseDelay + interval * 3);[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, baseDelay + interval * 4);[m
+[32m+[m[32m      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, baseDelay + interval * 5);[m
+     }[m
+[31m-  }, [isSpinning, playRolStop]);[m
+[32m+[m[32m  }, [isSpinning, playRolStop, isRolTijdVerkort]);[m
+ [m
+   const categorieItems = useMemo(() => {[m
+     return [[m
+[1mdiff --git a/src/components/Instellingen.tsx b/src/components/Instellingen.tsx[m
+[1mindex c64ecd3..1f8ece5 100644[m
+[1m--- a/src/components/Instellingen.tsx[m
+[1m+++ b/src/components/Instellingen.tsx[m
+[36m@@ -80,6 +80,8 @@[m [mexport const Instellingen = React.memo(({[m
+     setIsLokaleBonusOpslagActief,[m
+     maxNewLeitnerQuestionsPerDay,[m
+     setMaxNewLeitnerQuestionsPerDay,[m
+[32m+[m[32m    isMaxNewQuestionsLimitActief,[m
+[32m+[m[32m    setIsMaxNewQuestionsLimitActief,[m
+   } = useSettings();[m
+ [m
+   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);[m
+[36m@@ -404,18 +406,36 @@[m [mexport const Instellingen = React.memo(({[m
+                   {leermodusType === 'leitner' && ([m
+                     <>[m
+                       <label>[m
+[31m-                        Max. nieuwe vragen per dag:[m
+                         <input[m
+[31m-                          type="number"[m
+[31m-                          value={maxNewLeitnerQuestionsPerDay}[m
+[31m-                          onChange={(e) => setMaxNewLeitnerQuestionsPerDay(Number(e.target.value))}[m
+[31m-                          min="1"[m
+[31m-                          style={{ marginLeft: '10px', width: '60px' }}[m
+[32m+[m[32m                          type="checkbox"[m
+[32m+[m[32m                          checked={isMaxNewQuestionsLimitActief}[m
+[32m+[m[32m                          onChange={(e) => setIsMaxNewQuestionsLimitActief(e.target.checked)}[m
+[32m+[m[32m                          style={{ marginRight: '8px' }}[m
+                         />[m
+[32m+[m[32m                        Limiet nieuwe vragen per dag[m
+                       </label>[m
+                       <p className="setting-description">[m
+[31m-                        Stel een limiet in voor het aantal nieuwe vragen dat per dag aan het Leitner-systeem wordt toegevoegd om een te hoge leerlast te voorkomen.[m
+[32m+[m[32m                        Schakel deze optie uit om onbeperkt nieuwe vragen per dag toe te voegen aan het Leitner-systeem.[m
+                       </p>[m
+[32m+[m[41m                      [m
+[32m+[m[32m                      {isMaxNewQuestionsLimitActief && ([m
+[32m+[m[32m                        <>[m
+[32m+[m[32m                          <label>[m
+[32m+[m[32m                            Max. nieuwe vragen per dag:[m
+[32m+[m[32m                            <input[m
+[32m+[m[32m                              type="number"[m
+[32m+[m[32m                              value={maxNewLeitnerQuestionsPerDay}[m
+[32m+[m[32m                              onChange={(e) => setMaxNewLeitnerQuestionsPerDay(Number(e.target.value))}[m
+[32m+[m[32m                              min="1"[m
+[32m+[m[32m                              style={{ marginLeft: '10px', width: '60px' }}[m
+[32m+[m[32m                            />[m
+[32m+[m[32m                          </label>[m
+[32m+[m[32m                          <p className="setting-description">[m
+[32m+[m[32m                            Stel een limiet in voor het aantal nieuwe vragen dat per dag aan het Leitner-systeem wordt toegevoegd om een te hoge leerlast te voorkomen.[m
+[32m+[m[32m                          </p>[m
+[32m+[m[32m                        </>[m
+[32m+[m[32m                      )}[m
+[32m+[m[41m                      [m
+                       <button[m
+                         className="instellingen-knop"[m
+                         onClick={handleOpenLeitnerBeheer}[m
+[1mdiff --git a/src/components/LeitnerCategorieBeheer.css b/src/components/LeitnerCategorieBeheer.css[m
+[1mindex 7f90023..1d4c1e5 100644[m
+[1m--- a/src/components/LeitnerCategorieBeheer.css[m
+[1m+++ b/src/components/LeitnerCategorieBeheer.css[m
+[36m@@ -1924,211 +1924,890 @@[m
+   color: white;[m
+ }[m
+ [m
+[31m-.opslaan-modal-overlay {[m
+[31m-  position: fixed;[m
+[31m-  top: 0;[m
+[31m-  left: 0;[m
+[31m-  right: 0;[m
+[31m-  bottom: 0;[m
+[31m-  background-color: rgba(0, 0, 0, 0.8);[m
+[31m-  display: flex;[m
+[31m-  justify-content: center;[m
+[31m-  align-items: center;[m
+[31m-  z-index: 2000;[m
+[32m+[m[32m.opslaan-selectie-knop {[m
+[32m+[m[32m  background-color: #27ae60;[m
+[32m+[m[32m  color: white;[m
+[32m+[m[32m  border: none;[m
+[32m+[m[32m  padding: 10px 15px;[m
+[32m+[m[32m  border-radius: 6px;[m
+[32m+[m[32m  cursor: pointer;[m
+[32m+[m[32m  font-weight: 500;[m
+[32m+[m[32m  transition: all 0.2s ease;[m
+[32m+[m[32m  margin-top: 10px;[m
+ }[m
+ [m
+[31m-.opslaan-modal-content {[m
+[31m-  background-color: #282c34;[m
+[31m-  color: #e0e0e0;[m
+[31m-  padding: 25px;[m
+[31m-  border-radius: 12px;[m
+[31m-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);[m
+[31m-  width: 90%;[m
+[31m-  max-width: 400px;[m
+[31m-  border: 1px solid #444;[m
+[32m+[m[32m.opslaan-selectie-knop:hover:not(:disabled) {[m
+[32m+[m[32m  background-color: #2ecc71;[m
+[32m+[m[32m  transform: translateY(-1px);[m
+ }[m
+ [m
+[31m-.opslaan-modal-content h4 {[m
+[31m-  margin: 0 0 15px 0;[m
+[31m-  color: #61dafb;[m
+[31m-  font-size: 1.2rem;[m
+[32m+[m[32m.opslaan-selectie-knop:disabled {[m
+[32m+[m[32m  background-color: #666;[m
+[32m+[m[32m  color: #999;[m
+[32m+[m[32m  cursor: not-allowed;[m
+[32m+[m[32m  transform: none;[m
+ }[m
+ [m
+[31m-.opslaan-modal-content p {[m
+[31m-  margin: 0 0 15px 0;[m
+[31m-  color: #ccc;[m
+[31m-  font-size: 0.9rem;[m
+[32m+[m[32m.recordpogingen {[m
+[32m+[m[32m  background-color: #333;[m
+[32m+[m[32m  padding: 15px;[m
+[32m+[m[32m  border-radius: 8px;[m
+[32m+[m[32m  border: 1px solid #444;[m
+[32m+[m[32m  margin-bottom: 15px;[m
+ }[m
+ [m
+[31m-.selectie-naam-input {[m
+[32m+[m[32m.recordpogingen h4 {[m
+[32m+[m[32m  margin: 0 0 12px 0;[m
+[32m+[m[32m  color: #61dafb;[m
+[32m+[m[32m  font-size: 1.1rem;[m
+[32m+[m[3

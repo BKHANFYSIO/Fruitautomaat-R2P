@@ -1399,6 +1399,21 @@ class LeerDataManager {
     return allIds;
   }
 
+  private getAllLeitnerOpdrachtIdsIncludingPaused(): Set<string> {
+    const leitnerData = this.loadLeitnerData();
+    const allIds = new Set<string>();
+    if (leitnerData.isLeitnerActief) {
+      leitnerData.boxes.forEach(box => {
+        box.opdrachten.forEach(id => allIds.add(id));
+      });
+      // Voeg ook gepauzeerde opdrachten toe
+      if (leitnerData.pausedOpdrachten) {
+        leitnerData.pausedOpdrachten.forEach(id => allIds.add(id));
+      }
+    }
+    return allIds;
+  }
+
   // Achievement system
   private checkAchievements(leerData: LeerData): Achievement[] {
     const achievements = this.loadAchievements();
@@ -1988,6 +2003,7 @@ class LeerDataManager {
 
       for (const item of shuffledHerhalingen) {
         const idToMatch = item.opdrachtId;
+        
         const gekozenOpdracht = alleOpdrachten.find(op => {
           const hoofdcategorie = op.Hoofdcategorie || 'Overig';
           const generatedId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
@@ -2016,6 +2032,9 @@ class LeerDataManager {
     geselecteerdeCategorieen: string[]
   ): Opdracht[] {
     const leitnerOpdrachtIds = this.getAllLeitnerOpdrachtIds();
+    const leitnerData = this.loadLeitnerData();
+    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
+    
     return alleOpdrachten.filter(op => {
       const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
       if (!geselecteerdeCategorieen.includes(uniekeIdentifier)) {
@@ -2023,7 +2042,18 @@ class LeerDataManager {
       }
       const hoofdcategorie = op.Hoofdcategorie || 'Overig';
       const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
-      return !leitnerOpdrachtIds.has(opdrachtId);
+      
+      // Filter uit opdrachten die al in Leitner zitten
+      if (leitnerOpdrachtIds.has(opdrachtId)) {
+        return false;
+      }
+      
+      // Filter uit gepauzeerde opdrachten
+      if (pausedOpdrachten.includes(opdrachtId)) {
+        return false;
+      }
+      
+      return true;
     });
   }
 
@@ -2692,6 +2722,15 @@ class LeerDataManager {
   public getPauseTime(opdrachtId: string): string | null {
     const leitnerData = this.loadLeitnerData();
     return leitnerData.opdrachtPauseTimes[opdrachtId] || null;
+  }
+
+  // Dev tool functie om interval aan te passen
+  public setTijdelijkInterval(boxId: number, minuten: number): void {
+    const leitnerData = this.loadLeitnerData();
+    if (boxId < leitnerData.boxIntervallen.length) {
+      leitnerData.boxIntervallen[boxId] = minuten;
+      this.saveLeitnerData(leitnerData);
+    }
   }
 }
 

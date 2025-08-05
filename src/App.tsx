@@ -82,9 +82,16 @@ function App() {
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
-      leermodusType,
-  setLeermodusType,
-  maxNewLeitnerQuestionsPerDay,
+    leermodusType,
+    setLeermodusType,
+    maxNewLeitnerQuestionsPerDay,
+    setMaxNewLeitnerQuestionsPerDay,
+    isMaxNewQuestionsLimitActief,
+    setIsMaxNewQuestionsLimitActief,
+    isBox0IntervalVerkort,
+    setIsBox0IntervalVerkort,
+    isRolTijdVerkort,
+    setIsRolTijdVerkort,
   } = useSettings();
 
   // Game engine hook
@@ -375,6 +382,67 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     
     alert(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. De app is nu in Leermodus en de juiste categorieën zijn geselecteerd. Start een opdracht om een herhaling te krijgen.`);
   };
+
+  const handleToggleBox0Interval = () => {
+    const leerDataManager = getLeerDataManager();
+    const leitnerData = leerDataManager.loadLeitnerData();
+    const huidigeInterval = leitnerData.boxIntervallen[0];
+    
+    if (huidigeInterval === 10) {
+      // Verander naar 1 minuut
+      leerDataManager.setTijdelijkInterval(0, 1);
+      setIsBox0IntervalVerkort(true);
+      alert("Box 0 interval gewijzigd van 10 minuten naar 1 minuut. Opdrachten in box 0 zijn nu klaar voor herhaling na 1 minuut.");
+    } else {
+      // Reset naar 10 minuten
+      leerDataManager.setTijdelijkInterval(0, 10);
+      setIsBox0IntervalVerkort(false);
+      alert("Box 0 interval gereset naar 10 minuten.");
+    }
+  };
+
+  const handleToggleRolTijd = () => {
+    setIsRolTijdVerkort(!isRolTijdVerkort);
+    alert(isRolTijdVerkort ? "Rol animatie gereset naar normale snelheid." : "Rol animatie verkort voor snelle testing.");
+  };
+
+  const handleShowBeoordelingDirect = () => {
+    // Controleer of er een huidige opdracht is
+    if (!huidigeOpdracht) {
+      // Maak een dummy opdracht voor testing
+      const dummyOpdracht = {
+        opdracht: {
+          Hoofdcategorie: 'Test',
+          Categorie: 'Test Categorie',
+          Opdracht: 'Dit is een test opdracht voor de beoordeling',
+          Antwoordsleutel: 'Dit is een test antwoord',
+          Tijdslimiet: 60,
+          Extra_Punten: 0,
+          bron: 'systeem' as const
+        },
+        type: 'nieuw' as const,
+        box: undefined
+      };
+      
+      setHuidigeOpdracht(dummyOpdracht);
+      setHuidigeSpeler({ naam: 'Test Speler', score: 0, extraSpins: 0, beurten: 0 });
+      setHuidigeSpinAnalyse({
+        bonusPunten: 0,
+        actie: 'geen',
+        beschrijving: 'Test spin voor beoordeling',
+        winnendeSymbolen: [],
+        verdiendeSpins: 0
+      });
+    }
+
+    // Stop de spin animatie als die nog bezig is
+    setIsAanHetSpinnen(false);
+    
+    // Forceer de assessment fase om de beoordeling direct te tonen
+    setGamePhase('assessment');
+    
+    alert("Beoordeling wordt nu direct getoond. Je kunt de opdracht beoordelen zonder te wachten op de spin animatie.");
+  };
   // --- EINDE DEV PANEL FUNCTIES ---
 
 
@@ -387,19 +455,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setSpelerWachtrij([]);
     }
   }, [spelers.length]); // <-- DE WIJZIGING: reageer alleen op het AANTAL spelers
-
-  // Effect om de 'd' toets te detecteren voor dev mode
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'd') {
-          setIsDevMode(prev => !prev);
-        }
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, []);
 
   // Effect om de 'd' toets te detecteren voor dev mode
   useEffect(() => {
@@ -1785,6 +1840,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             forcePromotie={handleForcePromotie}
             resetLeitner={handleResetLeitner}
             forceHerhalingen={handleForceHerhalingen}
+            toggleBox0Interval={handleToggleBox0Interval}
+            toggleRolTijd={handleToggleRolTijd}
+            isBox0IntervalVerkort={isBox0IntervalVerkort}
+            isRolTijdVerkort={isRolTijdVerkort}
+            showBeoordelingDirect={handleShowBeoordelingDirect}
           />}
           {warning && <div className="app-warning">{warning}</div>}
           

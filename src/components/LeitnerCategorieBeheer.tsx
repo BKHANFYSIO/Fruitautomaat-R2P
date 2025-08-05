@@ -260,8 +260,87 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       minute: '2-digit'
     });
   };
+
+  const toggleAccordion = (categorie: string) => {
+    setOpenAccordionItems(prev => 
+      prev.includes(categorie) 
+        ? prev.filter(item => item !== categorie)
+        : [...prev, categorie]
+    );
+  };
+
+  const toggleHoofdCategorieAccordion = (hoofdCategorie: string) => {
+    setOpenHoofdCategorieItems(prev => 
+      prev.includes(hoofdCategorie) 
+        ? prev.filter(item => item !== hoofdCategorie)
+        : [...prev, hoofdCategorie]
+    );
+  };
+
+  const toggleSubCategorieAccordion = (subCategorie: string) => {
+    setOpenSubCategorieItems(prev => 
+      prev.includes(subCategorie) 
+        ? prev.filter(item => item !== subCategorie)
+        : [...prev, subCategorie]
+    );
+  };
+
+  const togglePauzeBeheer = () => {
+    setIsPauzeBeheerOpen(prev => !prev);
+  };
+
+  const handleResumeAllOpdrachten = () => {
+    pausedOpdrachten.forEach(opdrachtId => {
+      leerDataManager.resumeOpdracht(opdrachtId);
+    });
+    setToastBericht(`✅ Alle ${pausedOpdrachten.length} opdrachten hervat!`);
+    setIsToastZichtbaar(true);
+    // Force re-render
+    window.location.reload();
+  };
+
+
+
+  const getOpdrachtTitel = (opdrachtId: string): string => {
+    // Zoek naar de volledige opdracht in alleOpdrachten
+    const gevondenOpdracht = alleOpdrachten.find(op => {
+      const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+      const generatedId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+      return generatedId === opdrachtId;
+    });
+    
+    if (gevondenOpdracht) {
+      return gevondenOpdracht.Opdracht; // Volledige opdracht tekst
+    }
+    
+    // Fallback: probeer de titel uit de opdrachtId te halen
+    const parts = opdrachtId.split('_');
+    if (parts.length >= 3) {
+      // Combineer alle delen na de eerste twee en vervang underscores door spaties
+      const titel = parts.slice(2).join(' ').replace(/_/g, ' ');
+      return titel;
+    }
+    return opdrachtId; // Laatste fallback
+  };
+
+  const handleResumeAllInCategorie = (categorie: string) => {
+    const opdrachtenInCategorie = opdrachtenPerCategorie[categorie]?.filter(op => op.isPaused) || [];
+    opdrachtenInCategorie.forEach(op => {
+      leerDataManager.resumeOpdracht(op.opdrachtId);
+    });
+    setToastBericht(`✅ ${opdrachtenInCategorie.length} opdrachten in ${categorie.replace('_', ' - ')} hervat!`);
+    setIsToastZichtbaar(true);
+    // Force re-render
+    window.location.reload();
+  };
   const [statistieken, setStatistieken] = useState<CategorieStatistiek[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+  const [openHoofdCategorieItems, setOpenHoofdCategorieItems] = useState<string[]>([]);
+  const [openSubCategorieItems, setOpenSubCategorieItems] = useState<string[]>([]);
+  const [isPauzeBeheerOpen, setIsPauzeBeheerOpen] = useState(false);
+
+  const [isInstructieOpen, setIsInstructieOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'naam', direction: 'ascending' });
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
@@ -663,72 +742,199 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
           {/* Pauze beheer sectie */}
           <div className="pauze-beheer-sectie">
-            <h4>⏸️ Gepauzeerde Opdrachten Beheer</h4>
-            <div className="debug-info">
-              <p>Debug info:</p>
-              <p>Aantal gepauzeerde opdrachten: {pausedOpdrachten.length}</p>
-              <p>Aantal categorieën met opdrachten: {Object.keys(opdrachtenPerCategorie).length}</p>
-              <p>Gepauzeerde opdrachten: {JSON.stringify(pausedOpdrachten)}</p>
-              <button 
-                onClick={() => {
-                  // Test: pauzeer een opdracht
-                  const testOpdrachtId = 'Test_Categorie_TestOpdracht';
-                  leerDataManager.pauseOpdracht(testOpdrachtId);
-                  setToastBericht('Test opdracht gepauzeerd!');
-                  setIsToastZichtbaar(true);
-                  // Force re-render
-                  window.location.reload();
-                }}
-                className="test-pause-knop"
-              >
-                🧪 Test: Pauzeer een opdracht
-              </button>
+            <div className="pauze-beheer-header">
+              <h4>⏸️ Gepauzeerde Opdrachten Beheer</h4>
+              {pausedOpdrachten.length > 0 && (
+                <div className="pauze-overview">
+                  <span className="pauze-count">
+                    {pausedOpdrachten.length} gepauzeerde opdracht{pausedOpdrachten.length !== 1 ? 'en' : ''}
+                  </span>
+                  <button 
+                    onClick={() => togglePauzeBeheer()}
+                    className="pauze-toggle-knop"
+                  >
+                    {isPauzeBeheerOpen ? '▼ Verberg' : '▶ Bekijk en herstel'}
+                  </button>
+                </div>
+              )}
             </div>
-            {pausedOpdrachten.length > 0 ? (
-              <div className="paused-opdrachten-list">
-                {Object.entries(opdrachtenPerCategorie)
-                  .filter(([_, opdrachten]) => opdrachten.some(op => op.isPaused))
-                  .map(([categorie, opdrachten]) => (
-                    <div key={categorie} className="categorie-paused-group">
-                      <h6>{categorie.replace('_', ' - ')}</h6>
-                      <div className="paused-opdrachten-grid">
-                        {opdrachten
-                          .filter(op => op.isPaused)
-                          .map(op => (
-                            <div key={op.opdrachtId} className="paused-opdracht-card">
-                              <div className="paused-opdracht-info">
-                                <span className="box-indicator">
-                                  {op.boxId > 0 ? `Box ${op.boxId}` : 'Niet in box'}
+            
+            {pausedOpdrachten.length > 0 && isPauzeBeheerOpen && (
+              <div className="pauze-beheer-content">
+                {/* Snelle actie */}
+                <div className="bulk-acties">
+                  <h5>🚀 Snelle Actie</h5>
+                  <div className="bulk-actie-knoppen">
+                    <button 
+                      onClick={handleResumeAllOpdrachten}
+                      className="bulk-actie-knop primary"
+                      title="Hervat alle gepauzeerde opdrachten"
+                    >
+                      🔄 Hervat Alles
+                    </button>
+                  </div>
+                </div>
+
+                                {/* Hiërarchische categorieën accordion */}
+                <div className="paused-opdrachten-accordion">
+                  {(() => {
+                    // Groepeer opdrachten per hoofdcategorie
+                    const opdrachtenPerHoofdCategorie: { [hoofdCategorie: string]: { [subCategorie: string]: any[] } } = {};
+                    
+                    Object.entries(opdrachtenPerCategorie)
+                      .filter(([_, opdrachten]) => opdrachten.some(op => op.isPaused))
+                      .forEach(([categorie, opdrachten]) => {
+                        const [hoofdCategorie, subCategorie] = categorie.split('_');
+                        if (!opdrachtenPerHoofdCategorie[hoofdCategorie]) {
+                          opdrachtenPerHoofdCategorie[hoofdCategorie] = {};
+                        }
+                        opdrachtenPerHoofdCategorie[hoofdCategorie][subCategorie] = opdrachten.filter(op => op.isPaused);
+                      });
+
+                    return Object.entries(opdrachtenPerHoofdCategorie)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([hoofdCategorie, subCategorieen]) => {
+                        const totaalPausedInHoofdCategorie = Object.values(subCategorieen)
+                          .flat()
+                          .length;
+                        
+                        return (
+                          <div key={hoofdCategorie} className="hoofd-categorie-accordion-item">
+                            <button 
+                              className="accordion-header hoofd-categorie-header"
+                              onClick={() => toggleHoofdCategorieAccordion(hoofdCategorie)}
+                            >
+                              <span className="categorie-naam">
+                                <strong>{hoofdCategorie}</strong>
+                              </span>
+                              <div className="categorie-actions">
+                                <span className="opdracht-count">
+                                  {totaalPausedInHoofdCategorie} opdracht{totaalPausedInHoofdCategorie !== 1 ? 'en' : ''}
                                 </span>
-                                <span className="pause-time">
-                                  Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
-                                </span>
-                                <span className="opdracht-id">
-                                  ID: {op.opdrachtId}
-                                </span>
+                                <div 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Hervat alle opdrachten in deze hoofdcategorie
+                                    const opdrachtenInHoofdCategorie = Object.values(subCategorieen).flat();
+                                    opdrachtenInHoofdCategorie.forEach(op => {
+                                      leerDataManager.resumeOpdracht(op.opdrachtId);
+                                    });
+                                    setToastBericht(`✅ ${opdrachtenInHoofdCategorie.length} opdrachten in ${hoofdCategorie} hervat!`);
+                                    setIsToastZichtbaar(true);
+                                    window.location.reload();
+                                  }}
+                                  className="categorie-resume-knop"
+                                  title={`Hervat alle opdrachten in ${hoofdCategorie}`}
+                                >
+                                  🔄
+                                </div>
                               </div>
-                              <button 
-                                onClick={() => handleResumeOpdracht(op.opdrachtId)}
-                                className="resume-knop"
-                              >
-                                ▶️ Hervatten
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
+                              <span className="accordion-icon">
+                                {openHoofdCategorieItems.includes(hoofdCategorie) ? '▼' : '▶'}
+                              </span>
+                            </button>
+                            
+                            {openHoofdCategorieItems.includes(hoofdCategorie) && (
+                              <div className="accordion-content">
+                                {Object.entries(subCategorieen)
+                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .map(([subCategorie, opdrachten]) => (
+                                    <div key={`${hoofdCategorie}_${subCategorie}`} className="sub-categorie-accordion-item">
+                                      <button 
+                                        className="accordion-header sub-categorie-header"
+                                        onClick={() => toggleSubCategorieAccordion(`${hoofdCategorie}_${subCategorie}`)}
+                                      >
+                                        <span className="categorie-naam">
+                                          <span className="sub-categorie-indicator">└─</span> {subCategorie}
+                                        </span>
+                                        <div className="categorie-actions">
+                                          <span className="opdracht-count">
+                                            {opdrachten.length} opdracht{opdrachten.length !== 1 ? 'en' : ''}
+                                          </span>
+                                          <div 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleResumeAllInCategorie(`${hoofdCategorie}_${subCategorie}`);
+                                            }}
+                                            className="categorie-resume-knop"
+                                            title={`Hervat alle opdrachten in ${subCategorie}`}
+                                          >
+                                            🔄
+                                          </div>
+                                        </div>
+                                        <span className="accordion-icon">
+                                          {openSubCategorieItems.includes(`${hoofdCategorie}_${subCategorie}`) ? '▼' : '▶'}
+                                        </span>
+                                      </button>
+                                      
+                                      {openSubCategorieItems.includes(`${hoofdCategorie}_${subCategorie}`) && (
+                                        <div className="accordion-content sub-categorie-content">
+                                          <div className="paused-opdrachten-grid">
+                                            {opdrachten.map(op => (
+                                              <div key={op.opdrachtId} className="paused-opdracht-card">
+                                                <div className="paused-opdracht-info">
+                                                  <span className="opdracht-titel">
+                                                    {getOpdrachtTitel(op.opdrachtId)}
+                                                  </span>
+                                                  <span className="box-indicator">
+                                                    {op.boxId > 0 ? `Box ${op.boxId}` : 'Niet in box'}
+                                                  </span>
+                                                  <span className="pause-time">
+                                                    Gepauzeerd: {op.pauseTime ? formatPauseTime(op.pauseTime) : 'Onbekend'}
+                                                  </span>
+                                                </div>
+                                                <button 
+                                                  onClick={() => handleResumeOpdracht(op.opdrachtId)}
+                                                  className="resume-knop"
+                                                >
+                                                  ▶️ Hervatten
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                  })()}
+                </div>
               </div>
-            ) : (
+            )}
+            
+            {pausedOpdrachten.length === 0 && (
               <div className="geen-paused-melding">
                 <p>Geen gepauzeerde opdrachten. Je kunt opdrachten pauzeren na het voltooien ervan in de Leitner leermodus.</p>
-                <p>Om een opdracht te pauzeren:</p>
-                <ol>
-                  <li>Start een Leitner leermodus sessie</li>
-                  <li>Voltooi een opdracht</li>
-                  <li>Klik op "⏸️ Pauzeer deze opdracht" in de footer</li>
-                  <li>De opdracht verschijnt hier voor beheer</li>
-                </ol>
+                
+                <div className="instructie-sectie">
+                  <button 
+                    onClick={() => setIsInstructieOpen(!isInstructieOpen)}
+                    className="instructie-toggle"
+                  >
+                    <span className="instructie-icon">
+                      {isInstructieOpen ? '▼' : '▶'}
+                    </span>
+                    <span className="instructie-tekst">
+                      {isInstructieOpen ? 'Verberg instructie' : 'Klop open voor instructie'}
+                    </span>
+                  </button>
+                  
+                  {isInstructieOpen && (
+                    <div className="instructie-content">
+                      <p><strong>Om een opdracht te pauzeren:</strong></p>
+                      <ol>
+                        <li>Start een Leitner leermodus sessie</li>
+                        <li>Voltooi een opdracht</li>
+                        <li>Klik op "⏸️ Pauzeer deze opdracht" in de footer</li>
+                        <li>De opdracht verschijnt hier voor beheer</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

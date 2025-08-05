@@ -3,6 +3,7 @@ import type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/
 import Rol from './Rol';
 import { Hendel } from './Hendel'; // Importeer Hendel
 import { useAudio } from '../hooks/useAudio';
+import { useSettings } from '../context/SettingsContext';
 import './Fruitautomaat.css';
 
 type RolItem = { symbool?: string; img?: string };
@@ -54,6 +55,8 @@ export const Fruitautomaat = ({
   leermodusType,
   onPauseOpdracht
 }: FruitautomaatProps) => {
+  const { isRolTijdVerkort } = useSettings();
+  
   const [activeSpin, setActiveSpin] = useState({
     jackpot1: false, jackpot2: false, jackpot3: false,
     categorie: false, opdracht: false, naam: false,
@@ -68,14 +71,18 @@ export const Fruitautomaat = ({
         categorie: true, opdracht: true, naam: true,
       });
 
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); playRolStop(); }, 1000);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); playRolStop(); }, 1500);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); playRolStop(); }, 2000);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); playRolStop(); }, 2500);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, 3000);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, 3500);
+      // Gebruik verkorte tijd als de instelling actief is
+      const baseDelay = isRolTijdVerkort ? 200 : 1000;
+      const interval = isRolTijdVerkort ? 100 : 500;
+
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); playRolStop(); }, baseDelay);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); playRolStop(); }, baseDelay + interval);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); playRolStop(); }, baseDelay + interval * 2);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); playRolStop(); }, baseDelay + interval * 3);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, baseDelay + interval * 4);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, baseDelay + interval * 5);
     }
-  }, [isSpinning, playRolStop]);
+  }, [isSpinning, playRolStop, isRolTijdVerkort]);
 
   const categorieItems = useMemo(() => {
     return [

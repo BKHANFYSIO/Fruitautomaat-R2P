@@ -80,6 +80,8 @@ export const Instellingen = React.memo(({
     setIsLokaleBonusOpslagActief,
     maxNewLeitnerQuestionsPerDay,
     setMaxNewLeitnerQuestionsPerDay,
+    isMaxNewQuestionsLimitActief,
+    setIsMaxNewQuestionsLimitActief,
   } = useSettings();
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
@@ -404,18 +406,36 @@ export const Instellingen = React.memo(({
                   {leermodusType === 'leitner' && (
                     <>
                       <label>
-                        Max. nieuwe vragen per dag:
                         <input
-                          type="number"
-                          value={maxNewLeitnerQuestionsPerDay}
-                          onChange={(e) => setMaxNewLeitnerQuestionsPerDay(Number(e.target.value))}
-                          min="1"
-                          style={{ marginLeft: '10px', width: '60px' }}
+                          type="checkbox"
+                          checked={isMaxNewQuestionsLimitActief}
+                          onChange={(e) => setIsMaxNewQuestionsLimitActief(e.target.checked)}
+                          style={{ marginRight: '8px' }}
                         />
+                        Limiet nieuwe vragen per dag
                       </label>
                       <p className="setting-description">
-                        Stel een limiet in voor het aantal nieuwe vragen dat per dag aan het Leitner-systeem wordt toegevoegd om een te hoge leerlast te voorkomen.
+                        Schakel deze optie uit om onbeperkt nieuwe vragen per dag toe te voegen aan het Leitner-systeem.
                       </p>
+                      
+                      {isMaxNewQuestionsLimitActief && (
+                        <>
+                          <label>
+                            Max. nieuwe vragen per dag:
+                            <input
+                              type="number"
+                              value={maxNewLeitnerQuestionsPerDay}
+                              onChange={(e) => setMaxNewLeitnerQuestionsPerDay(Number(e.target.value))}
+                              min="1"
+                              style={{ marginLeft: '10px', width: '60px' }}
+                            />
+                          </label>
+                          <p className="setting-description">
+                            Stel een limiet in voor het aantal nieuwe vragen dat per dag aan het Leitner-systeem wordt toegevoegd om een te hoge leerlast te voorkomen.
+                          </p>
+                        </>
+                      )}
+                      
                       <button
                         className="instellingen-knop"
                         onClick={handleOpenLeitnerBeheer}

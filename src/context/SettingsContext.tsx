@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 type GameMode = 'single' | 'multi';
@@ -42,6 +42,14 @@ interface SettingsContextType {
   setLeermodusType: (type: 'normaal' | 'leitner') => void;
   maxNewLeitnerQuestionsPerDay: number;
   setMaxNewLeitnerQuestionsPerDay: (aantal: number) => void;
+  isMaxNewQuestionsLimitActief: boolean;
+  setIsMaxNewQuestionsLimitActief: (actief: boolean) => void;
+  
+  // Dev settings
+  isBox0IntervalVerkort: boolean;
+  setIsBox0IntervalVerkort: (verkort: boolean) => void;
+  isRolTijdVerkort: boolean;
+  setIsRolTijdVerkort: (verkort: boolean) => void;
   
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
@@ -62,32 +70,133 @@ interface SettingsProviderProps {
   children: ReactNode;
 }
 
+// Helper functies voor localStorage
+const loadFromStorage = (key: string, defaultValue: any) => {
+  try {
+    const item = localStorage.getItem(`fruitautomaat_settings_${key}`);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error(`Error loading setting ${key}:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToStorage = (key: string, value: any) => {
+  try {
+    localStorage.setItem(`fruitautomaat_settings_${key}`, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error saving setting ${key}:`, error);
+  }
+};
+
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   // Game settings
-  const [gameMode, setGameMode] = useState<GameMode>('multi');
-  const [maxRondes, setMaxRondes] = useState(0); // 0 = oneindig
+  const [gameMode, setGameMode] = useState<GameMode>(() => loadFromStorage('gameMode', 'multi'));
+  const [maxRondes, setMaxRondes] = useState(() => loadFromStorage('maxRondes', 0));
   
   // UI settings
-  const [isGeluidActief, setIsGeluidActief] = useState(true);
-  const [isTimerActief, setIsTimerActief] = useState(true);
-  const [isEerlijkeSelectieActief, setIsEerlijkeSelectieActief] = useState(true);
-  const [isJokerSpinActief, setIsJokerSpinActief] = useState(true);
-  const [isBonusOpdrachtenActief, setIsBonusOpdrachtenActief] = useState(true);
-  const [isSpinVergrendelingActief, setIsSpinVergrendelingActief] = useState(true);
-  const [isAutomatischScorebordActief, setIsAutomatischScorebordActief] = useState(true);
+  const [isGeluidActief, setIsGeluidActief] = useState(() => loadFromStorage('isGeluidActief', true));
+  const [isTimerActief, setIsTimerActief] = useState(() => loadFromStorage('isTimerActief', true));
+  const [isEerlijkeSelectieActief, setIsEerlijkeSelectieActief] = useState(() => loadFromStorage('isEerlijkeSelectieActief', true));
+  const [isJokerSpinActief, setIsJokerSpinActief] = useState(() => loadFromStorage('isJokerSpinActief', true));
+  const [isBonusOpdrachtenActief, setIsBonusOpdrachtenActief] = useState(() => loadFromStorage('isBonusOpdrachtenActief', true));
+  const [isSpinVergrendelingActief, setIsSpinVergrendelingActief] = useState(() => loadFromStorage('isSpinVergrendelingActief', true));
+  const [isAutomatischScorebordActief, setIsAutomatischScorebordActief] = useState(() => loadFromStorage('isAutomatischScorebordActief', true));
   
   // Advanced settings
-  const [bonusKans, setBonusKans] = useState<BonusKans>('standaard');
-  const [forceerMobieleWeergave, setForceerMobieleWeergave] = useState(false);
+  const [bonusKans, setBonusKans] = useState<BonusKans>(() => loadFromStorage('bonusKans', 'standaard'));
+  const [forceerMobieleWeergave, setForceerMobieleWeergave] = useState(() => loadFromStorage('forceerMobieleWeergave', false));
   
   // Learning mode settings
-  const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(false);
-  const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(true);
-  const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>('normaal');
-  const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(10);
+  const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(() => loadFromStorage('isSerieuzeLeerModusActief', false));
+  const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(() => loadFromStorage('isLeerFeedbackActief', true));
+  const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>(() => loadFromStorage('leermodusType', 'normaal'));
+  const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
+  const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
+
+  // Dev settings
+  const [isBox0IntervalVerkort, setIsBox0IntervalVerkort] = useState(() => loadFromStorage('isBox0IntervalVerkort', false));
+  const [isRolTijdVerkort, setIsRolTijdVerkort] = useState(() => loadFromStorage('isRolTijdVerkort', false));
 
   // Bonus settings
-  const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(false);
+  const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(() => loadFromStorage('isLokaleBonusOpslagActief', false));
+
+  // Effect om instellingen op te slaan wanneer ze veranderen
+  useEffect(() => {
+    saveToStorage('gameMode', gameMode);
+  }, [gameMode]);
+
+  useEffect(() => {
+    saveToStorage('maxRondes', maxRondes);
+  }, [maxRondes]);
+
+  useEffect(() => {
+    saveToStorage('isGeluidActief', isGeluidActief);
+  }, [isGeluidActief]);
+
+  useEffect(() => {
+    saveToStorage('isTimerActief', isTimerActief);
+  }, [isTimerActief]);
+
+  useEffect(() => {
+    saveToStorage('isEerlijkeSelectieActief', isEerlijkeSelectieActief);
+  }, [isEerlijkeSelectieActief]);
+
+  useEffect(() => {
+    saveToStorage('isJokerSpinActief', isJokerSpinActief);
+  }, [isJokerSpinActief]);
+
+  useEffect(() => {
+    saveToStorage('isBonusOpdrachtenActief', isBonusOpdrachtenActief);
+  }, [isBonusOpdrachtenActief]);
+
+  useEffect(() => {
+    saveToStorage('isSpinVergrendelingActief', isSpinVergrendelingActief);
+  }, [isSpinVergrendelingActief]);
+
+  useEffect(() => {
+    saveToStorage('isAutomatischScorebordActief', isAutomatischScorebordActief);
+  }, [isAutomatischScorebordActief]);
+
+  useEffect(() => {
+    saveToStorage('bonusKans', bonusKans);
+  }, [bonusKans]);
+
+  useEffect(() => {
+    saveToStorage('forceerMobieleWeergave', forceerMobieleWeergave);
+  }, [forceerMobieleWeergave]);
+
+  useEffect(() => {
+    saveToStorage('isSerieuzeLeerModusActief', isSerieuzeLeerModusActief);
+  }, [isSerieuzeLeerModusActief]);
+
+  useEffect(() => {
+    saveToStorage('isLeerFeedbackActief', isLeerFeedbackActief);
+  }, [isLeerFeedbackActief]);
+
+  useEffect(() => {
+    saveToStorage('leermodusType', leermodusType);
+  }, [leermodusType]);
+
+  useEffect(() => {
+    saveToStorage('maxNewLeitnerQuestionsPerDay', maxNewLeitnerQuestionsPerDay);
+  }, [maxNewLeitnerQuestionsPerDay]);
+
+  useEffect(() => {
+    saveToStorage('isMaxNewQuestionsLimitActief', isMaxNewQuestionsLimitActief);
+  }, [isMaxNewQuestionsLimitActief]);
+
+  useEffect(() => {
+    saveToStorage('isBox0IntervalVerkort', isBox0IntervalVerkort);
+  }, [isBox0IntervalVerkort]);
+
+  useEffect(() => {
+    saveToStorage('isRolTijdVerkort', isRolTijdVerkort);
+  }, [isRolTijdVerkort]);
+
+  useEffect(() => {
+    saveToStorage('isLokaleBonusOpslagActief', isLokaleBonusOpslagActief);
+  }, [isLokaleBonusOpslagActief]);
 
   const value: SettingsContextType = {
     // Game settings
@@ -127,6 +236,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setLeermodusType,
     maxNewLeitnerQuestionsPerDay,
     setMaxNewLeitnerQuestionsPerDay,
+    isMaxNewQuestionsLimitActief,
+    setIsMaxNewQuestionsLimitActief,
+    
+    // Dev settings
+    isBox0IntervalVerkort,
+    setIsBox0IntervalVerkort,
+    isRolTijdVerkort,
+    setIsRolTijdVerkort,
     
     // Bonus settings
     isLokaleBonusOpslagActief,

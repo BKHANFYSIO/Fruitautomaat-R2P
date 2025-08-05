@@ -15,7 +15,7 @@ const shuffle = <T,>(array: T[]): T[] => {
 };
 
 export const useGameEngine = () => {
-  const { maxNewLeitnerQuestionsPerDay } = useSettings();
+  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief } = useSettings();
 
   // Game state
   const [spelers, setSpelers] = useState<Speler[]>([]);
@@ -146,16 +146,20 @@ export const useGameEngine = () => {
       const leerDataManager = getLeerDataManager();
       
       const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
-      const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => 
-        geselecteerdeCategorieen.includes(item.opdrachtId.split('_')[0])
-      );
+      
+      const gefilterdeHerhalingen = herhalingenVoorVandaag.filter(item => {
+        const hoofdcategorie = item.opdrachtId.split('_')[0];
+        // Check of de hoofdcategorie voorkomt in een van de geselecteerde categorieën
+        const isIncluded = geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
+        return isIncluded;
+      });
       
       const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
       
       // Check of we een nieuwe opdracht willen en of de limiet is bereikt
       if (result.type === 'nieuw') {
         const newQuestionsToday = leerDataManager.getNewQuestionsTodayCount();
-        if (newQuestionsToday >= maxNewLeitnerQuestionsPerDay) {
+        if (isMaxNewQuestionsLimitActief && newQuestionsToday >= maxNewLeitnerQuestionsPerDay) {
           // Limiet bereikt, geef geen nieuwe opdracht.
           return { ...result, opdracht: null, type: 'geen', limietBereikt: true };
         }
@@ -172,7 +176,7 @@ export const useGameEngine = () => {
       const gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
-  }, [maxNewLeitnerQuestionsPerDay]);
+  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief]);
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,
