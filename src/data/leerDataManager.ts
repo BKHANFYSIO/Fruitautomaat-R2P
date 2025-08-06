@@ -1617,15 +1617,7 @@ class LeerDataManager {
     return counts;
   }
 
-  private getAlleUniekeCategorieen(): string[] {
-    const categorieen = new Set<string>();
-    this._alleOpdrachten.forEach(opdracht => {
-      if (opdracht.Categorie) {
-        categorieen.add(opdracht.Categorie);
-      }
-    });
-    return Array.from(categorieen);
-  }
+
 
   private getTotaalOpdrachtenInCategorie(categorie: string): number {
     return this._alleOpdrachten.filter(opdracht => opdracht.Categorie === categorie).length;
