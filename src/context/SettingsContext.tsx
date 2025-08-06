@@ -38,8 +38,13 @@ interface SettingsContextType {
   setIsJokerSpinActiefMultiplayer: (actief: boolean) => void;
   isSpinVergrendelingActiefVrijeLeermodus: boolean;
   setIsSpinVergrendelingActiefVrijeLeermodus: (actief: boolean) => void;
-  isSpinVergrendelingActiefLeitnerLeermodus: boolean;
-  setIsSpinVergrendelingActiefLeitnerLeermodus: (actief: boolean) => void;
+      isSpinVergrendelingActiefLeitnerLeermodus: boolean;
+    setIsSpinVergrendelingActiefLeitnerLeermodus: (actief: boolean) => void;
+    // Per-modus joker spin instellingen (niet meer gebruikt)
+    // isJokerSpinActiefVrijeLeermodus: boolean;
+    // setIsJokerSpinActiefVrijeLeermodus: (actief: boolean) => void;
+    // isJokerSpinActiefLeitnerLeermodus: boolean;
+    // setIsJokerSpinActiefLeitnerLeermodus: (actief: boolean) => void;
   
   // Advanced settings
   bonusKans: BonusKans;
@@ -148,12 +153,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [isJokerSpinActiefMultiplayer, setIsJokerSpinActiefMultiplayer] = useState(() => 
     loadFromStorage('isJokerSpinActiefMultiplayer', true)
   );
-  const [isJokerSpinActiefVrijeLeermodus, setIsJokerSpinActiefVrijeLeermodus] = useState(() => 
-    loadFromStorage('isJokerSpinActiefVrijeLeermodus', false)
-  );
-  const [isJokerSpinActiefLeitnerLeermodus, setIsJokerSpinActiefLeitnerLeermodus] = useState(() => 
-    loadFromStorage('isJokerSpinActiefLeitnerLeermodus', false)
-  );
+  // Per-modus joker spin instellingen (niet meer gebruikt)
+  // const [isJokerSpinActiefVrijeLeermodus, setIsJokerSpinActiefVrijeLeermodus] = useState(() => 
+  //   loadFromStorage('isJokerSpinActiefVrijeLeermodus', false)
+  // );
+  // const [isJokerSpinActiefLeitnerLeermodus, setIsJokerSpinActiefLeitnerLeermodus] = useState(() => 
+  //   loadFromStorage('isJokerSpinActiefLeitnerLeermodus', false)
+  // );
   
   // Advanced settings
   const [bonusKans, setBonusKans] = useState<BonusKans>(() => loadFromStorage('bonusKans', 'standaard'));

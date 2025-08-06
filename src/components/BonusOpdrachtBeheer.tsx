@@ -82,9 +82,10 @@ export const BonusOpdrachtBeheer = ({
     setNieuwePunten('');
   };
 
-  const handleVerwijderen = (index: number) => {
-    setOpdrachten(opdrachten.filter((_, i) => i !== index));
-  };
+  // Functie voor het verwijderen van individuele opdrachten (niet meer gebruikt in deze component)
+  // const handleVerwijderen = (index: number) => {
+  //   setOpdrachten(opdrachten.filter((_, i) => i !== index));
+  // };
 
   const handleBulkVerwijderen = () => {
     setOpdrachten([]);

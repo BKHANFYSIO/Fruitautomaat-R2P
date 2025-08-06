@@ -40,15 +40,15 @@ export const Instellingen = React.memo(({
   setBonusOpdrachten,
   basisBonusOpdrachten,
   // Spel status
-  isSpelGestart,
+  // isSpelGestart, // Niet meer gebruikt
   onSpelReset,
   // Categorie beheer
   onOpenCategorieBeheer,
-  onOpenCategorieSelectie,
+  // onOpenCategorieSelectie, // Niet meer gebruikt
 }: InstellingenProps) => {
   // Settings context
   const {
-    gameMode,
+    // gameMode, // Niet meer gebruikt
     setGameMode,
     maxRondes,
     setMaxRondes,
@@ -58,7 +58,7 @@ export const Instellingen = React.memo(({
     setIsTimerActief,
     isEerlijkeSelectieActief,
     setIsEerlijkeSelectieActief,
-    isJokerSpinActief,
+    // isJokerSpinActief, // Niet meer gebruikt
     setIsJokerSpinActief,
     isBonusOpdrachtenActief,
     setIsBonusOpdrachtenActief,
@@ -70,7 +70,7 @@ export const Instellingen = React.memo(({
     setBonusKans,
     forceerMobieleWeergave,
     setForceerMobieleWeergave,
-    isSerieuzeLeerModusActief,
+    // isSerieuzeLeerModusActief, // Niet meer gebruikt
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
@@ -97,10 +97,10 @@ export const Instellingen = React.memo(({
     setIsSpinVergrendelingActiefVrijeLeermodus,
     isSpinVergrendelingActiefLeitnerLeermodus,
     setIsSpinVergrendelingActiefLeitnerLeermodus,
-    isBox0IntervalVerkort,
-    setIsBox0IntervalVerkort,
-    isRolTijdVerkort,
-    setIsRolTijdVerkort,
+    // isBox0IntervalVerkort, // Niet meer gebruikt
+    // setIsBox0IntervalVerkort, // Niet meer gebruikt
+    // isRolTijdVerkort, // Niet meer gebruikt
+    // setIsRolTijdVerkort, // Niet meer gebruikt
   } = useSettings();
 
   // Tab state
@@ -125,13 +125,13 @@ export const Instellingen = React.memo(({
     }
   }, [isSpinVergrendelingActief, setIsJokerSpinActief]);
 
-  // Helper functie om modus naam te bepalen
-  const getModusNaam = () => {
-    if (gameMode === 'multi') return 'Multiplayer Modus';
-    if (!isSerieuzeLeerModusActief) return 'Highscore Modus';
-    if (leermodusType === 'leitner') return 'Leitner Leermodus';
-    return 'Vrije Leermodus';
-  };
+  // Helper functie om modus naam te bepalen (niet meer gebruikt)
+  // const getModusNaam = () => {
+  //   if (gameMode === 'multi') return 'Multiplayer Modus';
+  //   if (!isSerieuzeLeerModusActief) return 'Highscore Modus';
+  //   if (leermodusType === 'leitner') return 'Leitner Leermodus';
+  //   return 'Vrije Leermodus';
+  // };
 
   if (!isOpen) {
     return null;
@@ -228,9 +228,9 @@ export const Instellingen = React.memo(({
       setIsMaxNewQuestionsLimitActief(true);
       setNegeerBox0Wachttijd(true);
       
-      // Dev instellingen herstellen
-      setIsBox0IntervalVerkort(false);
-      setIsRolTijdVerkort(false);
+      // Dev instellingen herstellen (niet meer beschikbaar)
+      // setIsBox0IntervalVerkort(false);
+      // setIsRolTijdVerkort(false);
       
       // Bonus instellingen herstellen
       setIsLokaleBonusOpslagActief(false);
@@ -239,28 +239,29 @@ export const Instellingen = React.memo(({
     }
   };
 
-  const handleSerieuzeModusToggle = (checked: boolean) => {
-    if (checked) {
-      if (isSpelGestart && gameMode === 'multi') {
-        setIsSerieuzeModusWaarschuwingOpen(true);
-      } else {
-        setIsSerieuzeLeerModusActief(true);
-        if (gameMode === 'multi') {
-          setGameMode('single');
-        }
-      }
-    } else {
-      if (isSpelGestart && isSerieuzeLeerModusActief) {
-        setIsSerieuzeModusUitschakelenOpen(true);
-      } else {
-        setIsSerieuzeLeerModusActief(false);
-      }
-    }
-  };
+  // Functies voor serieuze modus toggles (niet meer gebruikt)
+  // const handleSerieuzeModusToggle = (checked: boolean) => {
+  //   if (checked) {
+  //     if (isSpelGestart && gameMode === 'multi') {
+  //       setIsSerieuzeModusWaarschuwingOpen(true);
+  //     } else {
+  //       setIsSerieuzeLeerModusActief(true);
+  //       if (gameMode === 'multi') {
+  //         setGameMode('single');
+  //       }
+  //     }
+  //   } else {
+  //     if (isSpelGestart && isSerieuzeLeerModusActief) {
+  //       setIsSerieuzeModusUitschakelenOpen(true);
+  //     } else {
+  //       setIsSerieuzeLeerModusActief(false);
+  //     }
+  //   }
+  // };
 
-  const handleLeitnerModusToggle = (checked: boolean) => {
-    setLeermodusType(checked ? 'leitner' : 'normaal');
-  };
+  // const handleLeitnerModusToggle = (checked: boolean) => {
+  //   setLeermodusType(checked ? 'leitner' : 'normaal');
+  // };
   
   const handleSerieuzeModusBevestiging = () => {
     setIsSerieuzeLeerModusActief(true);
