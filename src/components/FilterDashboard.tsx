@@ -10,27 +10,24 @@ interface FilterDashboardProps {
   };
   setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[] }) => void;
   opdrachten: Opdracht[];
-  onOpenCriteriaModal: () => void;
   actieveCategorieSelectie: string[];
 }
 
-export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, onOpenCriteriaModal, actieveCategorieSelectie }) => {
+export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie }) => {
 
   const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron } = useMemo(() => {
     const opdrachtenPerType: { [key: string]: number } = {};
     const opdrachtenPerBron: { [key: string]: number } = {};
     
-    const geselecteerdeOpdrachten = actieveCategorieSelectie.length > 0
-      ? opdrachten.filter(op => actieveCategorieSelectie.includes(`${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`))
-      : opdrachten;
-
-    geselecteerdeOpdrachten.forEach(op => {
+    // Gebruik alle opdrachten voor de filter tellingen, niet alleen geselecteerde
+    opdrachten.forEach(op => {
       const type = op.opdrachtType || 'Onbekend';
       opdrachtenPerType[type] = (opdrachtenPerType[type] || 0) + 1;
       const bron = op.bron || 'systeem';
       opdrachtenPerBron[bron] = (opdrachtenPerBron[bron] || 0) + 1;
     });
     
+    // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
     const alleOpdrachtTypes = Array.from(new Set(opdrachten.map(op => op.opdrachtType || 'Onbekend'))).sort((a, b) => {
       if (a === 'Onbekend') return 1;
       if (b === 'Onbekend') return -1;
@@ -38,9 +35,15 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
     });
     
     return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron };
-  }, [opdrachten, actieveCategorieSelectie]);
+  }, [opdrachten]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
+    // Voorkom dat beide bronnen worden uitgeschakeld
+    if (filters.bronnen.includes(bron) && filters.bronnen.length === 1) {
+      alert('Er moet minimaal één bron geselecteerd zijn');
+      return; // Laat minimaal één bron geselecteerd
+    }
+    
     const nieuweBronnen = filters.bronnen.includes(bron)
       ? filters.bronnen.filter(b => b !== bron)
       : [...filters.bronnen, bron];
@@ -59,9 +62,6 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
       <div className="filter-section">
         <div className="filter-header">
           <h5 className="filter-titel">Actieve Filters</h5>
-          <button onClick={onOpenCriteriaModal} className="criteria-knop" title="Gedetailleerd overzicht en filters">
-            📊
-          </button>
         </div>
         <div className="filter-icon-group">
           <span

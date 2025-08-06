@@ -198,9 +198,11 @@
 }
 
 .categorie-table th, .categorie-table td {
-  padding: 10px;
+  padding: 12px 8px;
   text-align: left;
   border-bottom: 1px solid #444;
+  height: 60px; /* Zorg voor consistente hoogte */
+  vertical-align: middle; /* Centreer content verticaal */
 }
 
 .categorie-table th {
@@ -1130,11 +1132,17 @@
   font-size: 1.1rem;
 }
 
+.categorie-lijst-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
 .snelle-selectie-knoppen {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .snelle-selectie-knop {
@@ -1341,6 +1349,8 @@
   padding: 12px 8px;
   text-align: left;
   border-bottom: 1px solid #444;
+  height: 60px; /* Zorg voor consistente hoogte */
+  vertical-align: middle; /* Centreer content verticaal */
 }
 
 .categorie-table th {
@@ -1401,11 +1411,15 @@
 
 .sub-categorie-rij td {
   color: #e0e0e0;
+  height: 60px; /* Zorg voor dezelfde hoogte als andere cellen */
+  vertical-align: middle;
 }
 
 .hoofd-categorie-rij td {
   font-weight: 600;
   color: #e0e0e0;
+  height: 60px; /* Zorg voor dezelfde hoogte als andere cellen */
+  vertical-align: middle;
 }
 
 .sub-categorie-rij {
@@ -1425,11 +1439,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .categorie-naam-cell.sub-categorie {
   padding-left: 30px;
   background-color: transparent !important;
+  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .hoofd-categorie-naam {
@@ -2020,6 +2036,8 @@
   padding: 12px 8px;
   text-align: left;
   border-bottom: 1px solid #444;
+  height: 60px; /* Zorg voor consistente hoogte */
+  vertical-align: middle; /* Centreer content verticaal */
 }
 
 .categorie-table th {
@@ -2080,11 +2098,15 @@
 
 .sub-categorie-rij td {
   color: #e0e0e0;
+  height: 60px; /* Zorg voor dezelfde hoogte als andere cellen */
+  vertical-align: middle;
 }
 
 .hoofd-categorie-rij td {
   font-weight: 600;
   color: #e0e0e0;
+  height: 60px; /* Zorg voor dezelfde hoogte als andere cellen */
+  vertical-align: middle;
 }
 
 .sub-categorie-rij {
@@ -2104,11 +2126,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .categorie-naam-cell.sub-categorie {
   padding-left: 30px;
   background-color: transparent !important;
+  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .hoofd-categorie-naam {
@@ -3465,4 +3489,108 @@ td.sub-categorie,
   background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+}
+
+/* Filter sectie styling */
+.filter-sectie {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid #444;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-header h4 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1.1em;
+}
+
+.filter-info {
+  font-size: 0.85em;
+  color: #888;
+  font-style: italic;
+}
+
+.filter-groepen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-groep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-label {
+  font-weight: 600;
+  color: #ccc;
+  min-width: 60px;
+  font-size: 0.9em;
+}
+
+.filter-iconen {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.1em;
+  border: 2px solid transparent;
+}
+
+.filter-icon.active {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.filter-icon.inactive {
+  background: #3a3a3a;
+  color: #888;
+  border-color: #555;
+}
+
+.filter-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.filter-icon.active:hover {
+  background: #5ba0f2;
+  border-color: #5ba0f2;
+}
+
+.filter-icon.inactive:hover {
+  background: #4a4a4a;
+  color: #aaa;
+  border-color: #666;
+}
+
+/* Specifieke fix voor subcategorie cellen in CategorieSelectieModal */
+.sub-categorie-rij .categorie-naam-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 12px 8px;
+  vertical-align: middle;
 }

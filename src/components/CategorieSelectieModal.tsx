@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
+import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
+import { opdrachtTypeIconen } from '../data/constants';
+
 
 // Toast melding component
 const ToastMelding = ({ bericht, isZichtbaar, onClose }: { bericht: string; isZichtbaar: boolean; onClose: () => void }) => {
@@ -64,6 +67,12 @@ interface CategorieSelectieModalProps {
   setGeselecteerdeHighscoreCategorieen?: (categorieen: string[]) => void;
   // Props voor directe tab navigatie
   initialActiveTab?: TabType;
+  // Nieuwe props voor filters
+  filters?: {
+    bronnen: ('systeem' | 'gebruiker')[];
+    opdrachtTypes: string[];
+  };
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[] }) => void;
 }
 
 export const CategorieSelectieModal = ({
@@ -83,6 +92,8 @@ export const CategorieSelectieModal = ({
   geselecteerdeHighscoreCategorieen = [],
   setGeselecteerdeHighscoreCategorieen,
   initialActiveTab,
+      filters = { bronnen: ['systeem'], opdrachtTypes: [] },
+  setFilters,
 }: CategorieSelectieModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialActiveTab || 'normaal');
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
@@ -98,9 +109,13 @@ export const CategorieSelectieModal = ({
   
   // Sorteer functionaliteit
   const [sortConfig, setSortConfig] = useState<{
-    key: 'naam' | 'aantalOpdrachten' | 'geselecteerd';
+    key: 'naam' | 'aantalOpdrachten' | 'geselecteerd' | 'status';
     direction: 'ascending' | 'descending';
   } | null>(null);
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [geselecteerdeCategorieVoorDetail, setGeselecteerdeCategorieVoorDetail] = useState<string | null>(null);
+  const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
 
   // Effect om activeTab bij te werken wanneer initialActiveTab verandert
   useEffect(() => {
@@ -218,12 +233,72 @@ export const CategorieSelectieModal = ({
   };
 
   const actieveCategorieSelectie = getActieveCategorieSelectie();
-    const actieveCategorieHandler = getActieveCategorieHandler();
+  const actieveCategorieHandler = getActieveCategorieHandler();
   const actieveBulkHandler = getActieveBulkHandler();
+
+  // Filter functionaliteit
+  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron } = useMemo(() => {
+    const opdrachtenPerType: { [key: string]: number } = {};
+    const opdrachtenPerBron: { [key: string]: number } = {};
+    
+    // Gebruik alle opdrachten voor de filter tellingen, niet alleen geselecteerde
+    opdrachten.forEach(op => {
+      const type = op.opdrachtType || 'Onbekend';
+      opdrachtenPerType[type] = (opdrachtenPerType[type] || 0) + 1;
+      const bron = op.bron || 'systeem';
+      opdrachtenPerBron[bron] = (opdrachtenPerBron[bron] || 0) + 1;
+    });
+    
+    // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
+    const alleOpdrachtTypes = Array.from(new Set(opdrachten.map(op => op.opdrachtType || 'Onbekend'))).sort((a, b) => {
+      if (a === 'Onbekend') return 1;
+      if (b === 'Onbekend') return -1;
+      return a.localeCompare(b);
+    });
+    
+    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron };
+  }, [opdrachten]);
+
+  const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
+    if (!setFilters) return;
+    
+    // Voorkom dat beide bronnen worden uitgeschakeld
+    if (filters.bronnen.includes(bron) && filters.bronnen.length === 1) {
+      setToastBericht('Er moet minimaal één bron geselecteerd zijn');
+      setIsToastZichtbaar(true);
+      return; // Laat minimaal één bron geselecteerd
+    }
+    
+    const nieuweBronnen = filters.bronnen.includes(bron)
+      ? filters.bronnen.filter(b => b !== bron)
+      : [...filters.bronnen, bron];
+    setFilters({ ...filters, bronnen: nieuweBronnen });
+  };
+
+  const handleTypeToggle = (type: string) => {
+    if (!setFilters) return;
+    const nieuweTypes = filters.opdrachtTypes.includes(type)
+      ? filters.opdrachtTypes.filter(t => t !== type)
+      : [...filters.opdrachtTypes, type];
+    setFilters({ ...filters, opdrachtTypes: nieuweTypes });
+  };
+
+  // Gefilterde opdrachten op basis van huidige filters
+  const gefilterdeOpdrachten = useMemo(() => {
+    return opdrachten.filter(op => {
+      // Filter op bron
+      const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes(op.bron as 'systeem' | 'gebruiker');
+      if (!bronMatch) return false;
+
+      // Filter op opdrachtType
+      if (filters.opdrachtTypes.length === 0) return true;
+      return filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+    });
+  }, [opdrachten, filters]);
 
   const gegroepeerdeCategorieen = useMemo(() => {
     const groepen: Record<string, string[]> = { 'Overig': [] };
-    opdrachten.forEach(opdracht => {
+    gefilterdeOpdrachten.forEach(opdracht => {
       const hoofdCat = opdracht.Hoofdcategorie || 'Overig';
       if (!groepen[hoofdCat]) {
         groepen[hoofdCat] = [];
@@ -236,18 +311,21 @@ export const CategorieSelectieModal = ({
       delete groepen['Overig'];
     }
     return groepen;
-  }, [opdrachten]);
-
-  
+  }, [gefilterdeOpdrachten]);
 
   const alleCategorieen = useMemo(() => {
-    const uniekeNamen = new Set<string>();
-    opdrachten.forEach(op => {
-      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
-      uniekeNamen.add(uniekeIdentifier);
-    });
-    return [...uniekeNamen];
-  }, [opdrachten]);
+    return Object.entries(gegroepeerdeCategorieen).flatMap(([hoofd, subs]) => 
+      subs.map(sub => `${hoofd} - ${sub}`)
+    );
+  }, [gegroepeerdeCategorieen]);
+
+  const handleSelecteerAlles = () => {
+    actieveBulkHandler(alleCategorieen, 'select');
+  };
+
+  const handleDeselecteerAlles = () => {
+    actieveBulkHandler(alleCategorieen, 'deselect');
+  };
 
   const toggleHoofdCategorie = (hoofd: string) => {
     setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
@@ -255,11 +333,7 @@ export const CategorieSelectieModal = ({
 
   const handleHoofdCategorieSelectie = (hoofd: string, subcategorieen: string[], isGeselecteerd: boolean) => {
     const uniekeSubcategorieen = subcategorieen.map(sub => `${hoofd} - ${sub}`);
-    if (isGeselecteerd) {
-      actieveBulkHandler(uniekeSubcategorieen, 'deselect');
-    } else {
-      actieveBulkHandler(uniekeSubcategorieen, 'select');
-    }
+    actieveBulkHandler(uniekeSubcategorieen, isGeselecteerd ? 'deselect' : 'select');
   };
 
   const handleOpslaanSelectie = () => {
@@ -307,14 +381,14 @@ export const CategorieSelectieModal = ({
   const handleLaadSelectie = (selectie: OpgeslagenCategorieSelectie) => {
     if (activeTab === 'multiplayer' && setGeselecteerdeMultiplayerCategorieen) {
       setGeselecteerdeMultiplayerCategorieen([...selectie.categorieen]);
-      setToastBericht(`Selectie "${selectie.naam}" is geladen!`);
-      setIsToastZichtbaar(true);
     } else if (activeTab === 'normaal') {
-      actieveBulkHandler([], 'select'); // Clear current selection
+      actieveBulkHandler(alleCategorieen, 'deselect');
       actieveBulkHandler(selectie.categorieen, 'select');
-      setToastBericht(`Selectie "${selectie.naam}" is geladen!`);
-      setIsToastZichtbaar(true);
+    } else if (activeTab === 'highscore' && setGeselecteerdeHighscoreCategorieen) {
+      setGeselecteerdeHighscoreCategorieen([...selectie.categorieen]);
     }
+    setToastBericht(`Selectie "${selectie.naam}" is geladen!`);
+    setIsToastZichtbaar(true);
   };
   
   const handleVerwijderSelectie = (id: string) => {
@@ -322,15 +396,13 @@ export const CategorieSelectieModal = ({
       const nieuweSelecties = opgeslagenSelecties.filter(s => s.id !== id);
       setOpgeslagenSelecties(nieuweSelecties);
       localStorage.setItem('multiplayer_categorie_selecties', JSON.stringify(nieuweSelecties));
-      setToastBericht('Selectie verwijderd!');
-      setIsToastZichtbaar(true);
     } else if (activeTab === 'normaal') {
       const nieuweSelecties = opgeslagenVrijeLeermodusSelecties.filter(s => s.id !== id);
       setOpgeslagenVrijeLeermodusSelecties(nieuweSelecties);
       localStorage.setItem('vrije_leermodus_categorie_selecties', JSON.stringify(nieuweSelecties));
-      setToastBericht('Selectie verwijderd!');
-      setIsToastZichtbaar(true);
     }
+    setToastBericht('Selectie verwijderd!');
+    setIsToastZichtbaar(true);
   };
 
   const handleHighScoreSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -346,22 +418,22 @@ export const CategorieSelectieModal = ({
       }
     }
   };
-
+  
   const getTabTitle = (tab: TabType) => {
     switch (tab) {
-      case 'multiplayer': return '🎮 Multiplayer Modus';
-      case 'highscore': return '🏆 Highscore Modus';
-      case 'normaal': return '📖 Vrije Leermodus';
-      case 'leitner': return '📚 Leitner Leermodus';
+      case 'multiplayer': return '🎮 Multiplayer';
+      case 'highscore': return '🏆 Highscore';
+      case 'normaal': return '📖 Vrije Leer';
+      case 'leitner': return '📚 Leitner';
     }
   };
 
   const getTabDescription = (tab: TabType) => {
     switch (tab) {
-      case 'multiplayer': return 'Kies categorieën voor multiplayer spelsessies.';
+      case 'multiplayer': return 'Kies categorieën voor multiplayer spelsessies en beheer je opgeslagen selecties.';
       case 'highscore': return 'Selecteer categorieën voor highscore pogingen en bekijk eerdere recordpogingen.';
-      case 'normaal': return 'Selecteer categorieën voor vrije leersessies zonder herhalingen of opslag.';
-      case 'leitner': return 'Selecteer categorieën voor de Leitner leermodus. Gebruik de knop hieronder voor gedetailleerd beheer met statistieken.';
+      case 'normaal': return 'Selecteer categorieën voor vrije leersessies en beheer je opgeslagen selecties.';
+      case 'leitner': return 'Selecteer categorieën voor de Leitner leermodus. Gebruik de knop hieronder voor gedetailleerd beheer.';
     }
   };
   
@@ -370,25 +442,25 @@ export const CategorieSelectieModal = ({
       .filter(op => op.bron === bron)
       .map(op => `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`);
     
-    actieveBulkHandler(alleCategorieen, 'deselect'); // Deselect all from current view first
+    actieveBulkHandler(alleCategorieen, 'deselect');
     actieveBulkHandler([...new Set(bronCategorieen)], 'select');
   };
 
-  const requestSort = (key: 'naam' | 'aantalOpdrachten' | 'geselecteerd') => {
-    let direction: 'ascending' | 'descending' = 'descending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'descending') {
-      direction = 'ascending';
+  const requestSort = (key: 'naam' | 'aantalOpdrachten' | 'geselecteerd' | 'status') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
     }
     setSortConfig({ key, direction });
   };
 
-  const getSortClass = (key: 'naam' | 'aantalOpdrachten' | 'geselecteerd') => {
+  const getSortClass = (key: 'naam' | 'aantalOpdrachten' | 'geselecteerd' | 'status') => {
     if (!sortConfig || sortConfig.key !== key) return '';
-    return sortConfig.direction === 'descending' ? 'sorted-desc' : 'sorted-asc';
+    return sortConfig.direction === 'ascending' ? 'sorted-asc' : 'sorted-desc';
   };
 
   const getAantalOpdrachten = (hoofd: string, sub: string) => {
-    return opdrachten.filter(opdracht => (opdracht.Hoofdcategorie || 'Overig') === hoofd && opdracht.Categorie === sub).length;
+    return gefilterdeOpdrachten.filter(opdracht => (opdracht.Hoofdcategorie || 'Overig') === hoofd && opdracht.Categorie === sub).length;
   };
 
   const getTotaalAantalOpdrachtenVoorSelectie = (categorieen: string[]) => {
@@ -398,11 +470,29 @@ export const CategorieSelectieModal = ({
     }, 0);
   };
 
+  const handleBekijkOpdrachten = (isHoofd: boolean, naam: string, subCategorieen?: string[]) => {
+    const gefilterdeOpdrachten = isHoofd
+        ? opdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === naam)
+        : opdrachten.filter(op => {
+            const [hoofd, sub] = naam.split(' - ');
+            return (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub;
+        });
+
+    setOpdrachtenVoorDetail(gefilterdeOpdrachten.map(op => ({
+        opdracht: op.Opdracht,
+        antwoord: op.Antwoord,
+        bron: op.bron,
+    })));
+    setGeselecteerdeCategorieVoorDetail(isHoofd ? naam : naam.split(' - ')[1]);
+    setDetailModalOpen(true);
+  };
+
   const getGesorteerdeCategorieen = () => {
     const categorieenMetData = Object.entries(gegroepeerdeCategorieen).map(([hoofd, subs]) => ({
       hoofd,
       subs,
-      totaalOpdrachten: subs.reduce((sum, sub) => sum + getAantalOpdrachten(hoofd, sub), 0)
+      totaalOpdrachten: subs.reduce((sum, sub) => sum + getAantalOpdrachten(hoofd, sub), 0),
+      geselecteerdeCount: subs.filter(sub => actieveCategorieSelectie.includes(`${hoofd} - ${sub}`)).length,
     }));
 
     if (!sortConfig) return categorieenMetData;
@@ -420,10 +510,10 @@ export const CategorieSelectieModal = ({
           aValue = a.totaalOpdrachten;
           bValue = b.totaalOpdrachten;
           break;
-        case 'geselecteerd':
-          aValue = 0;
-          bValue = 0;
-          break;
+        case 'status':
+            aValue = `${a.geselecteerdeCount}/${a.subs.length}`;
+            bValue = `${b.geselecteerdeCount}/${b.subs.length}`;
+            break;
         default:
           return 0;
       }
@@ -440,117 +530,41 @@ export const CategorieSelectieModal = ({
 
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
-      {activeTab === 'multiplayer' && (
+      {(activeTab === 'multiplayer' || activeTab === 'normaal') && (
         <div className="opgeslagen-selecties-sectie">
           <h4>📚 Opgeslagen Selecties</h4>
-          {opgeslagenSelecties.length > 0 ? (
+          {((activeTab === 'multiplayer' && opgeslagenSelecties.length > 0) || (activeTab === 'normaal' && opgeslagenVrijeLeermodusSelecties.length > 0)) ? (
             <div className="opgeslagen-selecties-lijst">
-              {opgeslagenSelecties.map(selectie => (
+              {(activeTab === 'multiplayer' ? opgeslagenSelecties : opgeslagenVrijeLeermodusSelecties).map(selectie => (
                 <div key={selectie.id} className="opgeslagen-selectie-item">
                   <div className="selectie-info">
                     <span className="selectie-naam">{selectie.naam}</span>
-                    <span className="selectie-datum">
-                      {new Date(selectie.datum).toLocaleDateString()}
-                    </span>
-                    <span className="selectie-aantal">
-                      {selectie.categorieen.length} categorieën • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdrachten
-                    </span>
+                    <span className="selectie-datum">{new Date(selectie.datum).toLocaleDateString()}</span>
+                    <span className="selectie-aantal">{selectie.categorieen.length} cat. • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdr.</span>
                   </div>
                   <div className="selectie-acties">
-                    <button 
-                      onClick={() => handleLaadSelectie(selectie)}
-                      className="laad-selectie-knop"
-                      title="Herstel deze selectie"
-                    >
-                      🔄
-                    </button>
-                    <button 
-                      onClick={() => handleVerwijderSelectie(selectie.id)}
-                      className="verwijder-selectie-knop"
-                      title="Verwijder deze selectie"
-                    >
-                      🗑️
-                    </button>
+                    <button onClick={() => handleLaadSelectie(selectie)} className="laad-selectie-knop" title="Herstel deze selectie">🔄</button>
+                    <button onClick={() => handleVerwijderSelectie(selectie.id)} className="verwijder-selectie-knop" title="Verwijder deze selectie">🗑️</button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="geen-selecties-melding">
-              <p>Nog geen selecties opgeslagen. Maak een selectie en klik op de 'Huidige Selectie Opslaan' knop.</p>
+              <p>Nog geen selecties opgeslagen. Maak een selectie en klik op de 'Opslaan' knop.</p>
             </div>
           )}
           
           <div className="opslaan-sectie">
             <button 
               onClick={handleOpslaanSelectie}
-              disabled={actieveCategorieSelectie.length === 0 || opgeslagenSelecties.length >= 5}
+              disabled={actieveCategorieSelectie.length === 0 || (activeTab === 'multiplayer' && opgeslagenSelecties.length >= 5) || (activeTab === 'normaal' && opgeslagenVrijeLeermodusSelecties.length >= 5)}
               className="opslaan-selectie-knop"
             >
               💾 Huidige Selectie Opslaan
             </button>
-            {opgeslagenSelecties.length >= 5 && (
-              <p className="max-selecties-melding">
-                Maximum van 5 opgeslagen selecties bereikt. Verwijder eerst een selectie om een nieuwe op te slaan.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'normaal' && (
-        <div className="opgeslagen-selecties-sectie">
-          <h4>📚 Opgeslagen Selecties</h4>
-          {opgeslagenVrijeLeermodusSelecties.length > 0 ? (
-            <div className="opgeslagen-selecties-lijst">
-              {opgeslagenVrijeLeermodusSelecties.map(selectie => (
-                <div key={selectie.id} className="opgeslagen-selectie-item">
-                  <div className="selectie-info">
-                    <span className="selectie-naam">{selectie.naam}</span>
-                    <span className="selectie-datum">
-                      {new Date(selectie.datum).toLocaleDateString()}
-                    </span>
-                    <span className="selectie-aantal">
-                      {selectie.categorieen.length} categorieën • {getTotaalAantalOpdrachtenVoorSelectie(selectie.categorieen)} opdrachten
-                    </span>
-                  </div>
-                  <div className="selectie-acties">
-                    <button 
-                      onClick={() => handleLaadSelectie(selectie)}
-                      className="laad-selectie-knop"
-                      title="Herstel deze selectie"
-                    >
-                      🔄
-                    </button>
-                    <button 
-                      onClick={() => handleVerwijderSelectie(selectie.id)}
-                      className="verwijder-selectie-knop"
-                      title="Verwijder deze selectie"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="geen-selecties-melding">
-              <p>Nog geen selecties opgeslagen. Maak een selectie en klik op de 'Huidige Selectie Opslaan' knop.</p>
-            </div>
-          )}
-          
-          <div className="opslaan-sectie">
-            <button 
-              onClick={handleOpslaanSelectie}
-              disabled={actieveCategorieSelectie.length === 0 || opgeslagenVrijeLeermodusSelecties.length >= 5}
-              className="opslaan-selectie-knop"
-            >
-              💾 Huidige Selectie Opslaan
-            </button>
-            {opgeslagenVrijeLeermodusSelecties.length >= 5 && (
-              <p className="max-selecties-melding">
-                Maximum van 5 opgeslagen selecties bereikt. Verwijder eerst een selectie om een nieuwe op te slaan.
-              </p>
+            {((activeTab === 'multiplayer' && opgeslagenSelecties.length >= 5) || (activeTab === 'normaal' && opgeslagenVrijeLeermodusSelecties.length >= 5)) && (
+              <p className="max-selecties-melding">Max van 5 selecties bereikt.</p>
             )}
           </div>
         </div>
@@ -569,7 +583,7 @@ export const CategorieSelectieModal = ({
               
               return (
                 <option key={categories} value={categories}>
-                  {datum} | {hoofdCategorieenString} ({categoryArray.length} categorieën) - {data.score} punten ({data.spelerNaam})
+                  {datum} | {hoofdCategorieenString} ({categoryArray.length} cat.) - {data.score} pnt ({data.spelerNaam})
                 </option>
               );
             })}
@@ -577,55 +591,78 @@ export const CategorieSelectieModal = ({
         </div>
       )}
 
-      <div className="snelle-selecties">
-        <h4>Snelle Selecties</h4>
-        <div className="snelle-selectie-knoppen">
-          <button onClick={() => actieveBulkHandler(alleCategorieen, 'select')} className="snelle-selectie-knop">
-            Alles
-          </button>
-          <button onClick={() => actieveBulkHandler(alleCategorieen, 'deselect')} className="snelle-selectie-knop">
-            Niets
-          </button>
-                        <button 
-                onClick={() => handleSelecteerBron('systeem')} 
-                className="snelle-selectie-knop"
-                disabled={!heeftSysteemOpdrachten}
-                title={!heeftSysteemOpdrachten ? 'Geen systeemopdrachten gevonden' : 'Selecteer alleen systeemopdrachten'}
-              >
-                🏛️ Alleen Systeem
-              </button>
-          <button 
-            onClick={() => handleSelecteerBron('gebruiker')} 
-            className="snelle-selectie-knop"
-            disabled={!heeftGebruikerOpdrachten}
-            title={!heeftGebruikerOpdrachten ? 'Geen eigen opdrachten gevonden' : 'Selecteer alleen eigen opdrachten'}
-          >
-            👤 Alleen Eigen
-          </button>
+      {/* Filter sectie */}
+      {setFilters && (
+        <div className="filter-sectie">
+          <div className="filter-header">
+            <h4>🔍 Filters</h4>
+            <span className="filter-info">Filters synchroniseren met hoofdmenu</span>
+          </div>
+          <div className="filter-groepen">
+            <div className="filter-groep">
+              <span className="filter-label">Bron:</span>
+              <div className="filter-iconen">
+                <span
+                  className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                  title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
+                  onClick={() => handleBronToggle('systeem')}
+                >
+                  🏛️
+                </span>
+                <span
+                  className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                  title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
+                  onClick={() => handleBronToggle('gebruiker')}
+                >
+                  👤
+                </span>
+              </div>
+            </div>
+            <div className="filter-groep">
+              <span className="filter-label">Type:</span>
+              <div className="filter-iconen">
+                {alleOpdrachtTypes.map(type => {
+                  const count = opdrachtenPerType[type] || 0;
+                  return (
+                    <span
+                      key={type}
+                      className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                      title={`${type}: ${count} opdr.`}
+                      onClick={() => handleTypeToggle(type)}
+                    >
+                      {opdrachtTypeIconen[type] || '❓'}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="categorie-lijst">
         <div className="categorie-lijst-header">
           <h4>Categorieën</h4>
+          <div className="snelle-selectie-knoppen">
+            <button onClick={handleSelecteerAlles} className="snelle-selectie-knop">Selecteer Alles</button>
+            <button onClick={handleDeselecteerAlles} className="snelle-selectie-knop">Deselecteer Alles</button>
+          </div>
         </div>
         
         <table className="categorie-table">
           <thead>
             <tr>
               <th onClick={() => requestSort('naam')} className={`sortable ${getSortClass('naam')}`}>
-                Categorie
-                <span className="sort-indicator">▼</span>
+                Categorie <span className="sort-indicator">↕</span>
               </th>
               <th>Selectie</th>
               <th onClick={() => requestSort('aantalOpdrachten')} className={`sortable ${getSortClass('aantalOpdrachten')}`}>
-                Opdrachten
-                <span className="sort-indicator">▼</span>
+                Opdr. <span className="sort-indicator">↕</span>
               </th>
-              <th onClick={() => requestSort('geselecteerd')} className={`sortable ${getSortClass('geselecteerd')}`}>
-                Status
-                <span className="sort-indicator">▼</span>
+              <th onClick={() => requestSort('status')} className={`sortable ${getSortClass('status')}`}>
+                Status <span className="sort-indicator">↕</span>
               </th>
+              <th>Acties</th>
             </tr>
           </thead>
           <tbody>
@@ -658,6 +695,11 @@ export const CategorieSelectieModal = ({
                     <td className="status-cell">
                       <span className="geselecteerd-aantal">{geselecteerdeSubsCount}/{subs.length}</span>
                     </td>
+                    <td className="actie-cell">
+                        <button onClick={() => handleBekijkOpdrachten(true, hoofd)} className="bekijk-opdrachten-knop" title={`Bekijk opdrachten in ${hoofd}`}>
+                            👁️
+                        </button>
+                    </td>
                   </tr>
                   
                   {openHoofdCategorieen[hoofd] && subs.map(sub => {
@@ -668,8 +710,8 @@ export const CategorieSelectieModal = ({
                     return (
                       <tr key={uniekeIdentifier} className="sub-categorie-rij">
                         <td className="categorie-naam-cell sub-categorie">
-                          {getBronIconen(opdrachten, hoofd, sub)}
                           <span className="sub-categorie-naam">{sub}</span>
+                          {getBronIconen(opdrachten, hoofd, sub)}
                         </td>
                         <td>
                           <input
@@ -683,6 +725,11 @@ export const CategorieSelectieModal = ({
                         </td>
                         <td className="status-cell">
                           <span className="geselecteerd-status">{isGeselecteerd ? '✓' : ''}</span>
+                        </td>
+                        <td className="actie-cell">
+                            <button onClick={() => handleBekijkOpdrachten(false, uniekeIdentifier)} className="bekijk-opdrachten-knop" title={`Bekijk opdrachten in ${sub}`}>
+                                👁️
+                            </button>
                         </td>
                       </tr>
                     );
@@ -773,18 +820,21 @@ export const CategorieSelectieModal = ({
                 maxLength={30}
               />
               <div className="opslaan-modal-acties">
-                <button onClick={() => setToonOpslaanModal(false)} className="annuleer-knop">
-                  Annuleren
-                </button>
-                <button onClick={handleBevestigOpslaan} className="bevestig-knop">
-                  Opslaan
-                </button>
+                <button onClick={() => setToonOpslaanModal(false)} className="annuleer-knop">Annuleren</button>
+                <button onClick={handleBevestigOpslaan} className="bevestig-knop">Opslaan</button>
               </div>
             </div>
           </div>
         )}
       </div>
       {toastBericht && <ToastMelding bericht={toastBericht} isZichtbaar={isToastZichtbaar} onClose={() => setIsToastZichtbaar(false)} />}
+      
+      <OpdrachtenDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        categorieNaam={geselecteerdeCategorieVoorDetail || ''}
+        opdrachten={opdrachtenVoorDetail}
+      />
     </div>
   );
 };

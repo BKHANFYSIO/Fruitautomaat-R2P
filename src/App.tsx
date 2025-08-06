@@ -26,7 +26,7 @@ import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
 import { DevPanel } from './components/DevPanel';
 import { LimietBereiktModal } from './components/LimietBereiktModal';
 import { FilterDashboard } from './components/FilterDashboard';
-import { CriteriaModal } from './components/CriteriaModal';
+
 
 // Hooks
 import { useAudio } from './hooks/useAudio';
@@ -74,21 +74,29 @@ function App() {
     if (savedFilters) {
       try {
         const parsed = JSON.parse(savedFilters);
-        // Zorg ervoor dat de structuur klopt
+        // Zorg ervoor dat de structuur klopt en minimaal één bron geselecteerd is
         if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
+          // Zorg ervoor dat er minimaal één bron geselecteerd is
+          if (parsed.bronnen.length === 0) {
+            parsed.bronnen = ['systeem'];
+          }
           return parsed;
         }
       } catch (e) {
         console.error("Fout bij het parsen van filters uit localStorage", e);
       }
     }
-    return { bronnen: [], opdrachtTypes: [] };
+    return { bronnen: ['systeem'], opdrachtTypes: [] };
   });
 
   // Effect to save filters to localStorage
   useEffect(() => {
     localStorage.setItem('opdrachtFilters', JSON.stringify(filters));
   }, [filters]);
+
+
+
+
   
   // Settings context
   const {
@@ -189,7 +197,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
-  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
+
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
 const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
@@ -679,18 +687,79 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const aantalOpdrachtenLeitner = useMemo(() => berekenAantalOpdrachten(geselecteerdeLeitnerCategorieen), [geselecteerdeLeitnerCategorieen, opdrachtenVoorSelectie]);
   const aantalOpdrachtenNormaal = useMemo(() => berekenAantalOpdrachten(geselecteerdeCategorieen), [geselecteerdeCategorieen, opdrachtenVoorSelectie]);
 
+  // Backup selecties voor filter herstel
+  const [backupSelecties, setBackupSelecties] = useState<{
+    normaal: string[];
+    leitner: string[];
+    multiplayer: string[];
+    highscore: string[];
+  }>({
+    normaal: [],
+    leitner: [],
+    multiplayer: [],
+    highscore: []
+  });
+
   // Effect om geselecteerde categorieën op te schonen als ze niet meer beschikbaar zijn na filteren
   useEffect(() => {
     const beschikbareIds = new Set(alleUniekeCategorieen);
+    
+    // Backup huidige selecties voordat we ze filteren
+    setBackupSelecties(prev => ({
+      ...prev,
+      normaal: geselecteerdeCategorieen,
+      leitner: geselecteerdeLeitnerCategorieen,
+      multiplayer: geselecteerdeMultiplayerCategorieen,
+      highscore: geselecteerdeHighscoreCategorieen
+    }));
+
+    // Filter selecties op beschikbare categorieën
     setGeselecteerdeCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
     setGeselecteerdeLeitnerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
     setGeselecteerdeMultiplayerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
     setGeselecteerdeHighscoreCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
   }, [alleUniekeCategorieen]);
 
+  // Functie om selecties te herstellen wanneer filters worden teruggezet
+  const herstelSelecties = useCallback((nieuweFilters: Filters, oudeFilters: Filters) => {
+    // Check of er filters zijn toegevoegd (niet verwijderd)
+    const meerBronnen = nieuweFilters.bronnen.length > oudeFilters.bronnen.length;
+    const meerTypes = nieuweFilters.opdrachtTypes.length > oudeFilters.opdrachtTypes.length;
+    
+    if (meerBronnen || meerTypes) {
+      // Herstel selecties voor alle modi
+      const beschikbareIds = new Set(alleUniekeCategorieen);
+      
+      setGeselecteerdeCategorieen(prev => {
+        const herstelde = [...new Set([...prev, ...backupSelecties.normaal])];
+        return herstelde.filter(cat => beschikbareIds.has(cat));
+      });
+      
+      setGeselecteerdeLeitnerCategorieen(prev => {
+        const herstelde = [...new Set([...prev, ...backupSelecties.leitner])];
+        return herstelde.filter(cat => beschikbareIds.has(cat));
+      });
+      
+      setGeselecteerdeMultiplayerCategorieen(prev => {
+        const herstelde = [...new Set([...prev, ...backupSelecties.multiplayer])];
+        return herstelde.filter(cat => beschikbareIds.has(cat));
+      });
+      
+      setGeselecteerdeHighscoreCategorieen(prev => {
+        const herstelde = [...new Set([...prev, ...backupSelecties.highscore])];
+        return herstelde.filter(cat => beschikbareIds.has(cat));
+      });
+    }
+  }, [backupSelecties, alleUniekeCategorieen]);
 
-
-
+  // Aangepaste setFilters functie die selecties herstelt
+  const setFiltersMetHerstel = useCallback((nieuweFilters: Filters | ((prev: Filters) => Filters)) => {
+    const oudeFilters = filters;
+    const nieuweFiltersValue = typeof nieuweFilters === 'function' ? nieuweFilters(oudeFilters) : nieuweFilters;
+    
+    setFilters(nieuweFiltersValue);
+    herstelSelecties(nieuweFiltersValue, oudeFilters);
+  }, [filters, herstelSelecties]);
 
   // Effect om normale categorie-selectie op te slaan
   useEffect(() => {
@@ -1636,7 +1705,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             setIsCategorieSelectieOpen(false);
             setIsCategorieBeheerOpen(false); // Reset Leitner modal state
           }}
-        opdrachten={opdrachtenVoorSelectie}
+        opdrachten={opdrachten}
         geselecteerdeCategorieen={geselecteerdeCategorieen}
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
@@ -1650,6 +1719,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         geselecteerdeHighscoreCategorieen={geselecteerdeHighscoreCategorieen}
         setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         initialActiveTab={categorieSelectieActiveTab}
+        filters={filters}
+        setFilters={setFiltersMetHerstel}
       />
 
       {isCategorieBeheerOpen && (
@@ -1662,7 +1733,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           geselecteerdeCategorieen={geselecteerdeLeitnerCategorieen}
           setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
           alleCategorieen={alleUniekeCategorieen}
-          alleOpdrachten={opdrachtenVoorSelectie}
+          alleOpdrachten={opdrachten}
+          filters={filters}
+          setFilters={setFiltersMetHerstel}
         />
       )}
 
@@ -1676,14 +1749,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         maxVragen={maxNewLeitnerQuestionsPerDay}
       />
 
-      <CriteriaModal 
-        isOpen={isCriteriaModalOpen}
-        onClose={() => setIsCriteriaModalOpen(false)}
-        opdrachten={opdrachten}
-        filters={filters}
-        setFilters={setFilters}
-        actieveCategorieSelectie={actieveCategorieSelectie}
-      />
+
 
       {isMobieleWeergave && (
         <>
@@ -1834,9 +1900,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
           <FilterDashboard 
             filters={filters}
-            setFilters={setFilters}
+            setFilters={setFiltersMetHerstel}
             opdrachten={opdrachten}
-            onOpenCriteriaModal={() => setIsCriteriaModalOpen(true)}
+    
             actieveCategorieSelectie={actieveCategorieSelectie}
           />
 

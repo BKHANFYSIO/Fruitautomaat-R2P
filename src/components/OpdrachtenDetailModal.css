@@ -1,0 +1,270 @@
+/* OpdrachtenDetailModal styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content.opdrachten-detail-modal {
+  background-color: #282c34;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  width: 95%;
+  max-width: 1200px;
+  border: 1px solid #444;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  border-bottom: 1px solid #444;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #61dafb;
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #61dafb;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Zoekbalk styling */
+.zoekbalk-container {
+  margin-bottom: 20px;
+}
+
+.zoekbalk-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.zoekbalk-input:focus {
+  outline: none;
+  border-color: #61dafb;
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.2);
+}
+
+.zoekbalk-input::placeholder {
+  color: #888;
+}
+
+/* Tabel styling */
+.opdrachten-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.opdrachten-table th {
+  background-color: #2d3748;
+  color: #e0e0e0;
+  font-weight: 600;
+  padding: 16px 12px;
+  text-align: left;
+  border-bottom: 2px solid #444;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.opdrachten-table td {
+  padding: 12px;
+  border-bottom: 1px solid #333;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.opdrachten-table tr:hover {
+  background-color: #2a2a2a;
+}
+
+.opdrachten-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Kolom specifieke styling */
+.opdracht-kolom {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.antwoord-kolom {
+  min-width: 150px;
+}
+
+.bron-kolom {
+  text-align: center;
+  min-width: 80px;
+}
+
+.box-kolom {
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-kolom {
+  text-align: center;
+  min-width: 100px;
+}
+
+.herhaling-kolom {
+  text-align: center;
+  min-width: 120px;
+}
+
+.pogingen-kolom {
+  text-align: center;
+  min-width: 80px;
+}
+
+.succes-kolom {
+  text-align: center;
+  min-width: 100px;
+}
+
+/* Antwoord toggle knop styling */
+.antwoord-toggle-knop {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.antwoord-toggle-knop:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.antwoord-toggle-knop.verberg {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+}
+
+.antwoord-toggle-knop.verberg:hover {
+  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+}
+
+/* Antwoord tekst styling */
+.antwoord-tekst {
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #e0e0e0;
+}
+
+.geen-antwoord {
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.85rem;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.actief {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.status-badge.paused {
+  background-color: #ff9800;
+  color: white;
+}
+
+.status-badge.completed {
+  background-color: #2196F3;
+  color: white;
+}
+
+/* Bron iconen */
+.bron-icon {
+  font-size: 1.2rem;
+  margin: 0 2px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .modal-content.opdrachten-detail-modal {
+    width: 98%;
+    padding: 15px;
+  }
+  
+  .opdrachten-table {
+    font-size: 0.8rem;
+  }
+  
+  .opdrachten-table th,
+  .opdrachten-table td {
+    padding: 8px 6px;
+  }
+  
+  .antwoord-toggle-knop {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}

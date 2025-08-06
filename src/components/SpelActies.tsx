@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Opdracht } from '../data/types';
 import './SpelActies.css';
-import { CriteriaModal } from './CriteriaModal';
 import { AiPromptModal } from './AiPromptModal';
 import { CRITERIA } from '../data/criteria';
 import { Modal } from './Modal';
@@ -24,7 +23,6 @@ interface SpelActiesProps {
 
 export const SpelActies = ({ opdracht }: SpelActiesProps) => {
   const [isAiPromptZichtbaar, setIsAiPromptZichtbaar] = useState(false);
-  const [isCriteriaZichtbaar, setIsCriteriaZichtbaar] = useState(false);
   const [isAntwoordModalOpen, setIsAntwoordModalOpen] = useState(false);
 
 
@@ -63,21 +61,12 @@ export const SpelActies = ({ opdracht }: SpelActiesProps) => {
 
   return (
     <div className="spel-acties">
-      <CriteriaModal 
-        isOpen={isCriteriaZichtbaar} 
-        onClose={() => setIsCriteriaZichtbaar(false)} 
-        opdrachten={[]}
-        filters={{ bronnen: [], opdrachtTypes: [] }}
-        setFilters={() => {}}
-        actieveCategorieSelectie={[]}
-      />
       <AiPromptModal isOpen={isAiPromptZichtbaar} onClose={() => setIsAiPromptZichtbaar(false)} prompt={aiPrompt} />
 
       <div className="actie-knoppen">
         {heeftAntwoordsleutel && (
           <button onClick={() => setIsAntwoordModalOpen(true)}>Antwoordsleutel</button>
         )}
-        <button onClick={() => setIsCriteriaZichtbaar(true)}>Criteria</button>
         <button onClick={() => setIsAiPromptZichtbaar(true)}>AI-Prompt criteria</button>
       </div>
        {heeftAntwoordsleutel && (
