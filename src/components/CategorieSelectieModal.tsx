@@ -104,8 +104,7 @@ export const CategorieSelectieModal = ({
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
   
-  const heeftSysteemOpdrachten = useMemo(() => opdrachten.some(op => op.bron === 'systeem'), [opdrachten]);
-  const heeftGebruikerOpdrachten = useMemo(() => opdrachten.some(op => op.bron === 'gebruiker'), [opdrachten]);
+
   
   // Sorteer functionaliteit
   const [sortConfig, setSortConfig] = useState<{
@@ -437,14 +436,7 @@ export const CategorieSelectieModal = ({
     }
   };
   
-  const handleSelecteerBron = (bron: 'systeem' | 'gebruiker') => {
-    const bronCategorieen = opdrachten
-      .filter(op => op.bron === bron)
-      .map(op => `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`);
-    
-    actieveBulkHandler(alleCategorieen, 'deselect');
-    actieveBulkHandler([...new Set(bronCategorieen)], 'select');
-  };
+
 
   const requestSort = (key: 'naam' | 'aantalOpdrachten' | 'geselecteerd' | 'status') => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -470,7 +462,7 @@ export const CategorieSelectieModal = ({
     }, 0);
   };
 
-  const handleBekijkOpdrachten = (isHoofd: boolean, naam: string, subCategorieen?: string[]) => {
+  const handleBekijkOpdrachten = (isHoofd: boolean, naam: string) => {
     const gefilterdeOpdrachten = isHoofd
         ? opdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === naam)
         : opdrachten.filter(op => {
@@ -480,7 +472,7 @@ export const CategorieSelectieModal = ({
 
     setOpdrachtenVoorDetail(gefilterdeOpdrachten.map(op => ({
         opdracht: op.Opdracht,
-        antwoord: op.Antwoord,
+        antwoord: op.Antwoordsleutel || '',
         bron: op.bron,
     })));
     setGeselecteerdeCategorieVoorDetail(isHoofd ? naam : naam.split(' - ')[1]);

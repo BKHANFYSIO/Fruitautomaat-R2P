@@ -449,8 +449,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
   const [toonResetModal, setToonResetModal] = useState(false);
   const [resetCategorie, setResetCategorie] = useState<string>('');
 
-  const heeftSysteemOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'systeem'), [alleOpdrachten]);
-  const heeftGebruikerOpdrachten = useMemo(() => alleOpdrachten.some(op => op.bron === 'gebruiker'), [alleOpdrachten]);
+
 
   // Laad opgeslagen selecties bij component mount
   useEffect(() => {
@@ -613,15 +612,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     }, 0);
   };
 
-  const handleSelecteerBron = (bron: 'systeem' | 'gebruiker') => {
-    setGeselecteerdeCategorieen([]); // Eerst alles deselecteren
 
-    const bronCategorieen = alleOpdrachten
-      .filter(op => op.bron === bron)
-      .map(op => `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`);
-    
-    setGeselecteerdeCategorieen([...new Set(bronCategorieen)]);
-  };
 
   // Leitner selectie opslaan functionaliteit
   const handleOpslaanSelectie = () => {

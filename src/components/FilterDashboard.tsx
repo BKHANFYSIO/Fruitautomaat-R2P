@@ -13,7 +13,7 @@ interface FilterDashboardProps {
   actieveCategorieSelectie: string[];
 }
 
-export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie }) => {
+export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten }) => {
 
   const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron } = useMemo(() => {
     const opdrachtenPerType: { [key: string]: number } = {};
