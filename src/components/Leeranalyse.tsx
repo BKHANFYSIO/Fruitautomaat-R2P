@@ -687,21 +687,21 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
 
       // 5. Leitner sheet (indien beschikbaar)
       if (leitnerData && leitnerData.isLeitnerActief) {
-        const leitnerData = [
+        const leitnerSheetData = [
           {
-            'Totaal Opdrachten': leitnerData.boxes.reduce((sum, box) => sum + box.opdrachten.length, 0),
-            'Box 0': leitnerData.boxes.find(b => b.boxId === 0)?.opdrachten.length || 0,
-            'Box 1': leitnerData.boxes.find(b => b.boxId === 1)?.opdrachten.length || 0,
-            'Box 2': leitnerData.boxes.find(b => b.boxId === 2)?.opdrachten.length || 0,
-            'Box 3': leitnerData.boxes.find(b => b.boxId === 3)?.opdrachten.length || 0,
-            'Box 4': leitnerData.boxes.find(b => b.boxId === 4)?.opdrachten.length || 0,
-            'Box 5': leitnerData.boxes.find(b => b.boxId === 5)?.opdrachten.length || 0,
-            'Box 6': leitnerData.boxes.find(b => b.boxId === 6)?.opdrachten.length || 0,
-            'Box 7': leitnerData.boxes.find(b => b.boxId === 7)?.opdrachten.length || 0,
+            'Totaal Opdrachten': leitnerData.boxes.reduce((sum: number, box: any) => sum + box.opdrachten.length, 0),
+            'Box 0': leitnerData.boxes.find((b: any) => b.boxId === 0)?.opdrachten.length || 0,
+            'Box 1': leitnerData.boxes.find((b: any) => b.boxId === 1)?.opdrachten.length || 0,
+            'Box 2': leitnerData.boxes.find((b: any) => b.boxId === 2)?.opdrachten.length || 0,
+            'Box 3': leitnerData.boxes.find((b: any) => b.boxId === 3)?.opdrachten.length || 0,
+            'Box 4': leitnerData.boxes.find((b: any) => b.boxId === 4)?.opdrachten.length || 0,
+            'Box 5': leitnerData.boxes.find((b: any) => b.boxId === 5)?.opdrachten.length || 0,
+            'Box 6': leitnerData.boxes.find((b: any) => b.boxId === 6)?.opdrachten.length || 0,
+            'Box 7': leitnerData.boxes.find((b: any) => b.boxId === 7)?.opdrachten.length || 0,
             'Export Datum': new Date().toISOString().split('T')[0]
           }
         ];
-        const leitnerSheet = XLSX.utils.json_to_sheet(leitnerData);
+        const leitnerSheet = XLSX.utils.json_to_sheet(leitnerSheetData);
         XLSX.utils.book_append_sheet(workbook, leitnerSheet, "Leitner");
       }
 

@@ -31,7 +31,6 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
   categorieNaam,
   opdrachten,
   geselecteerdeOpdrachten = [],
-  onOpdrachtSelectie,
 }) => {
   const [zichtbareAntwoorden, setZichtbareAntwoorden] = useState<string[]>([]);
   const [zoekterm, setZoekterm] = useState('');

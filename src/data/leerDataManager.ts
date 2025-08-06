@@ -1491,7 +1491,6 @@ class LeerDataManager {
         }
         case 'categorie_complete': {
           const categorieCounts = this.getCategorieOpdrachtCounts(leerData);
-          const totaleCategorieen = this.getAlleUniekeCategorieen();
           behaald = Object.entries(categorieCounts).some(([categorie, count]) => {
             const totaleOpdrachtenInCategorie = this.getTotaalOpdrachtenInCategorie(categorie);
             return count >= totaleOpdrachtenInCategorie;
