@@ -202,10 +202,10 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
 const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
 
-
+  // State om bij te houden of de multiplayer waarschuwing al is getoond
+  const [multiplayerWaarschuwingGetoond, setMultiplayerWaarschuwingGetoond] = useState(false);
 
   // File upload state
-  const [isVervangenActief, setIsVervangenActief] = useState(false);
   const [geselecteerdBestand, setGeselecteerdBestand] = useState<File | null>(null);
 
   // High score state
@@ -648,6 +648,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setGamePhase('idle');
     setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij spel reset
     setLimietWaarschuwingGenegeerd(false); // Reset limiet waarschuwing
+    setMultiplayerWaarschuwingGetoond(false); // Reset multiplayer waarschuwing state
   };
 
   // Volledig gefilterde opdrachten op basis van bron en type
@@ -687,79 +688,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const aantalOpdrachtenLeitner = useMemo(() => berekenAantalOpdrachten(geselecteerdeLeitnerCategorieen), [geselecteerdeLeitnerCategorieen, opdrachtenVoorSelectie]);
   const aantalOpdrachtenNormaal = useMemo(() => berekenAantalOpdrachten(geselecteerdeCategorieen), [geselecteerdeCategorieen, opdrachtenVoorSelectie]);
 
-  // Backup selecties voor filter herstel
-  const [backupSelecties, setBackupSelecties] = useState<{
-    normaal: string[];
-    leitner: string[];
-    multiplayer: string[];
-    highscore: string[];
-  }>({
-    normaal: [],
-    leitner: [],
-    multiplayer: [],
-    highscore: []
-  });
-
-  // Effect om geselecteerde categorieën op te schonen als ze niet meer beschikbaar zijn na filteren
-  useEffect(() => {
-    const beschikbareIds = new Set(alleUniekeCategorieen);
-    
-    // Backup huidige selecties voordat we ze filteren
-    setBackupSelecties(prev => ({
-      ...prev,
-      normaal: geselecteerdeCategorieen,
-      leitner: geselecteerdeLeitnerCategorieen,
-      multiplayer: geselecteerdeMultiplayerCategorieen,
-      highscore: geselecteerdeHighscoreCategorieen
-    }));
-
-    // Filter selecties op beschikbare categorieën
-    setGeselecteerdeCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
-    setGeselecteerdeLeitnerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
-    setGeselecteerdeMultiplayerCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
-    setGeselecteerdeHighscoreCategorieen(prev => prev.filter(cat => beschikbareIds.has(cat)));
-  }, [alleUniekeCategorieen]);
-
-  // Functie om selecties te herstellen wanneer filters worden teruggezet
-  const herstelSelecties = useCallback((nieuweFilters: Filters, oudeFilters: Filters) => {
-    // Check of er filters zijn toegevoegd (niet verwijderd)
-    const meerBronnen = nieuweFilters.bronnen.length > oudeFilters.bronnen.length;
-    const meerTypes = nieuweFilters.opdrachtTypes.length > oudeFilters.opdrachtTypes.length;
-    
-    if (meerBronnen || meerTypes) {
-      // Herstel selecties voor alle modi
-      const beschikbareIds = new Set(alleUniekeCategorieen);
-      
-      setGeselecteerdeCategorieen(prev => {
-        const herstelde = [...new Set([...prev, ...backupSelecties.normaal])];
-        return herstelde.filter(cat => beschikbareIds.has(cat));
-      });
-      
-      setGeselecteerdeLeitnerCategorieen(prev => {
-        const herstelde = [...new Set([...prev, ...backupSelecties.leitner])];
-        return herstelde.filter(cat => beschikbareIds.has(cat));
-      });
-      
-      setGeselecteerdeMultiplayerCategorieen(prev => {
-        const herstelde = [...new Set([...prev, ...backupSelecties.multiplayer])];
-        return herstelde.filter(cat => beschikbareIds.has(cat));
-      });
-      
-      setGeselecteerdeHighscoreCategorieen(prev => {
-        const herstelde = [...new Set([...prev, ...backupSelecties.highscore])];
-        return herstelde.filter(cat => beschikbareIds.has(cat));
-      });
-    }
-  }, [backupSelecties, alleUniekeCategorieen]);
-
-  // Aangepaste setFilters functie die selecties herstelt
-  const setFiltersMetHerstel = useCallback((nieuweFilters: Filters | ((prev: Filters) => Filters)) => {
-    const oudeFilters = filters;
-    const nieuweFiltersValue = typeof nieuweFilters === 'function' ? nieuweFilters(oudeFilters) : nieuweFilters;
-    
-    setFilters(nieuweFiltersValue);
-    herstelSelecties(nieuweFiltersValue, oudeFilters);
-  }, [filters, herstelSelecties]);
+  // De staat voor geselecteerde categorieën is nu de enige 'source of truth'.
+  // We verwijderen niet langer categorieën wanneer filters veranderen.
+  // De UI-componenten zijn verantwoordelijk voor het tonen van de juiste (gefilterde) weergave.
 
   // Effect om normale categorie-selectie op te slaan
   useEffect(() => {
@@ -946,10 +877,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       return;
     }
 
-    if (gameMode === 'multi' && gefilterdeOpdrachten.length < 20) {
+    if (gameMode === 'multi' && gefilterdeOpdrachten.length < 20 && !multiplayerWaarschuwingGetoond) {
       if (!window.confirm(`Let op: je hebt minder dan 20 opdrachten (${gefilterdeOpdrachten.length}) geselecteerd. Voor de beste spelervaring raden we meer aan. Wil je toch doorgaan?`)) {
         return; // Stop als de gebruiker annuleert
       }
+      setMultiplayerWaarschuwingGetoond(true); // Markeer dat de waarschuwing is getoond
     }
 
     if (!isSpelGestart) {
@@ -1408,7 +1340,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setGeselecteerdBestand(null);
   };
 
-  const handleVerwerkBestand = () => {
+  const handleVerwerkBestand = (vervang: boolean) => {
     if (!geselecteerdBestand) return;
 
     const reader = new FileReader();
@@ -1416,8 +1348,27 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       try {
         const arrayBuffer = event.target?.result as ArrayBuffer;
         const nieuweOpdrachten = parseExcelData(arrayBuffer, 'gebruiker');
-        laadNieuweOpdrachten(nieuweOpdrachten, isVervangenActief);
-        alert(`${nieuweOpdrachten.length} opdrachten succesvol geladen!`);
+        // Tel het aantal unieke opdrachten dat daadwerkelijk wordt toegevoegd
+        const huidigeOpdrachten = opdrachten.filter(o => o.bron === 'gebruiker');
+        const bestaandeKeys = new Set(
+          huidigeOpdrachten.map(o => `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`)
+        );
+        const uniekeNieuweOpdrachten = nieuweOpdrachten.filter(o => {
+          const key = `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`;
+          return !bestaandeKeys.has(key);
+        });
+        
+        laadNieuweOpdrachten(nieuweOpdrachten, vervang);
+        
+        if (vervang) {
+          alert(`${nieuweOpdrachten.length} opdrachten succesvol vervangen!`);
+        } else {
+          const overgeslagen = nieuweOpdrachten.length - uniekeNieuweOpdrachten.length;
+          const bericht = overgeslagen > 0 
+            ? `${uniekeNieuweOpdrachten.length} nieuwe opdrachten toegevoegd, ${overgeslagen} dubbelingen overgeslagen.`
+            : `${uniekeNieuweOpdrachten.length} opdrachten succesvol toegevoegd!`;
+          alert(bericht);
+        }
         setGeselecteerdBestand(null); // Reset na succes
         setIsInstellingenOpen(false); // Sluit de instellingen na een succesvolle upload
       } catch (err) {
@@ -1667,8 +1618,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             onAnnuleer={handleAnnuleerUpload}
             onVerwerk={handleVerwerkBestand}
             geselecteerdBestand={geselecteerdBestand}
-            isVervangenActief={isVervangenActief}
-            setIsVervangenActief={setIsVervangenActief}
           />
           <p className="setting-description" style={{ marginLeft: 0, marginTop: '20px', marginBottom: '15px' }}>
               <strong>Categorieën selectie:</strong> Categorieën kunnen nu worden aangepast via de knoppen in het linker menu. 
@@ -1720,7 +1669,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         initialActiveTab={categorieSelectieActiveTab}
         filters={filters}
-        setFilters={setFiltersMetHerstel}
+        setFilters={setFilters}
       />
 
       {isCategorieBeheerOpen && (
@@ -1735,7 +1684,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           alleCategorieen={alleUniekeCategorieen}
           alleOpdrachten={opdrachten}
           filters={filters}
-          setFilters={setFiltersMetHerstel}
+          setFilters={setFilters}
         />
       )}
 
@@ -1754,7 +1703,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       {isMobieleWeergave && (
         <>
           <button className="score-lade-knop" onClick={() => setIsScoreLadeOpen(prev => !prev)}>
-            &#x1F3C6; {/* Trofee-icoon */}
+            <div className="hamburger-menu">
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </div>
           </button>
           <button className="fullscreen-knop" onClick={toggleFullscreen}>
             {isFullscreen ? '⛶' : '⛶'} {/* Fullscreen iconen */}
@@ -1900,7 +1853,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
           <FilterDashboard 
             filters={filters}
-            setFilters={setFiltersMetHerstel}
+            setFilters={setFilters}
             opdrachten={opdrachten}
     
             actieveCategorieSelectie={actieveCategorieSelectie}
@@ -1988,14 +1941,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                     </p>
                     <p>Je leerdata wordt automatisch opgeslagen op dit device.</p>
                     <p>Geen naam vereist - focus op leren!</p>
-                    <p><strong>Stap 1:</strong> Kies een spelmodus</p>
+                    <p><strong>Stap 1:</strong> Kies een spelmodus <span className="mobile-hint">(open menu via knop linksboven)</span></p>
                     <p><strong>Stap 2:</strong> Selecteer of pas geselecteerde categorieën aan</p>
                     <p><strong>Stap 3:</strong> Start het spel door rechts op de spin te klikken</p>
                     <p><strong>Tip:</strong> Gebruik de knop rechtsboven voor een volledige schermweergave.</p>
                   </>
                 ) : (
                   <>
-                    <p><strong>Stap 1:</strong> Kies een spelmodus</p>
+                    <p><strong>Stap 1:</strong> Kies een spelmodus <span className="mobile-hint">(open menu via knop linksboven)</span></p>
                     <p><strong>Stap 2:</strong> Voeg spelers toe (Highscore en Multiplayer)</p>
                     <p><strong>Stap 3:</strong> Selecteer of pas geselecteerde categorieën aan</p>
                     <p><strong>Stap 4:</strong> Start het spel door rechts op de spin te klikken</p>

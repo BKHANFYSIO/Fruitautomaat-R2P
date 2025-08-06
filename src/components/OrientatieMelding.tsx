@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './OrientatieMelding.css';
 
 interface OrientatieMeldingProps {
@@ -6,7 +6,22 @@ interface OrientatieMeldingProps {
 }
 
 export const OrientatieMelding = ({ isMobiel }: OrientatieMeldingProps) => {
-  const [genegeerd, setGenegeerd] = useState(false);
+  const [genegeerd, setGenegeerd] = useState(() => {
+    // Check of de melding al eerder is getoond
+    return localStorage.getItem('orientatie_melding_getoond') === 'true';
+  });
+
+  // Automatisch verdwijnen na 10 seconden
+  useEffect(() => {
+    if (isMobiel && !genegeerd) {
+      const timer = setTimeout(() => {
+        setGenegeerd(true);
+        localStorage.setItem('orientatie_melding_getoond', 'true');
+      }, 10000); // 10 seconden
+
+      return () => clearTimeout(timer);
+    }
+  }, [isMobiel, genegeerd]);
 
   // Toon alleen op mobiele apparaten in portrait modus (via CSS)
   if (!isMobiel || genegeerd) {
@@ -15,6 +30,7 @@ export const OrientatieMelding = ({ isMobiel }: OrientatieMeldingProps) => {
 
   const handleNegeer = () => {
     setGenegeerd(true);
+    localStorage.setItem('orientatie_melding_getoond', 'true');
   };
 
   return (
@@ -38,7 +54,10 @@ export const OrientatieMelding = ({ isMobiel }: OrientatieMeldingProps) => {
           <p>Tip: gebruik de 'volledig scherm' modus voor een nog betere ervaring.</p>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="fullscreen-icoon"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         </div>
-        <button onClick={handleNegeer} className="negeer-knop">Negeren</button>
+        <div className="orientatie-melding-footer">
+          <p className="auto-verdwijnt-tekst">Verdwijnt automatisch over 10 seconden</p>
+          <button onClick={handleNegeer} className="negeer-knop">Nu sluiten</button>
+        </div>
       </div>
     </div>
   );

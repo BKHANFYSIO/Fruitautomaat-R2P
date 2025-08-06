@@ -148,7 +148,7 @@ export const Fruitautomaat = ({
         {huidigeOpdracht && gamePhase !== 'spinning' && (
           <div className="opdracht-info-footer">
             <span className="info-item" title={`Bron: ${huidigeOpdracht.opdracht.bron || 'Onbekend'}`}>
-              {huidigeOpdracht.opdracht.bron === 'systeem' ? '🏛️' : '👤'}
+              {huidigeOpdracht.opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}
             </span>
             <span className="info-item" title={`Type: ${huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}`}>
               {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}

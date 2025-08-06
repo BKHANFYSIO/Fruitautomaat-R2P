@@ -9,14 +9,14 @@ export const SYMBOLEN = [
 ];
 
 export const opdrachtTypeIconen: { [key: string]: string } = {
-  'Feitenkennis': '🧠',
-  'Begrijpen': '💡',
-  'Toepassing': '🔧',
-  'Uitleggen': '🗣️',
-  'Tekenen': '✍️',
-  'Communicatie': '💬',
-  'Fysiotherapie': '💪',
-  'Praktijk': '🏃‍♂️',
+  'Feitenkennis': '📚',
+  'Begrijpen': '💭',
+  'Toepassing': '⚙️',
+  'Uitleggen': '📢',
+  'Tekenen': '✏️',
+  'Communicatie': '📞',
+  'Fysiotherapie': '🏥',
+  'Praktijk': '🎯',
   'Onbekend': '❓'
 };
 

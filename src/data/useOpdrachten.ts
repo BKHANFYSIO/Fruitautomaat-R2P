@@ -112,8 +112,17 @@ export const useOpdrachten = (defaultFilePath: string) => {
       const systeemOpdrachten = huidigeOpdrachten.filter(o => o.bron === 'systeem');
       const huidigeGebruikerOpdrachten = vervang ? [] : huidigeOpdrachten.filter(o => o.bron === 'gebruiker');
       
-      const bestaandeOpdrachtKeys = new Set(huidigeGebruikerOpdrachten.map(o => o.Opdracht));
-      const uniekeNieuweOpdrachten = gebruikerOpdrachten.filter(o => !bestaandeOpdrachtKeys.has(o.Opdracht));
+      // Verbeterde duplicaat detectie: check op combinatie van opdrachttekst, categorie en hoofdcategorie
+      const bestaandeOpdrachtKeys = new Set(
+        huidigeGebruikerOpdrachten.map(o => 
+          `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`
+        )
+      );
+      
+      const uniekeNieuweOpdrachten = gebruikerOpdrachten.filter(o => {
+        const key = `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`;
+        return !bestaandeOpdrachtKeys.has(key);
+      });
 
       const gecombineerdeGebruikerOpdrachten = [...huidigeGebruikerOpdrachten, ...uniekeNieuweOpdrachten];
       

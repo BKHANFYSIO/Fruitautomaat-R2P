@@ -137,7 +137,7 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
                     )}
                   </td>
                   <td className="bron-kolom">
-                    <span className="bron-icon">{opdracht.bron === 'systeem' ? '🏛️' : '👤'}</span>
+                    <span className="bron-icon">{opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}</span>
                   </td>
                   <td className="box-kolom">{opdracht.box ?? '-'}</td>
                   <td className="status-kolom">

@@ -48,8 +48,8 @@ export const Timer = ({ tijdslimiet, onTimeUp, isActief, isGeluidActief, isTimer
     return () => clearInterval(intervalId);
   }, [isActief, isTimerActief, onTimeUp, playTick, playEnd, stopTick]);
 
-  // Als timer niet actief is, toon niets
-  if (!isTimerActief) {
+  // Als timer niet actief is of tijdslimiet is 0, toon niets
+  if (!isTimerActief || tijdslimiet <= 0) {
     return null;
   }
 

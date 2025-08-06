@@ -17,15 +17,15 @@
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid #4a5568;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .filter-titel {
   margin: 0;
   color: #63b3ed;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .criteria-knop {
@@ -43,43 +43,59 @@
   background-color: rgba(99, 179, 237, 0.2);
 }
 
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #63b3ed;
+  min-width: 40px;
+  flex-shrink: 0;
+}
+
 .filter-icon-group {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-
-.filter-icon-group:not(:last-child) {
-  margin-bottom: 10px;
+  gap: 6px;
+  flex: 1;
 }
 
 .filter-icon {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  padding: 4px;
-  border-radius: 5px;
+  padding: 3px;
+  border-radius: 4px;
   line-height: 1;
 }
 
 .filter-icon.inactive {
-  opacity: 0.4;
+  opacity: 0.6;
   transform: scale(0.9);
+  color: #a0a0a0;
 }
 
 .filter-icon.inactive:hover {
-  opacity: 0.7;
+  opacity: 0.8;
   transform: scale(1);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #d0d0d0;
 }
 
 .filter-icon.active {
   opacity: 1;
   transform: scale(1.1);
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  color: #ffffff;
 }
 
 .filter-icon.active:hover {
   transform: scale(1.2);
+  color: #ffffff;
 }

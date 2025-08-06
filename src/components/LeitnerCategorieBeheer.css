@@ -3564,9 +3564,9 @@ td.sub-categorie,
 }
 
 .filter-icon.inactive {
-  background: #3a3a3a;
-  color: #888;
-  border-color: #555;
+  background: #2a2a2a;
+  color: #cccccc;
+  border-color: #444;
 }
 
 .filter-icon:hover {
@@ -3580,9 +3580,9 @@ td.sub-categorie,
 }
 
 .filter-icon.inactive:hover {
-  background: #4a4a4a;
-  color: #aaa;
-  border-color: #666;
+  background: #3a3a3a;
+  color: #ffffff;
+  border-color: #555;
 }
 
 /* Specifieke fix voor subcategorie cellen in CategorieSelectieModal */

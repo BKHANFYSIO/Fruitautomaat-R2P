@@ -241,4 +241,12 @@
 .info-item {
   font-size: 1.5rem;
   cursor: help;
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.info-item:hover {
+  transform: scale(1.1);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
 }

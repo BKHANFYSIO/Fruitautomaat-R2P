@@ -27,6 +27,20 @@ interface SettingsContextType {
   isAutomatischScorebordActief: boolean;
   setIsAutomatischScorebordActief: (actief: boolean) => void;
   
+  // Per-modus settings
+  isSpinVergrendelingActiefHighscore: boolean;
+  setIsSpinVergrendelingActiefHighscore: (actief: boolean) => void;
+  isJokerSpinActiefHighscore: boolean;
+  setIsJokerSpinActiefHighscore: (actief: boolean) => void;
+  isSpinVergrendelingActiefMultiplayer: boolean;
+  setIsSpinVergrendelingActiefMultiplayer: (actief: boolean) => void;
+  isJokerSpinActiefMultiplayer: boolean;
+  setIsJokerSpinActiefMultiplayer: (actief: boolean) => void;
+  isSpinVergrendelingActiefVrijeLeermodus: boolean;
+  setIsSpinVergrendelingActiefVrijeLeermodus: (actief: boolean) => void;
+  isSpinVergrendelingActiefLeitnerLeermodus: boolean;
+  setIsSpinVergrendelingActiefLeitnerLeermodus: (actief: boolean) => void;
+  
   // Advanced settings
   bonusKans: BonusKans;
   setBonusKans: (kans: BonusKans) => void;
@@ -94,7 +108,15 @@ const saveToStorage = (key: string, value: any) => {
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   // Game settings
   const [gameMode, setGameMode] = useState<GameMode>(() => loadFromStorage('gameMode', 'multi'));
-  const [maxRondes, setMaxRondes] = useState(() => loadFromStorage('maxRondes', 0));
+  const [maxRondes, setMaxRondes] = useState(() => {
+    const opgeslagenWaarde = loadFromStorage('maxRondes', 4);
+    // Migratie: vervang 0 door 4 voor bestaande gebruikers
+    if (opgeslagenWaarde === 0) {
+      saveToStorage('maxRondes', 4);
+      return 4;
+    }
+    return opgeslagenWaarde;
+  });
   
   // UI settings
   const [isGeluidActief, setIsGeluidActief] = useState(() => loadFromStorage('isGeluidActief', true));
@@ -104,6 +126,34 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [isBonusOpdrachtenActief, setIsBonusOpdrachtenActief] = useState(() => loadFromStorage('isBonusOpdrachtenActief', true));
   const [isSpinVergrendelingActief, setIsSpinVergrendelingActief] = useState(() => loadFromStorage('isSpinVergrendelingActief', true));
   const [isAutomatischScorebordActief, setIsAutomatischScorebordActief] = useState(() => loadFromStorage('isAutomatischScorebordActief', true));
+  
+  // Per-modus spin vergrendeling instellingen
+  const [isSpinVergrendelingActiefHighscore, setIsSpinVergrendelingActiefHighscore] = useState(() => 
+    loadFromStorage('isSpinVergrendelingActiefHighscore', true)
+  );
+  const [isSpinVergrendelingActiefMultiplayer, setIsSpinVergrendelingActiefMultiplayer] = useState(() => 
+    loadFromStorage('isSpinVergrendelingActiefMultiplayer', true)
+  );
+  const [isSpinVergrendelingActiefVrijeLeermodus, setIsSpinVergrendelingActiefVrijeLeermodus] = useState(() => 
+    loadFromStorage('isSpinVergrendelingActiefVrijeLeermodus', true)
+  );
+  const [isSpinVergrendelingActiefLeitnerLeermodus, setIsSpinVergrendelingActiefLeitnerLeermodus] = useState(() => 
+    loadFromStorage('isSpinVergrendelingActiefLeitnerLeermodus', true)
+  );
+
+  // Per-modus joker spin instellingen
+  const [isJokerSpinActiefHighscore, setIsJokerSpinActiefHighscore] = useState(() => 
+    loadFromStorage('isJokerSpinActiefHighscore', false)
+  );
+  const [isJokerSpinActiefMultiplayer, setIsJokerSpinActiefMultiplayer] = useState(() => 
+    loadFromStorage('isJokerSpinActiefMultiplayer', true)
+  );
+  const [isJokerSpinActiefVrijeLeermodus, setIsJokerSpinActiefVrijeLeermodus] = useState(() => 
+    loadFromStorage('isJokerSpinActiefVrijeLeermodus', false)
+  );
+  const [isJokerSpinActiefLeitnerLeermodus, setIsJokerSpinActiefLeitnerLeermodus] = useState(() => 
+    loadFromStorage('isJokerSpinActiefLeitnerLeermodus', false)
+  );
   
   // Advanced settings
   const [bonusKans, setBonusKans] = useState<BonusKans>(() => loadFromStorage('bonusKans', 'standaard'));
@@ -160,6 +210,30 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   useEffect(() => {
     saveToStorage('isAutomatischScorebordActief', isAutomatischScorebordActief);
   }, [isAutomatischScorebordActief]);
+
+  useEffect(() => {
+    saveToStorage('isSpinVergrendelingActiefHighscore', isSpinVergrendelingActiefHighscore);
+  }, [isSpinVergrendelingActiefHighscore]);
+
+  useEffect(() => {
+    saveToStorage('isJokerSpinActiefHighscore', isJokerSpinActiefHighscore);
+  }, [isJokerSpinActiefHighscore]);
+
+  useEffect(() => {
+    saveToStorage('isSpinVergrendelingActiefMultiplayer', isSpinVergrendelingActiefMultiplayer);
+  }, [isSpinVergrendelingActiefMultiplayer]);
+
+  useEffect(() => {
+    saveToStorage('isJokerSpinActiefMultiplayer', isJokerSpinActiefMultiplayer);
+  }, [isJokerSpinActiefMultiplayer]);
+
+  useEffect(() => {
+    saveToStorage('isSpinVergrendelingActiefVrijeLeermodus', isSpinVergrendelingActiefVrijeLeermodus);
+  }, [isSpinVergrendelingActiefVrijeLeermodus]);
+
+  useEffect(() => {
+    saveToStorage('isSpinVergrendelingActiefLeitnerLeermodus', isSpinVergrendelingActiefLeitnerLeermodus);
+  }, [isSpinVergrendelingActiefLeitnerLeermodus]);
 
   useEffect(() => {
     saveToStorage('bonusKans', bonusKans);
@@ -227,6 +301,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsSpinVergrendelingActief,
     isAutomatischScorebordActief,
     setIsAutomatischScorebordActief,
+    
+    // Per-modus settings
+    isSpinVergrendelingActiefHighscore,
+    setIsSpinVergrendelingActiefHighscore,
+    isJokerSpinActiefHighscore,
+    setIsJokerSpinActiefHighscore,
+    isSpinVergrendelingActiefMultiplayer,
+    setIsSpinVergrendelingActiefMultiplayer,
+    isJokerSpinActiefMultiplayer,
+    setIsJokerSpinActiefMultiplayer,
+    isSpinVergrendelingActiefVrijeLeermodus,
+    setIsSpinVergrendelingActiefVrijeLeermodus,
+    isSpinVergrendelingActiefLeitnerLeermodus,
+    setIsSpinVergrendelingActiefLeitnerLeermodus,
     
     // Advanced settings
     bonusKans,

@@ -7,9 +7,7 @@ import * as XLSX from 'xlsx';
 import './Instellingen.css';
 import { generateCertificaat } from '../utils/certificaatGenerator';
 import { getLeerDataManager } from '../data/leerDataManager';
-// import type { Opdracht } from '../data/types'; // Niet gebruikt
 import { useSettings } from '../context/SettingsContext';
-
 
 type BonusOpdracht = { opdracht: string; punten: number[] };
 
@@ -46,6 +44,7 @@ export const Instellingen = React.memo(({
   onSpelReset,
   // Categorie beheer
   onOpenCategorieBeheer,
+  onOpenCategorieSelectie,
 }: InstellingenProps) => {
   // Settings context
   const {
@@ -85,7 +84,27 @@ export const Instellingen = React.memo(({
     setIsMaxNewQuestionsLimitActief,
     negeerBox0Wachttijd,
     setNegeerBox0Wachttijd,
+    // Per-modus settings
+    isSpinVergrendelingActiefHighscore,
+    setIsSpinVergrendelingActiefHighscore,
+    isJokerSpinActiefHighscore,
+    setIsJokerSpinActiefHighscore,
+    isSpinVergrendelingActiefMultiplayer,
+    setIsSpinVergrendelingActiefMultiplayer,
+    isJokerSpinActiefMultiplayer,
+    setIsJokerSpinActiefMultiplayer,
+    isSpinVergrendelingActiefVrijeLeermodus,
+    setIsSpinVergrendelingActiefVrijeLeermodus,
+    isSpinVergrendelingActiefLeitnerLeermodus,
+    setIsSpinVergrendelingActiefLeitnerLeermodus,
+    isBox0IntervalVerkort,
+    setIsBox0IntervalVerkort,
+    isRolTijdVerkort,
+    setIsRolTijdVerkort,
   } = useSettings();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState('algemeen');
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
@@ -106,11 +125,17 @@ export const Instellingen = React.memo(({
     }
   }, [isSpinVergrendelingActief, setIsJokerSpinActief]);
 
+  // Helper functie om modus naam te bepalen
+  const getModusNaam = () => {
+    if (gameMode === 'multi') return 'Multiplayer Modus';
+    if (!isSerieuzeLeerModusActief) return 'Highscore Modus';
+    if (leermodusType === 'leitner') return 'Leitner Leermodus';
+    return 'Vrije Leermodus';
+  };
+
   if (!isOpen) {
     return null;
   }
-
-
 
   const handleClearHighscoresAndRecords = () => {
     if (confirm('Weet je zeker dat je alle highscores en persoonlijke records wilt verwijderen? Dit kan niet ongedaan worden gemaakt.')) {
@@ -157,25 +182,60 @@ export const Instellingen = React.memo(({
   };
 
   const handleClearAllData = () => {
-    if (confirm('Weet je zeker dat je ALLE lokaal opgeslagen gegevens wilt verwijderen? Dit verwijdert scores, persoonlijke bests, bonusopdrachten, leeranalyse gegevens en Leitner-systeem data. Dit kan niet ongedaan worden gemaakt.')) {
-      localStorage.removeItem('fruitautomaat_highScores');
-      localStorage.removeItem('fruitautomaat_personalBests');
-      localStorage.removeItem('bonusOpdrachten');
-      
-      // Verwijder ook alle leerdata en Leitner data
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('fruitautomaat_leerdata_') || 
-            key.startsWith('fruitautomaat_sessies_') || 
-            key.startsWith('fruitautomaat_preferences_') || 
-            key.startsWith('fruitautomaat_achievements_') ||
-            key.startsWith('fruitautomaat_leitner_')) {
-          localStorage.removeItem(key);
+    if (confirm('Weet je zeker dat je ALLE gegevens wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
+      // Verwijder alle localStorage items die beginnen met fruitautomaat_
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('fruitautomaat_')) {
+          keysToRemove.push(key);
         }
-      });
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       
-      setBonusOpdrachten(basisBonusOpdrachten);
+      alert('Alle gegevens zijn verwijderd. De pagina wordt herladen om de wijzigingen toe te passen.');
       window.location.reload();
+    }
+  };
+
+  const handleHerstelStandaardInstellingen = () => {
+    if (confirm('Weet je zeker dat je alle instellingen wilt herstellen naar de standaardwaarden? Dit kan niet ongedaan gemaakt worden.')) {
+      // Herstel alle instellingen naar standaardwaarden
+      setIsGeluidActief(true);
+      setIsTimerActief(true);
+      setIsEerlijkeSelectieActief(true);
+      setIsJokerSpinActief(true);
+      setIsBonusOpdrachtenActief(true);
+      setIsSpinVergrendelingActief(true);
+      setIsAutomatischScorebordActief(true);
+      setForceerMobieleWeergave(false);
+      setMaxRondes(4);
+      setBonusKans('standaard');
+      
+      // Per-modus instellingen herstellen
+      setIsSpinVergrendelingActiefHighscore(true);
+      setIsJokerSpinActiefHighscore(false);
+      setIsSpinVergrendelingActiefMultiplayer(true);
+      setIsJokerSpinActiefMultiplayer(true);
+      setIsSpinVergrendelingActiefVrijeLeermodus(true);
+      setIsSpinVergrendelingActiefLeitnerLeermodus(true);
+      
+      // Leermodus instellingen herstellen
+      setIsSerieuzeLeerModusActief(false);
+      setIsLeerFeedbackActief(true);
+      setLeermodusType('leitner');
+      setMaxNewLeitnerQuestionsPerDay(10);
+      setIsMaxNewQuestionsLimitActief(true);
+      setNegeerBox0Wachttijd(true);
+      
+      // Dev instellingen herstellen
+      setIsBox0IntervalVerkort(false);
+      setIsRolTijdVerkort(false);
+      
+      // Bonus instellingen herstellen
+      setIsLokaleBonusOpslagActief(false);
+      
+      alert('Alle instellingen zijn hersteld naar de standaardwaarden.');
     }
   };
 
@@ -243,8 +303,6 @@ export const Instellingen = React.memo(({
     }
   };
 
-
-
   return (
     <div className="instellingen-overlay" onClick={onClose}>
       <div className="instellingen-content" onClick={(e) => e.stopPropagation()}>
@@ -252,137 +310,452 @@ export const Instellingen = React.memo(({
           <h2>Instellingen</h2>
           <button onClick={onClose} className="modal-close-button">&times;</button>
         </div>
-        <div className="instellingen-body">
-          {/* --- Groep: Algemeen --- */}
-          <div className="settings-group">
-            <h4>Algemeen</h4>
-            <label>
-              <input
-                type="checkbox"
-                checked={isGeluidActief}
-                onChange={() => setIsGeluidActief(!isGeluidActief)}
-              />
-              Geluidseffecten
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={forceerMobieleWeergave}
-                onChange={() => setForceerMobieleWeergave(!forceerMobieleWeergave)}
-              />
-              Forceer mobiele weergave
-            </label>
-            <p className="setting-description">
-              Forceert de mobiele layout op laptop/desktop: verbergt scorebord en instellingen achter de beker en lichten de fruitautomaat meer uit. In mobiele weergave gebeurt dit al automatisch.
-            </p>
-            <label>
-              <input
-                type="checkbox"
-                checked={isAutomatischScorebordActief}
-                onChange={() => setIsAutomatischScorebordActief(!isAutomatischScorebordActief)}
-              />
-              Toon scorebord automatisch in mobiele weergave
-            </label>
-            <p className="setting-description">
-              Toont het scorebord automatisch na het geven van een score voor de duur van 2 seconden. In normale weergave blijft het scorebord altijd zichtbaar.
-            </p>
-          </div>
+        
+        {/* Tab Navigation */}
+        <div className="instellingen-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'algemeen' ? 'active' : ''}`}
+            onClick={() => setActiveTab('algemeen')}
+          >
+            🔧 Algemeen
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'highscore' ? 'active' : ''}`}
+            onClick={() => setActiveTab('highscore')}
+          >
+            🏆 Highscore
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'multiplayer' ? 'active' : ''}`}
+            onClick={() => setActiveTab('multiplayer')}
+          >
+            👥 Multiplayer
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'vrijeleermodus' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vrijeleermodus')}
+          >
+            📚 Vrije Leermodus
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'leitnerleermodus' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leitnerleermodus')}
+          >
+            📚 Leitner Leermodus
+          </button>
+        </div>
 
-          {/* --- Groep: Spelverloop --- */}
-          <div className="settings-group">
-            <h4>Spelverloop</h4>
-            {gameMode === 'multi' && (
-              <label>
-                Aantal rondes (alleen multiplayer):
-                <input
-                  type="number"
-                  value={maxRondes}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    if (value >= 1 && value <= 30) {
-                      setMaxRondes(value);
-                    } else if (e.target.value === '') {
-                      setMaxRondes(1); // Of een andere fallback als je dat wilt
-                    }
-                  }}
-                  min="1"
-                  max="30"
-                  style={{ marginLeft: 'auto', width: '80px' }}
-                />
-              </label>
-            )}
-            <label>
-              <input
-                type="checkbox"
-                checked={isTimerActief}
-                onChange={(e) => setIsTimerActief(e.target.checked)}
-              />
-              Timer voor opdrachten gebruiken
-            </label>
-            {gameMode === 'multi' && (
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isEerlijkeSelectieActief}
-                  onChange={(e) => setIsEerlijkeSelectieActief(e.target.checked)}
-                />
-                Spelers gegarandeerd een beurt geven
-              </label>
-            )}
-            {gameMode === 'multi' && (
-              <p className="setting-description">
-                Zorgt ervoor dat spelers in een wachtrij komen en iedereen aan de beurt komt voordat de cyclus herstart. Als uitgeschakeld gebeurt de selectie volledig willekeurig.
-              </p>
-            )}
-            <label>
-              <input
-                type="checkbox"
-                checked={isSpinVergrendelingActief}
-                onChange={() => setIsSpinVergrendelingActief(!isSpinVergrendelingActief)}
-              />
-              Blokkeer spin tot na antwoord
-            </label>
-            <p className="setting-description">
-              Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
-            </p>
-            <label>
-              <input
-                type="checkbox"
-                checked={isJokerSpinActief}
-                onChange={(e) => setIsJokerSpinActief(e.target.checked)}
-                disabled={!isSpinVergrendelingActief}
-              />
-              Jokers leveren extra spins op
-            </label>
-            <p className="setting-description">
-              Bij een geblokkeerde spin kunnen spelers jokers sparen en inzetten voor extra spins. De beurt blijft bij dezelfde speler, maar geeft een nieuwe opdracht en punten. Deze optie vereist dat de spin geblokkeerd is na een antwoord.
-            </p>
-                          {isSerieuzeLeerModusActief && gameMode === 'single' && (
-                <div className="serieuze-modus-notice">
+        <div className="instellingen-body">
+          {/* Tab Content - conditioneel per tab */}
+          <div className="tab-content">
+            {/* --- Tab: Algemeen --- */}
+            {activeTab === 'algemeen' && (
+              <>
+                <div className="settings-group">
+                  <h4>Algemeen</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isGeluidActief}
+                      onChange={() => setIsGeluidActief(!isGeluidActief)}
+                    />
+                    Geluidseffecten
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={forceerMobieleWeergave}
+                      onChange={() => setForceerMobieleWeergave(!forceerMobieleWeergave)}
+                    />
+                    Forceer mobiele weergave
+                  </label>
                   <p className="setting-description">
-                    <strong>Als de 'Leer Modus gebruiken' geactiveerd is:</strong> "Blokkeer spin tot na antwoord" staat standaard aan voor optimaal leereffect. 
-                    Andere spelverloop instellingen zijn uitgevinkt voor optimale leerervaring. Je voorkeur wordt onthouden.
+                    Forceert de mobiele layout op laptop/desktop: verbergt scorebord en instellingen achter de beker en lichten de fruitautomaat meer uit. In mobiele weergave gebeurt dit al automatisch.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isAutomatischScorebordActief}
+                      onChange={() => setIsAutomatischScorebordActief(!isAutomatischScorebordActief)}
+                    />
+                    Toon scorebord automatisch in mobiele weergave
+                  </label>
+                  <p className="setting-description">
+                    Toont het scorebord automatisch na het geven van een score voor de duur van 2 seconden. In normale weergave blijft het scorebord altijd zichtbaar.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isTimerActief}
+                      onChange={(e) => setIsTimerActief(e.target.checked)}
+                    />
+                    Timer voor opdrachten gebruiken
+                  </label>
+                  <p className="setting-description">
+                    Toont een timer tijdens het beantwoorden van opdrachten. De timer helpt bij het oefenen van vaardigheden en het automatiseren van kennis. 
+                    <strong>Tip:</strong> Schakel de timer uit als je nog bezig bent met het leren van nieuwe stof - dan kan de druk afleiden van het begrijpen van de materie.
+                  </p>
+                  
+                  {/* Herstel Standaard Instellingen Knop */}
+                  <div className="herstel-standaard-sectie">
+                    <button 
+                      onClick={handleHerstelStandaardInstellingen}
+                      className="herstel-standaard-knop"
+                      title="Herstel alle instellingen naar de standaardwaarden"
+                    >
+                      🔄 Herstel Standaard Instellingen
+                    </button>
+                    <p className="setting-description">
+                      Herstelt alle instellingen naar de standaardwaarden. Dit heeft geen invloed op je opgeslagen data (scores, leerdata, etc.).
+                    </p>
+                  </div>
+                </div>
+
+                {/* --- Groep: Opdrachtenbeheer --- */}
+                <div className="settings-group">
+                  <h4>Opdrachtenbeheer</h4>
+                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
+                    <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
+                    Kies vervolgens of je wilt aanvullen of overschrijven.
+                  </p>
+                  
+                  <div className="opdracht-knoppen-container">
+                    <button 
+                      onClick={() => {
+                        const data = [
+                          { 
+                            Hoofdcategorie: 'Voorbeeld Hoofdcategorie',
+                            Categorie: 'Voorbeeld Categorie', 
+                            Opdracht: 'Voorbeeld Opdracht', 
+                            Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
+                            Tijdslimiet: 60,
+                            "Extra_Punten (max 2)": 0,
+                            OpdrachtType: 'Feitenkennis'
+                          }
+                        ];
+                        const worksheet = XLSX.utils.json_to_sheet(data);
+                        const workbook = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(workbook, worksheet, "Opdrachten");
+                        XLSX.writeFile(workbook, "opdrachten_sjabloon.xlsx");
+                      }}
+                      className="instellingen-knop download-template-knop"
+                    >
+                      📥 Download Excel Sjabloon
+                    </button>
+                    
+                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
+                      Dit is een snelle manier om veel opdrachten te maken.
+                    </p>
+                    
+                    <button 
+                      className="instellingen-knop ai-generator-knop"
+                      onClick={() => setIsAiGeneratorOpen(true)}
+                    >
+                      🚀 Genereer Nieuwe Opdrachten met AI
+                    </button>
+                  </div>
+                  
+                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                    <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
+                    Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
+                  </p>
+                  
+                  {children}
+                </div>
+
+                {/* --- Groep: Data Beheer --- */}
+                <div className="settings-group">
+                  <h4>Data Beheer</h4>
+                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
+                    Hier kun je verschillende soorten lokaal opgeslagen gegevens verwijderen.
+                  </p>
+                  
+                  <div className="data-beheer-knoppen">
+                    <button 
+                      onClick={() => {
+                        if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
+                          onVerwijderGebruikerOpdrachten();
+                          alert('Alle eigen opdrachten zijn verwijderd.');
+                        }
+                      }}
+                      className="data-beheer-knop opdrachten-knop"
+                    >
+                      📝 Verwijder Eigen Opdrachten
+                    </button>
+
+                    <button 
+                      onClick={handleClearHighscoresAndRecords}
+                      className="data-beheer-knop single-player-knop"
+                    >
+                      🎯 Verwijder Highscores & Records (alleen Highscore Modus)
+                    </button>
+                    
+                    <button 
+                      onClick={handleClearBonusOpdrachten}
+                      className="data-beheer-knop bonus-knop"
+                    >
+                      🎭 Verwijder Bonusopdrachten (alleen multiplayer)
+                    </button>
+                    
+                    <button 
+                      onClick={handleClearLeeranalyseData}
+                      className="data-beheer-knop leeranalyse-knop"
+                    >
+                      📊 Verwijder Leeranalyse & Statistieken (alleen Leer Modus)
+                    </button>
+                    
+                    <button 
+                      onClick={handleClearLeitnerData}
+                      className="data-beheer-knop leitner-knop"
+                    >
+                      📚 Verwijder Leitner-systeem Data (alleen Leer Modus)
+                    </button>
+                    
+                    <button 
+                      onClick={handleClearAllData}
+                      className="data-beheer-knop alles-knop"
+                    >
+                      🗑️ Verwijder Alle Gegevens
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* --- Tab: Highscore Modus --- */}
+            {activeTab === 'highscore' && (
+              <div className="settings-group">
+                <h4>Spelverloop</h4>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={isSpinVergrendelingActiefHighscore}
+                    onChange={() => setIsSpinVergrendelingActiefHighscore(!isSpinVergrendelingActiefHighscore)}
+                  />
+                  Blokkeer spin tot na antwoord
+                </label>
+                <p className="setting-description">
+                  Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
+                </p>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={isJokerSpinActiefHighscore}
+                    onChange={(e) => setIsJokerSpinActiefHighscore(e.target.checked)}
+                    disabled={!isSpinVergrendelingActiefHighscore}
+                  />
+                  Jokers leveren extra spins op
+                </label>
+                <p className="setting-description">
+                  Bij een geblokkeerde spin kunnen spelers jokers sparen en inzetten voor extra spins. De beurt blijft bij dezelfde speler, maar geeft een nieuwe opdracht en punten. Deze optie vereist dat de spin geblokkeerd is na een antwoord.
+                </p>
+              </div>
+            )}
+
+            {/* --- Tab: Multiplayer Modus --- */}
+            {activeTab === 'multiplayer' && (
+              <>
+                {/* --- Groep: Spelverloop --- */}
+                <div className="settings-group">
+                  <h4>Spelverloop</h4>
+                  <label>
+                    Aantal rondes (alleen multiplayer):
+                    <input
+                      type="number"
+                      value={maxRondes}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (value >= 1 && value <= 30) {
+                          setMaxRondes(value);
+                        } else if (e.target.value === '' || value < 1) {
+                          setMaxRondes(1);
+                        } else if (value > 30) {
+                          setMaxRondes(30);
+                        }
+                      }}
+                      min="1"
+                      max="30"
+                      style={{ marginLeft: 'auto', width: '80px' }}
+                      title="Stel het aantal rondes in (1-30). Het spel stopt automatisch na dit aantal rondes."
+                    />
+                  </label>
+                  <p className="setting-description">
+                    Het spel stopt automatisch na het ingestelde aantal rondes. Standaard: 4 rondes.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isEerlijkeSelectieActief}
+                      onChange={(e) => setIsEerlijkeSelectieActief(e.target.checked)}
+                    />
+                    Spelers gegarandeerd een beurt geven
+                  </label>
+                  <p className="setting-description">
+                    Zorgt ervoor dat spelers in een wachtrij komen en iedereen aan de beurt komt voordat de cyclus herstart. Als uitgeschakeld gebeurt de selectie volledig willekeurig.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isSpinVergrendelingActiefMultiplayer}
+                      onChange={() => setIsSpinVergrendelingActiefMultiplayer(!isSpinVergrendelingActiefMultiplayer)}
+                    />
+                    Blokkeer spin tot na antwoord
+                  </label>
+                  <p className="setting-description">
+                    Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isJokerSpinActiefMultiplayer}
+                      onChange={(e) => setIsJokerSpinActiefMultiplayer(e.target.checked)}
+                      disabled={!isSpinVergrendelingActiefMultiplayer}
+                    />
+                    Jokers leveren extra spins op
+                  </label>
+                  <p className="setting-description">
+                    Bij een geblokkeerde spin kunnen spelers jokers sparen en inzetten voor extra spins. De beurt blijft bij dezelfde speler, maar geeft een nieuwe opdracht en punten. Deze optie vereist dat de spin geblokkeerd is na een antwoord.
                   </p>
                 </div>
-              )}
-          </div>
 
-            {/* --- Groep: Leer Modus --- */}
-            <div className="settings-group">
-              <h4>Leer Modus</h4>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isSerieuzeLeerModusActief}
-                  onChange={(e) => handleSerieuzeModusToggle(e.target.checked)}
-                />
-                Leer Modus gebruiken {gameMode === 'multi' && isSerieuzeLeerModusActief && <span style={{ color: '#666', fontSize: '0.9em' }}>(Switched naar single player)</span>}
-              </label>
-              <p className="setting-description">
-                In deze modus worden geen punten gegeven. Minder afleiding, meer focus op leren. Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat generatie. Perfect voor zelfstudie, het ontwikkelen van studievaardigheden en gebruik in je portfolio. Leerzame feedback en tips worden standaard getoond.
-              </p>
-              {isSerieuzeLeerModusActief && (
-                <>
+                {/* --- Groep: Bonusopdrachten --- */}
+                <div className="settings-group">
+                  <h4>Bonusopdrachten</h4>
+                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
+                    Wanneer een speler drie vraagtekens (❓❓❓) draait, kan er een bonusopdracht gestart worden om extra punten te verdienen. 
+                    Als dit is uitgeschakeld, ontvangt de speler willekeurig 1 tot 10 bonuspunten.
+                    <br /><br />
+                    <strong>Let op:</strong> Bonusopdrachten zijn alleen beschikbaar bij 3 of meer spelers.
+                  </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isBonusOpdrachtenActief}
+                      onChange={(e) => setIsBonusOpdrachtenActief(e.target.checked)}
+                    />
+                    Bonusopdrachten gebruiken
+                  </label>
+
+                  {/* Conditionally render the rest only when active */}
+                  {isBonusOpdrachtenActief && (
+                    <>
+                      <div style={{ marginTop: '15px' }}>
+                        <p style={{ marginBottom: '10px' }}>Kans op een bonusronde verhogen:</p>
+                        <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '10px' }}>
+                          Wil je meer fun? Verhoog dan de kans op drie vraagtekens (❓❓❓) in het spel.
+                        </p>
+                        <div className="kansen-container">
+                          <label>
+                            <input
+                              type="radio"
+                              name="bonusKans"
+                              value="standaard"
+                              checked={bonusKans === 'standaard'}
+                              onChange={() => setBonusKans('standaard')}
+                            />
+                            Normaal
+                          </label>
+                          <label>
+                            <input
+                              type="radio"
+                              name="bonusKans"
+                              value="verhoogd"
+                              checked={bonusKans === 'verhoogd'}
+                              onChange={() => setBonusKans('verhoogd')}
+                            />
+                            Verhoogd (ca. 10% kans)
+                          </label>
+                          <label>
+                            <input
+                              type="radio"
+                              name="bonusKans"
+                              value="fors_verhoogd"
+                              checked={bonusKans === 'fors_verhoogd'}
+                              onChange={() => setBonusKans('fors_verhoogd')}
+                            />
+                            Sterk verhoogd (ca. 25% kans)
+                          </label>
+                        </div>
+                      </div>
+
+                      <p className="setting-description" style={{ marginLeft: 0, marginTop: '10px', marginBottom: '5px' }}>
+                        Hier kun je bonusopdrachten toevoegen en verwijderen voor extra variatie in het spel.
+                      </p>
+                      
+                      {/* Algemene informatie en knoppen buiten accordeon */}
+                      <div className="settings-group">
+                        <h4>Bonusopdrachten Beheer</h4>
+                        <BonusOpdrachtBeheer 
+                          opdrachten={bonusOpdrachten} 
+                          setOpdrachten={setBonusOpdrachten}
+                          isLokaleOpslagActief={isLokaleBonusOpslagActief}
+                          basisBonusOpdrachten={basisBonusOpdrachten}
+                          onLokaleOpslagChange={setIsLokaleBonusOpslagActief}
+                        />
+                      </div>
+                      
+                      {/* Alleen de lijst met opdrachten in accordeon */}
+                      {bonusOpdrachten.length > 0 && (
+                        <>
+                          <button 
+                            className="harmonica-knop" 
+                            onClick={() => setIsBonusBeheerOpen(!isBonusBeheerOpen)}
+                            title="Bekijk en beheer alle huidige bonusopdrachten"
+                          >
+                            Bekijk alle bonusopdrachten ({bonusOpdrachten.length})
+                            <span className={`pijl ${isBonusBeheerOpen ? 'open' : ''}`}>▶</span>
+                          </button>
+                          <div className={`harmonica-content ${isBonusBeheerOpen ? 'open' : ''}`}>
+                            <div className="lijst-sectie">
+                              <h5>Huidige Bonusopdrachten ({bonusOpdrachten.length})</h5>
+                              <ul className="bonus-opdrachten-lijst">
+                                {bonusOpdrachten.map((opdracht, index) => (
+                                  <li key={index} className="bonus-opdracht-item">
+                                    <span className="opdracht-tekst">"{opdracht.opdracht}" ({opdracht.punten.join(', ')} pnt)</span>
+                                    <button onClick={() => {
+                                      const nieuweLijst = bonusOpdrachten.filter((_, i) => i !== index);
+                                      setBonusOpdrachten(nieuweLijst);
+                                    }} className="verwijder-knop">
+                                      &times;
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* --- Tab: Vrije Leermodus --- */}
+            {activeTab === 'vrijeleermodus' && (
+              <>
+                {/* --- Groep: Spelverloop voor Vrije Leermodus --- */}
+                <div className="settings-group">
+                  <h4>Spelverloop</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isSpinVergrendelingActiefVrijeLeermodus}
+                      onChange={() => setIsSpinVergrendelingActiefVrijeLeermodus(!isSpinVergrendelingActiefVrijeLeermodus)}
+                    />
+                    Blokkeer spin tot na antwoord
+                  </label>
+                  <p className="setting-description">
+                    Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
+                  </p>
+                </div>
+
+                <div className="settings-group">
+                  <h4>Vrije Leermodus</h4>
+                  <p className="setting-description">
+                    In deze modus worden geen punten gegeven. Minder afleiding, meer focus op leren. Leren op basis van herhalingen met opslaan van data voor leeranalyses en certificaat generatie. Perfect voor zelfstudie, het ontwikkelen van studievaardigheden en gebruik in je portfolio. Leerzame feedback en tips worden standaard getoond.
+                  </p>
                   <label>
                     <input
                       type="checkbox"
@@ -394,15 +767,56 @@ export const Instellingen = React.memo(({
                   <p className="setting-description">
                     Toon leerzame feedback en tips over effectief leren bij spin combinaties. Standaard aan gezet in Leer Modus. Als uitgeschakeld krijg je alleen de Leer Modus zonder feedback.
                   </p>
-                  
+                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
+                    <strong>Data beheer:</strong> Je kunt je leeranalyse gegevens verwijderen via de "Data Beheer" sectie onderaan deze pagina.
+                  </p>
+                </div>
+
+                {/* Leeranalyse en certificaat knoppen */}
+                <div className="settings-group">
+                  <h4>Leeranalyse & Certificaat</h4>
+                  <div className="leer-modus-knoppen">
+                    <button 
+                      className="leer-analyse-knop" 
+                      onClick={() => setIsLeeranalyseOpen(true)}
+                    >
+                      📊 Leeranalyse
+                    </button>
+                    <button 
+                      className="certificaat-knop" 
+                      onClick={() => setIsCertificaatModalOpen(true)}
+                    >
+                      🏆 Certificaat genereren
+                    </button>
+                  </div>
+                  <p className="setting-description">
+                    <em>Genereer een professioneel certificaat met je leerprestaties voor je portfolio.</em>
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* --- Tab: Leitner Leermodus --- */}
+            {activeTab === 'leitnerleermodus' && (
+              <>
+                {/* --- Groep: Spelverloop voor Leitner Leermodus --- */}
+                <div className="settings-group">
+                  <h4>Spelverloop</h4>
                   <label>
                     <input
                       type="checkbox"
-                      checked={leermodusType === 'leitner'}
-                      onChange={(e) => handleLeitnerModusToggle(e.target.checked)}
+                      checked={isSpinVergrendelingActiefLeitnerLeermodus}
+                      onChange={() => setIsSpinVergrendelingActiefLeitnerLeermodus(!isSpinVergrendelingActiefLeitnerLeermodus)}
                     />
-                    Leitner Leer Modus gebruiken
+                    Blokkeer spin tot na antwoord
                   </label>
+                  <p className="setting-description">
+                    Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
+                  </p>
+                </div>
+
+                <div className="settings-group">
+                  <h4>Leitner Leermodus</h4>
                   <p className="setting-description">
                     Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
                   </p>
@@ -460,224 +874,31 @@ export const Instellingen = React.memo(({
                       </button>
                     </>
                   )}
-                </>
-              )}
-              
-              {/* Leeranalyse en certificaat knoppen - altijd zichtbaar in single player */}
-              <div className="leer-modus-knoppen">
-                <button 
-                  className="leer-analyse-knop" 
-                  onClick={() => setIsLeeranalyseOpen(true)}
-                >
-                  📊 Leeranalyse
-                </button>
-                <button 
-                  className="certificaat-knop" 
-                  onClick={() => setIsCertificaatModalOpen(true)}
-                >
-                  🏆 Certificaat genereren
-                </button>
-              </div>
-              <p className="setting-description">
-                <em>Genereer een professioneel certificaat met je leerprestaties voor je portfolio.</em>
-              </p>
-              <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
-                <strong>Data beheer:</strong> Je kunt je leeranalyse gegevens verwijderen via de "Data Beheer" sectie onderaan deze pagina.
-              </p>
-            </div>
+                </div>
 
-            {/* --- Groep: Opdrachtenbeheer --- */}
-          <div className="settings-group">
-            <h4>Opdrachtenbeheer</h4>
-            <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-              <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
-              Kies vervolgens of je wilt aanvullen of overschrijven.
-            </p>
-            
-            <div className="opdracht-knoppen-container">
-              <button 
-                onClick={() => {
-                  // Call the downloadTemplate function from the BestandsUploader props
-                  const data = [
-                    { 
-                      Hoofdcategorie: 'Voorbeeld Hoofdcategorie',
-                      Categorie: 'Voorbeeld Categorie', 
-                      Opdracht: 'Voorbeeld Opdracht', 
-                      Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
-                      Tijdslimiet: 60,
-                      "Extra_Punten (max 2)": 0,
-                      OpdrachtType: 'Feitenkennis'
-                    }
-                  ];
-                  const worksheet = XLSX.utils.json_to_sheet(data);
-                  const workbook = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(workbook, worksheet, "Opdrachten");
-                  XLSX.writeFile(workbook, "opdrachten_sjabloon.xlsx");
-                }}
-                className="instellingen-knop download-template-knop"
-              >
-                📥 Download Excel Sjabloon
-              </button>
-              
-              <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-                <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
-                Dit is een snelle manier om veel opdrachten te maken.
-              </p>
-              
-              <button 
-                className="instellingen-knop ai-generator-knop"
-                onClick={() => setIsAiGeneratorOpen(true)}
-              >
-                🚀 Genereer Nieuwe Opdrachten met AI
-              </button>
-            </div>
-            
-            <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-              <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
-              Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
-            </p>
-            
-            {children}
-            
-          </div>
-
-          {/* --- Groep: Bonusopdrachten --- */}
-          {gameMode === 'multi' && (
-            <div className="settings-group">
-              <h4>Bonusopdrachten (alleen voor multiplayer)</h4>
-              <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-                Wanneer een speler drie vraagtekens (❓❓❓) draait, kan er een bonusopdracht gestart worden om extra punten te verdienen. 
-                Als dit is uitgeschakeld, ontvangt de speler willekeurig 1 tot 10 bonuspunten.
-                <br /><br />
-                <strong>Let op:</strong> Bonusopdrachten zijn alleen beschikbaar bij 3 of meer spelers.
-              </p>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isBonusOpdrachtenActief}
-                  onChange={(e) => setIsBonusOpdrachtenActief(e.target.checked)}
-                />
-                Bonusopdrachten gebruiken
-              </label>
-
-              {/* Conditionally render the rest only when active */}
-              {isBonusOpdrachtenActief && (
-                <>
-                  <div style={{ marginTop: '15px' }}>
-                    <p style={{ marginBottom: '10px' }}>Kans op een bonusronde verhogen:</p>
-                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '10px' }}>
-                      Wil je meer fun? Verhoog dan de kans op drie vraagtekens (❓❓❓) in het spel.
-                    </p>
-                    <div className="kansen-container">
-                      <label>
-                        <input
-                          type="radio"
-                          name="bonusKans"
-                          value="standaard"
-                          checked={bonusKans === 'standaard'}
-                          onChange={() => setBonusKans('standaard')}
-                        />
-                        Normaal
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name="bonusKans"
-                          value="verhoogd"
-                          checked={bonusKans === 'verhoogd'}
-                          onChange={() => setBonusKans('verhoogd')}
-                        />
-                        Verhoogd (ca. 10% kans)
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name="bonusKans"
-                          value="fors_verhoogd"
-                          checked={bonusKans === 'fors_verhoogd'}
-                          onChange={() => setBonusKans('fors_verhoogd')}
-                        />
-                        Sterk verhoogd (ca. 25% kans)
-                      </label>
-                    </div>
+                {/* Leeranalyse en certificaat knoppen */}
+                <div className="settings-group">
+                  <h4>Leeranalyse & Certificaat</h4>
+                  <div className="leer-modus-knoppen">
+                    <button 
+                      className="leer-analyse-knop" 
+                      onClick={() => setIsLeeranalyseOpen(true)}
+                    >
+                      📊 Leeranalyse
+                    </button>
+                    <button 
+                      className="certificaat-knop" 
+                      onClick={() => setIsCertificaatModalOpen(true)}
+                    >
+                      🏆 Certificaat genereren
+                    </button>
                   </div>
-
-                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '10px', marginBottom: '5px' }}>
-                    Hier kun je bonusopdrachten toevoegen en verwijderen voor extra variatie in het spel.
+                  <p className="setting-description">
+                    <em>Genereer een professioneel certificaat met je leerprestaties voor je portfolio.</em>
                   </p>
-                  <button className="harmonica-knop" onClick={() => setIsBonusBeheerOpen(!isBonusBeheerOpen)}>
-                    Beheer de bonusopdrachten
-                    <span className={`pijl ${isBonusBeheerOpen ? 'open' : ''}`}>▶</span>
-                  </button>
-                  <div className={`harmonica-content ${isBonusBeheerOpen ? 'open' : ''}`}>
-                    <BonusOpdrachtBeheer 
-                      opdrachten={bonusOpdrachten} 
-                      setOpdrachten={setBonusOpdrachten}
-                      isLokaleOpslagActief={isLokaleBonusOpslagActief}
-                      basisBonusOpdrachten={basisBonusOpdrachten}
-                      onLokaleOpslagChange={setIsLokaleBonusOpslagActief}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* --- Groep: Data Beheer --- */}
-          <div className="settings-group">
-            <h4>Data Beheer</h4>
-            <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-              Hier kun je verschillende soorten lokaal opgeslagen gegevens verwijderen.
-            </p>
-            
-            <div className="data-beheer-knoppen">
-              <button 
-                onClick={() => {
-                  if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
-                    onVerwijderGebruikerOpdrachten();
-                    alert('Alle eigen opdrachten zijn verwijderd.');
-                  }
-                }}
-                className="data-beheer-knop opdrachten-knop"
-              >
-                📝 Verwijder Eigen Opdrachten
-              </button>
-
-              <button 
-                onClick={handleClearHighscoresAndRecords}
-                className="data-beheer-knop single-player-knop"
-              >
-                🎯 Verwijder Highscores & Records (alleen Highscore Modus)
-              </button>
-              
-              <button 
-                onClick={handleClearBonusOpdrachten}
-                className="data-beheer-knop bonus-knop"
-              >
-                🎭 Verwijder Bonusopdrachten (alleen multiplayer)
-              </button>
-              
-              <button 
-                onClick={handleClearLeeranalyseData}
-                className="data-beheer-knop leeranalyse-knop"
-              >
-                📊 Verwijder Leeranalyse & Statistieken (alleen Leer Modus)
-              </button>
-              
-              <button 
-                onClick={handleClearLeitnerData}
-                className="data-beheer-knop leitner-knop"
-              >
-                📚 Verwijder Leitner-systeem Data (alleen Leer Modus)
-              </button>
-              
-              <button 
-                onClick={handleClearAllData}
-                className="data-beheer-knop alles-knop"
-              >
-                🗑️ Verwijder Alle Gegevens
-              </button>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

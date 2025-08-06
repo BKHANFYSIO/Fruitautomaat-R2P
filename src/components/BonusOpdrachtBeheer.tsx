@@ -205,7 +205,7 @@ export const BonusOpdrachtBeheer = ({
   return (
     <div className="bonus-opdracht-beheer">
       <p className="uitleg-tekst">
-        Hieronder zie je de bonusopdrachten. Je kunt ze handmatig toevoegen, via Excel importeren, of allemaal verwijderen. 
+        Voeg bonusopdrachten toe voor extra variatie in het spel. Je kunt ze handmatig toevoegen, via Excel importeren, of allemaal verwijderen. 
         <strong>Tip:</strong> Bewaar je Excel bestand of deel het online met medestudenten voor hergebruik!
         {isLokaleOpslagActief && (
           <span style={{ color: '#4CAF50', fontWeight: 'bold' }}> ✓ Lokale opslag actief</span>
@@ -216,10 +216,19 @@ export const BonusOpdrachtBeheer = ({
       <div className="excel-sectie">
         <h5>Excel Import/Export</h5>
         <div className="excel-knoppen">
-          <button onClick={downloadExcelSjabloon} className="excel-knop sjabloon-knop">
+          <button 
+            onClick={downloadExcelSjabloon} 
+            className="excel-knop sjabloon-knop"
+            title="Download een Excel bestand met de juiste kolommen om bonusopdrachten in te vullen"
+          >
             📥 Download Excel Sjabloon
           </button>
-          <button onClick={exportNaarExcel} className="excel-knop export-knop" disabled={opdrachten.length === 0}>
+          <button 
+            onClick={exportNaarExcel} 
+            className="excel-knop export-knop" 
+            disabled={opdrachten.length === 0}
+            title="Exporteer alle huidige bonusopdrachten naar een Excel bestand"
+          >
             📤 Export naar Excel
           </button>
           <input
@@ -232,6 +241,7 @@ export const BonusOpdrachtBeheer = ({
           <button 
             onClick={() => fileInputRef.current?.click()} 
             className="excel-knop import-knop"
+            title="Importeer bonusopdrachten uit een Excel bestand (voegt toe aan bestaande opdrachten)"
           >
             📁 Import van Excel
           </button>
@@ -244,6 +254,7 @@ export const BonusOpdrachtBeheer = ({
           <button 
             onClick={() => setToonBevestiging(true)} 
             className="bulk-verwijder-knop"
+            title="Verwijder alle bonusopdrachten in één keer"
           >
             🗑️ Verwijder alle opdrachten
           </button>
@@ -251,6 +262,7 @@ export const BonusOpdrachtBeheer = ({
         <button 
           onClick={() => setToonResetBevestiging(true)} 
           className="reset-basis-knop"
+          title="Herstel de originele bonusopdrachten die standaard bij het spel horen"
         >
           🔄 Herstel basis bonusopdrachten
         </button>
@@ -259,6 +271,9 @@ export const BonusOpdrachtBeheer = ({
       {/* Handmatige Toevoeging */}
       <div className="handmatig-sectie">
         <h5>Handmatig Toevoegen</h5>
+        <p className="setting-description" style={{ marginBottom: '10px', fontSize: '0.9em' }}>
+          Voeg snel een nieuwe bonusopdracht toe met bijbehorende punten.
+        </p>
         <form onSubmit={handleToevoegen} className="nieuwe-opdracht-formulier">
           <input
             type="text"
@@ -266,6 +281,7 @@ export const BonusOpdrachtBeheer = ({
             value={nieuweOpdracht}
             onChange={(e) => setNieuweOpdracht(e.target.value)}
             placeholder="Nieuwe bonusopdracht"
+            title="Voer hier je bonusopdracht in"
             required
           />
           <input
@@ -274,28 +290,18 @@ export const BonusOpdrachtBeheer = ({
             value={nieuwePunten}
             onChange={(e) => setNieuwePunten(e.target.value)}
             placeholder="Punten (bijv. 1,2,3)"
+            title="Voer de punten in die je kunt verdienen, gescheiden door komma's"
             required
           />
-          <button type="submit" className="toevoeg-knop">+</button>
+          <button 
+            type="submit" 
+            className="toevoeg-knop"
+            title="Voeg de nieuwe bonusopdracht toe"
+          >
+            +
+          </button>
         </form>
       </div>
-
-      {/* Lijst van Opdrachten */}
-      {opdrachten.length > 0 && (
-        <div className="lijst-sectie">
-          <h5>Huidige Bonusopdrachten ({opdrachten.length})</h5>
-          <ul className="bonus-opdrachten-lijst">
-            {opdrachten.map((opdracht, index) => (
-              <li key={index} className="bonus-opdracht-item">
-                <span className="opdracht-tekst">"{opdracht.opdracht}" ({opdracht.punten.join(', ')} pnt)</span>
-                <button onClick={() => handleVerwijderen(index)} className="verwijder-knop">
-                  &times;
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Bevestigingsdialoog voor verwijderen */}
       {toonBevestiging && (

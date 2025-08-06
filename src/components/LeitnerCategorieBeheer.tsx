@@ -19,8 +19,8 @@ const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
     const bronnen = new Set(relevanteOpdrachten.map(op => op.bron));
     
     let iconen = '';
-    if (bronnen.has('systeem')) iconen += '🏛️';
-    if (bronnen.has('gebruiker')) iconen += '👤';
+    if (bronnen.has('systeem')) iconen += '📖';
+    if (bronnen.has('gebruiker')) iconen += '👨‍💼';
     
     return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
   };
@@ -1059,14 +1059,14 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                       title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
                       onClick={() => handleBronToggle('systeem')}
                     >
-                      🏛️
+                      📖
                     </span>
                     <span
                       className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
                       title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
                       onClick={() => handleBronToggle('gebruiker')}
                     >
-                      👤
+                      👨‍💼
                     </span>
                   </div>
                 </div>
