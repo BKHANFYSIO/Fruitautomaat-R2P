@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { Opdracht } from '../data/types';
 import { opdrachtTypeIconen } from '../data/constants';
 import './FilterDashboard.css';
@@ -14,6 +14,16 @@ interface FilterDashboardProps {
 }
 
 export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten }) => {
+  // State voor accordeon functionaliteit
+  const [isExpanded, setIsExpanded] = useState(() => {
+    const saved = localStorage.getItem('filterDashboardExpanded');
+    return saved ? JSON.parse(saved) : true; // Standaard open
+  });
+
+  // Sla de expanded state op in localStorage
+  useEffect(() => {
+    localStorage.setItem('filterDashboardExpanded', JSON.stringify(isExpanded));
+  }, [isExpanded]);
 
   const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron } = useMemo(() => {
     const opdrachtenPerType: { [key: string]: number } = {};
@@ -57,55 +67,76 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
     setFilters({ ...filters, opdrachtTypes: nieuweTypes });
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <div className="filter-dashboard">
       <div className="filter-section">
         <div className="filter-header">
-          <h5 className="filter-titel">Actieve Filters</h5>
+          <button 
+            className="filter-toggle-button"
+            onClick={toggleExpanded}
+            aria-expanded={isExpanded}
+          >
+            <span className="filter-titel">Filters Snel Aanpassen</span>
+            <span className={`toggle-arrow ${isExpanded ? 'expanded' : ''}`}>
+              ▼
+            </span>
+          </button>
         </div>
         
-        {/* Bron filters */}
-        <div className="filter-group">
-          <span className="filter-label">Bron:</span>
-          <div className="filter-icon-group">
-            <span
-              className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
-              title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
-              onClick={() => handleBronToggle('systeem')}
-            >
-              📖
-            </span>
-            <span
-              className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
-              title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
-              onClick={() => handleBronToggle('gebruiker')}
-            >
-              👨‍💼
-            </span>
-          </div>
-        </div>
-
-        {/* Type filters */}
-        <div className="filter-group">
-          <span className="filter-label">Type:</span>
-          <div className="filter-icon-group">
-            {alleOpdrachtTypes.map(type => {
-              const count = opdrachtenPerType[type] || 0;
-              const titleText = `${type}: ${count} opdr.`;
-
-              return (
+        {isExpanded && (
+          <div className="filter-content">
+            {/* Bron filters */}
+            <div className="filter-group">
+              <div className="filter-label-container">
+                <span className="filter-label">Bron:</span>
+              </div>
+              <div className="filter-icon-group">
                 <span
-                  key={type}
-                  className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
-                  title={titleText}
-                  onClick={() => handleTypeToggle(type)}
+                  className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                  title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
+                  onClick={() => handleBronToggle('systeem')}
                 >
-                  {opdrachtTypeIconen[type] || '❓'}
+                  📖
                 </span>
-              );
-            })}
+                <span
+                  className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                  title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
+                  onClick={() => handleBronToggle('gebruiker')}
+                >
+                  👨‍💼
+                </span>
+              </div>
+            </div>
+
+            {/* Type filters */}
+            <div className="filter-group">
+              <div className="filter-label-container">
+                <span className="filter-label">Type:</span>
+              </div>
+              <div className="filter-icon-group">
+                {alleOpdrachtTypes.map(type => {
+                  const count = opdrachtenPerType[type] || 0;
+                  const titleText = `${type}: ${count} opdr.`;
+
+                  return (
+                    <span
+                      key={type}
+                      className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                      title={titleText}
+                      onClick={() => handleTypeToggle(type)}
+                    >
+                      {opdrachtTypeIconen[type] || '❓'}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -101,19 +101,19 @@
   background-color: #2d3748;
   color: #e0e0e0;
   font-weight: 600;
-  padding: 16px 12px;
+  padding: 12px 8px;
   text-align: left;
   border-bottom: 2px solid #444;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .opdrachten-table td {
-  padding: 12px;
+  padding: 8px 6px;
   border-bottom: 1px solid #333;
   color: #e0e0e0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   vertical-align: middle;
 }
 
@@ -126,43 +126,83 @@
 }
 
 /* Kolom specifieke styling */
+.selectie-kolom {
+  text-align: center;
+  min-width: 30px;
+  width: 30px;
+}
+
+.selectie-kolom input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #61dafb !important;
+  background-color: #2a2a2a !important;
+  border: 1px solid #555 !important;
+  border-radius: 2px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+}
+
+.selectie-kolom input[type="checkbox"]:checked {
+  background-color: #61dafb !important;
+  border-color: #61dafb !important;
+}
+
+.selectie-kolom input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -2px;
+  left: 1px;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
 .opdracht-kolom {
-  min-width: 200px;
-  max-width: 300px;
+  min-width: 180px;
+  max-width: 250px;
 }
 
 .antwoord-kolom {
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .bron-kolom {
   text-align: center;
-  min-width: 80px;
+  min-width: 60px;
+}
+
+.type-kolom {
+  text-align: center;
+  min-width: 60px;
 }
 
 .box-kolom {
   text-align: center;
-  min-width: 80px;
+  min-width: 60px;
 }
 
 .status-kolom {
   text-align: center;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 .herhaling-kolom {
   text-align: center;
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .pogingen-kolom {
   text-align: center;
-  min-width: 80px;
+  min-width: 60px;
 }
 
 .succes-kolom {
   text-align: center;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 /* Antwoord toggle knop styling */
@@ -243,6 +283,12 @@
 
 /* Bron iconen */
 .bron-icon {
+  font-size: 1.2rem;
+  margin: 0 2px;
+}
+
+/* Type iconen */
+.type-icon {
   font-size: 1.2rem;
   margin: 0 2px;
 }

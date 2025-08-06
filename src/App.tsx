@@ -582,35 +582,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     }
   }, [gameMode, geselecteerdeCategorieen]);
 
-  // Effect om Leitner statistieken te berekenen
-  useEffect(() => {
-    const updateStats = () => {
-      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief && opdrachten.length > 0) {
-        const leerDataManager = getLeerDataManager();
-        
-        // Haal altijd het aantal nieuwe opdrachten op
-        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachtenVoorSelectie, geselecteerdeLeitnerCategorieen);
-        setAantalNieuweLeitnerOpdrachten(nieuweOpdrachtenCount);
 
-        // Bepaal of de Box 0 override actief moet zijn
-        const reguliereStats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: false });
-        const moetOverrideActiefZijn = negeerBox0Wachttijd && nieuweOpdrachtenCount === 0 && reguliereStats.reguliereHerhalingenBeschikbaar === 0;
-        setIsBox0OverrideActief(moetOverrideActiefZijn);
-        
-        // Haal de uiteindelijke statistieken op, met de override-logica indien nodig
-        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: moetOverrideActiefZijn });
-        setLeitnerStats(stats);
-      } else {
-        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
-        setAantalNieuweLeitnerOpdrachten(0);
-        setIsBox0OverrideActief(false);
-      }
-    };
-
-    updateStats();
-    const intervalId = setInterval(updateStats, 5000); 
-    return () => clearInterval(intervalId);
-  }, [leermodusType, isSerieuzeLeerModusActief, geselecteerdeLeitnerCategorieen, opdrachten, negeerBox0Wachttijd]);
 
   // Effect voor leerdata sessie tracking - alleen cleanup bij uitschakelen
   useEffect(() => {
@@ -675,6 +647,53 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     });
     return [...uniekeNamen];
   }, [opdrachtenVoorSelectie]);
+
+  // Filter geselecteerde categorieën op basis van beschikbare categorieën na filtering
+  const gefilterdeGeselecteerdeLeitnerCategorieen = useMemo(() => {
+    return geselecteerdeLeitnerCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
+  }, [geselecteerdeLeitnerCategorieen, alleUniekeCategorieen]);
+
+  const gefilterdeGeselecteerdeCategorieen = useMemo(() => {
+    return geselecteerdeCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
+  }, [geselecteerdeCategorieen, alleUniekeCategorieen]);
+
+  const gefilterdeGeselecteerdeHighscoreCategorieen = useMemo(() => {
+    return geselecteerdeHighscoreCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
+  }, [geselecteerdeHighscoreCategorieen, alleUniekeCategorieen]);
+
+  const gefilterdeGeselecteerdeMultiplayerCategorieen = useMemo(() => {
+    return geselecteerdeMultiplayerCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
+  }, [geselecteerdeMultiplayerCategorieen, alleUniekeCategorieen]);
+
+  // Effect om Leitner statistieken te berekenen
+  useEffect(() => {
+    const updateStats = () => {
+      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief && opdrachten.length > 0) {
+        const leerDataManager = getLeerDataManager();
+        
+        // Haal altijd het aantal nieuwe opdrachten op
+        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachtenVoorSelectie, gefilterdeGeselecteerdeLeitnerCategorieen);
+        setAantalNieuweLeitnerOpdrachten(nieuweOpdrachtenCount);
+
+        // Bepaal of de Box 0 override actief moet zijn
+        const reguliereStats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(gefilterdeGeselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: false });
+        const moetOverrideActiefZijn = negeerBox0Wachttijd && nieuweOpdrachtenCount === 0 && reguliereStats.reguliereHerhalingenBeschikbaar === 0;
+        setIsBox0OverrideActief(moetOverrideActiefZijn);
+        
+        // Haal de uiteindelijke statistieken op, met de override-logica indien nodig
+        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(gefilterdeGeselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: moetOverrideActiefZijn });
+        setLeitnerStats(stats);
+      } else {
+        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
+        setAantalNieuweLeitnerOpdrachten(0);
+        setIsBox0OverrideActief(false);
+      }
+    };
+
+    updateStats();
+    const intervalId = setInterval(updateStats, 5000); 
+    return () => clearInterval(intervalId);
+  }, [leermodusType, isSerieuzeLeerModusActief, gefilterdeGeselecteerdeLeitnerCategorieen, opdrachten, negeerBox0Wachttijd, filters]);
 
   const berekenAantalOpdrachten = (geselecteerde: string[]) => {
     return opdrachtenVoorSelectie.filter(op => {
@@ -979,7 +998,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     let boxNummer: number | undefined = undefined;
 
     if (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner') {
-      const result = selectLeitnerOpdracht(gefilterdeOpdrachten, geselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
+      const result = selectLeitnerOpdracht(gefilterdeOpdrachten, gefilterdeGeselecteerdeLeitnerCategorieen, isSerieuzeLeerModusActief, gameMode, limietWaarschuwingGenegeerd);
       
       if (result.limietBereikt && !limietWaarschuwingGenegeerd) {
         setIsLimietModalOpen(true);
@@ -1765,7 +1784,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                   disabled={isSpelGestart}
                 >
                   <span className="knop-titel">Categorieën Aanpassen</span>
-                  <span className="knop-details">{geselecteerdeHighscoreCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenHighscore} Opdr.</span>
+                                        <span className="knop-details">{gefilterdeGeselecteerdeHighscoreCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenHighscore} Opdr.</span>
                   {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
                 </button>
                 <div className="highscore-info-text">
@@ -1788,7 +1807,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                   disabled={isSpelGestart}
                 >
                   <span className="knop-titel">Categorieën Aanpassen</span>
-                  <span className="knop-details">{geselecteerdeMultiplayerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenMultiplayer} Opdr.</span>
+                                        <span className="knop-details">{gefilterdeGeselecteerdeMultiplayerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenMultiplayer} Opdr.</span>
                   {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
                 </button>
                 <div className="multiplayer-info-text">
@@ -1812,7 +1831,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                       className="categorie-beheer-knop"
                     >
                       <span className="knop-titel">Categorieën Aanpassen</span>
-                      <span className="knop-details">{geselecteerdeLeitnerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenLeitner} Opdr.</span>
+                      <span className="knop-details">{gefilterdeGeselecteerdeLeitnerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenLeitner} Opdr.</span>
                     </button>
                     <div className="leitner-stats-info">
                       <p>Nieuwe opdrachten: <strong>{aantalNieuweLeitnerOpdrachten}</strong></p>
@@ -1840,7 +1859,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                       className="categorie-beheer-knop"
                     >
                       <span className="knop-titel">Categorieën Aanpassen</span>
-                      <span className="knop-details">{geselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.</span>
+                      <span className="knop-details">{gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.</span>
                     </button>
                     <div className="vrije-leermodus-info-text">
                       <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>

@@ -594,8 +594,6 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     }
   }), []);
 
-  if (!isOpen) return null;
-
   const showInfoModal = useCallback((title: string, content: string) => {
     setInfoModal({ isOpen: true, title, content });
   }, []);
@@ -687,26 +685,77 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
       const sessiesSheet = XLSX.utils.json_to_sheet(sessiesData);
       XLSX.utils.book_append_sheet(workbook, sessiesSheet, "Sessies");
 
-      // 5. Achievements sheet
-      const leerDataManager = getLeerDataManager();
-      const achievements = leerDataManager.loadAchievements();
-      const achievementsData = achievements.map((achievement: any) => ({
-        'Achievement': achievement.naam,
-        'Beschrijving': achievement.beschrijving,
-        'Icon': achievement.icon,
-        'Categorie': achievement.categorie,
-        'Behaald Op': formatDatum(achievement.behaaldOp)
-      }));
-      const achievementsSheet = XLSX.utils.json_to_sheet(achievementsData);
-      XLSX.utils.book_append_sheet(workbook, achievementsSheet, "Achievements");
+      // 5. Leitner sheet (indien beschikbaar)
+      if (leitnerData && leitnerData.isLeitnerActief) {
+        const leitnerData = [
+          {
+            'Totaal Opdrachten': leitnerData.boxes.reduce((sum, box) => sum + box.opdrachten.length, 0),
+            'Box 0': leitnerData.boxes.find(b => b.boxId === 0)?.opdrachten.length || 0,
+            'Box 1': leitnerData.boxes.find(b => b.boxId === 1)?.opdrachten.length || 0,
+            'Box 2': leitnerData.boxes.find(b => b.boxId === 2)?.opdrachten.length || 0,
+            'Box 3': leitnerData.boxes.find(b => b.boxId === 3)?.opdrachten.length || 0,
+            'Box 4': leitnerData.boxes.find(b => b.boxId === 4)?.opdrachten.length || 0,
+            'Box 5': leitnerData.boxes.find(b => b.boxId === 5)?.opdrachten.length || 0,
+            'Box 6': leitnerData.boxes.find(b => b.boxId === 6)?.opdrachten.length || 0,
+            'Box 7': leitnerData.boxes.find(b => b.boxId === 7)?.opdrachten.length || 0,
+            'Export Datum': new Date().toISOString().split('T')[0]
+          }
+        ];
+        const leitnerSheet = XLSX.utils.json_to_sheet(leitnerData);
+        XLSX.utils.book_append_sheet(workbook, leitnerSheet, "Leitner");
+      }
 
-      // Download het Excel bestand
+      // Download het bestand
       XLSX.writeFile(workbook, `leeranalyse_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }).catch(error => {
-      console.error('Fout bij Excel export:', error);
-      alert('Fout bij het exporteren naar Excel. Probeer het opnieuw.');
     });
-  }, [leerData, formatDatum]);
+  }, [leerData, leitnerData, formatDatum]);
+
+  if (!isOpen) return null;
+
+  // Toon melding als er geen data is
+  if (!leerData || Object.keys(leerData.opdrachten).length === 0) {
+    return (
+      <div className="leeranalyse-overlay" onClick={onClose}>
+        <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="leeranalyse-header">
+            <h2>📊 Leeranalyse</h2>
+            <button 
+              className="modal-close"
+              aria-label="Sluiten"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div className="leeranalyse-body">
+            <div className="geen-data-melding">
+              <h3>📝 Nog geen leerdata beschikbaar</h3>
+              <p>
+                Er is nog geen leerdata beschikbaar omdat je nog geen opdrachten hebt voltooid 
+                in de vrije leermodus of Leitner leermodus.
+              </p>
+              <p>
+                <strong>Om leerdata te verzamelen:</strong>
+              </p>
+              <ul>
+                <li>✅ Speel opdrachten in de <strong>vrije leermodus</strong></li>
+                <li>✅ Gebruik de <strong>Leitner leermodus</strong> voor gestructureerd leren</li>
+                <li>✅ Voltooi opdrachten om je voortgang bij te houden</li>
+              </ul>
+              <p>
+                Zodra je je eerste opdracht hebt voltooid, wordt hier je leeranalyse getoond 
+                met statistieken, grafieken en inzichten over je leervoortgang.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
 

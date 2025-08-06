@@ -587,8 +587,8 @@ export const CategorieSelectieModal = ({
       {setFilters && (
         <div className="filter-sectie">
           <div className="filter-header">
-            <h4>🔍 Filters</h4>
-            <span className="filter-info">Filters synchroniseren met hoofdmenu</span>
+            <h4 className="filter-titel">🔍 Filters Aanpassen</h4>
+            <span className="filter-info">Selecteer op bron en/of type. Combinaties mogelijk. Selecties worden bewaard.</span>
           </div>
           <div className="filter-groepen">
             <div className="filter-groep">

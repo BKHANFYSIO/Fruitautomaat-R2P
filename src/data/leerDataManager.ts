@@ -101,94 +101,103 @@ const ACHIEVEMENTS: Omit<Achievement, 'behaaldOp'>[] = [
     categorie: 'progressie'
   },
 
-  // --- Kwaliteit Categorie (Prestaties) ---
+  // --- Streak Categorie (Opeenvolgende dagen) ---
   {
-    id: 'goed',
-    naam: 'Goed',
-    beschrijving: 'Behaalde een gemiddelde score van 3.5+',
-    icon: '👍',
-    categorie: 'kwaliteit'
+    id: 'streak_7',
+    naam: 'Week Warrior',
+    beschrijving: '7 dagen achter elkaar geleerd',
+    icon: '🔥',
+    categorie: 'streak'
   },
   {
-    id: 'zeer_goed',
-    naam: 'Zeer Goed',
-    beschrijving: 'Behaalde een gemiddelde score van 4.0+',
-    icon: '⭐',
-    categorie: 'kwaliteit'
-  },
-  {
-    id: 'excellent',
-    naam: 'Excellent',
-    beschrijving: 'Behaalde een gemiddelde score van 4.5+',
-    icon: '🌟',
-    categorie: 'kwaliteit'
-  },
-  {
-    id: 'perfect',
-    naam: 'Perfect',
-    beschrijving: 'Behaalde een gemiddelde score van 4.8+',
-    icon: '👑',
-    categorie: 'kwaliteit'
-  },
-
-  // --- Consistentie Categorie (Streaks) ---
-  {
-    id: 'dagelijkse_student',
-    naam: 'Dagelijkse Student',
-    beschrijving: 'Studieerde 3 dagen achter elkaar',
-    icon: '📅',
-    categorie: 'consistentie'
-  },
-  {
-    id: 'trouwe_leerling',
+    id: 'streak_14',
     naam: 'Trouwe Leerling',
-    beschrijving: 'Studieerde 7 dagen achter elkaar',
-    icon: '🤝',
-    categorie: 'consistentie'
+    beschrijving: '14 dagen achter elkaar geleerd',
+    icon: '🔥🔥',
+    categorie: 'streak'
   },
   {
-    id: 'de_onverstoorbare',
-    naam: 'De Onverstoorbare',
-    beschrijving: 'Studieerde 14 dagen achter elkaar',
-    icon: '🥇',
-    categorie: 'consistentie'
+    id: 'streak_30',
+    naam: 'Maand Meester',
+    beschrijving: '30 dagen achter elkaar geleerd',
+    icon: '🔥🔥🔥',
+    categorie: 'streak'
   },
   {
-    id: 'de_legende',
-    naam: 'De Legende',
-    beschrijving: 'Studieerde 30 dagen achter elkaar',
+    id: 'streak_100',
+    naam: 'Honderd Dagen Held',
+    beschrijving: '100 dagen achter elkaar geleerd',
     icon: '👑',
-    categorie: 'consistentie'
+    categorie: 'streak'
   },
 
-  // --- Exploratie Categorie (Variatie) ---
+  // --- Categorie Mastery Categorie ---
   {
-    id: 'verkenner',
-    naam: 'Verkenner',
-    beschrijving: 'Probeerde 3 verschillende categorieën',
-    icon: '🔍',
-    categorie: 'exploratie'
+    id: 'categorie_10',
+    naam: 'Categorie Verkenner',
+    beschrijving: '10 opdrachten in één categorie voltooid',
+    icon: '📚',
+    categorie: 'categorie_mastery'
   },
   {
-    id: 'ontdekker',
-    naam: 'Ontdekker',
-    beschrijving: 'Probeerde 5 verschillende categorieën',
-    icon: '🗺️',
-    categorie: 'exploratie'
+    id: 'categorie_25',
+    naam: 'Categorie Kenner',
+    beschrijving: '25 opdrachten in één categorie voltooid',
+    icon: '📚📚',
+    categorie: 'categorie_mastery'
   },
   {
-    id: 'allrounder',
-    naam: 'Allrounder',
-    beschrijving: 'Probeerde 7 verschillende categorieën',
-    icon: '🎨',
-    categorie: 'exploratie'
+    id: 'categorie_50',
+    naam: 'Categorie Expert',
+    beschrijving: '50 opdrachten in één categorie voltooid',
+    icon: '📚📚📚',
+    categorie: 'categorie_mastery'
   },
   {
-    id: 'specialist',
-    naam: 'Specialist',
-    beschrijving: 'Probeerde alle beschikbare categorieën',
-    icon: '🎯',
-    categorie: 'exploratie'
+    id: 'categorie_complete',
+    naam: 'Categorie Meester',
+    beschrijving: 'Alle opdrachten in één categorie voltooid',
+    icon: '👑',
+    categorie: 'categorie_mastery'
+  },
+
+  // --- Leertijd Categorie ---
+  {
+    id: 'tijd_60',
+    naam: 'Uur Leerling',
+    beschrijving: '60 minuten totale leertijd',
+    icon: '⏰',
+    categorie: 'leertijd'
+  },
+  {
+    id: 'tijd_300',
+    naam: 'Uren Maker',
+    beschrijving: '5 uur totale leertijd',
+    icon: '⏰⏰',
+    categorie: 'leertijd'
+  },
+  {
+    id: 'tijd_1000',
+    naam: 'Tijd Meester',
+    beschrijving: '1000 minuten totale leertijd',
+    icon: '⏰⏰⏰',
+    categorie: 'leertijd'
+  },
+
+  // --- Dagelijkse Streak Categorie ---
+  {
+    id: 'dagelijkse_streak_7',
+    naam: 'Week Warrior',
+    beschrijving: '7 dagen achter elkaar geleerd',
+    icon: '📅',
+    categorie: 'dagelijkse_streak'
+  },
+  {
+    id: 'dagelijkse_streak_30',
+    naam: 'Maand Meester',
+    beschrijving: '30 dagen achter elkaar geleerd',
+    icon: '📅📅',
+    categorie: 'dagelijkse_streak'
   },
 
   // --- Speciale Categorie (Unieke prestaties) ---
@@ -209,7 +218,7 @@ const ACHIEVEMENTS: Omit<Achievement, 'behaaldOp'>[] = [
   {
     id: 'diepe_denker',
     naam: 'Diepe Denker',
-    beschrijving: 'Behaalde gemiddelde 4+ met moeilijke opdrachten',
+    beschrijving: 'Behaalde gemiddelde 4+ over laatste 30 opdrachten',
     icon: '🧠',
     categorie: 'speciaal'
   },
@@ -1414,6 +1423,7 @@ class LeerDataManager {
       let behaald = false;
 
       switch (achievementDef.id) {
+        // Onboarding achievements
         case 'eerste_opdracht':
           behaald = leerData.statistieken.totaalOpdrachten >= 1;
           break;
@@ -1426,6 +1436,8 @@ class LeerDataManager {
         case 'de_starter':
           behaald = leerData.statistieken.totaalOpdrachten >= 10;
           break;
+
+        // Progressie achievements
         case 'leergierig':
           behaald = leerData.statistieken.totaalOpdrachten >= 25;
           break;
@@ -1438,81 +1450,136 @@ class LeerDataManager {
         case 'master':
           behaald = leerData.statistieken.totaalOpdrachten >= 250;
           break;
-        case 'goed':
-          behaald = leerData.statistieken.gemiddeldeScore >= 3.5;
-          break;
-        case 'zeer_goed':
-          behaald = leerData.statistieken.gemiddeldeScore >= 4.0;
-          break;
-        case 'excellent':
-          behaald = leerData.statistieken.gemiddeldeScore >= 4.5;
-          break;
-        case 'perfect':
-          behaald = leerData.statistieken.gemiddeldeScore >= 4.8;
-          break;
-        case 'dagelijkse_student':
-          behaald = leerData.statistieken.totaalSessies >= 3; // Aanname: 3 dagen consistentie
-          break;
-        case 'trouwe_leerling':
-          behaald = leerData.statistieken.totaalSessies >= 7; // Aanname: 7 dagen consistentie
-          break;
-        case 'de_onverstoorbare':
-          behaald = leerData.statistieken.totaalSessies >= 14; // Aanname: 14 dagen consistentie
-          break;
-        case 'de_legende':
-          behaald = leerData.statistieken.totaalSessies >= 30; // Aanname: 30 dagen consistentie
-          break;
-        case 'verkenner': {
-          const uniekeCategorieen = new Set(Object.values(leerData.opdrachten).map(op => op.categorie));
-          behaald = uniekeCategorieen.size >= 3; // Aanname: 3 verschillende categorieën
+
+        // Streak achievements (opeenvolgende dagen)
+        case 'streak_7': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 7;
           break;
         }
-        case 'ontdekker': {
-          const uniekeCategorieen = new Set(Object.values(leerData.opdrachten).map(op => op.categorie));
-          behaald = uniekeCategorieen.size >= 5; // Aanname: 5 verschillende categorieën
+        case 'streak_14': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 14;
           break;
         }
-        case 'allrounder': {
-          const uniekeCategorieen = new Set(Object.values(leerData.opdrachten).map(op => op.categorie));
-          behaald = uniekeCategorieen.size >= 7; // Aanname: 7 verschillende categorieën
+        case 'streak_30': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 30;
           break;
         }
-        case 'specialist': {
-          const uniekeCategorieen = new Set(Object.values(leerData.opdrachten).map(op => op.categorie));
-          behaald = uniekeCategorieen.size >= Object.keys(leerData.opdrachten).length; // Aanname: alle categorieën
+        case 'streak_100': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 100;
           break;
         }
+
+        // Categorie mastery achievements
+        case 'categorie_10': {
+          const categorieCounts = this.getCategorieOpdrachtCounts(leerData);
+          behaald = Object.values(categorieCounts).some(count => count >= 10);
+          break;
+        }
+        case 'categorie_25': {
+          const categorieCounts = this.getCategorieOpdrachtCounts(leerData);
+          behaald = Object.values(categorieCounts).some(count => count >= 25);
+          break;
+        }
+        case 'categorie_50': {
+          const categorieCounts = this.getCategorieOpdrachtCounts(leerData);
+          behaald = Object.values(categorieCounts).some(count => count >= 50);
+          break;
+        }
+        case 'categorie_complete': {
+          const categorieCounts = this.getCategorieOpdrachtCounts(leerData);
+          const totaleCategorieen = this.getAlleUniekeCategorieen();
+          behaald = Object.entries(categorieCounts).some(([categorie, count]) => {
+            const totaleOpdrachtenInCategorie = this.getTotaalOpdrachtenInCategorie(categorie);
+            return count >= totaleOpdrachtenInCategorie;
+          });
+          break;
+        }
+
+        // Leertijd achievements
+        case 'tijd_60':
+          behaald = leerData.statistieken.totaalSpeeltijd >= 60;
+          break;
+        case 'tijd_300':
+          behaald = leerData.statistieken.totaalSpeeltijd >= 300;
+          break;
+        case 'tijd_1000':
+          behaald = leerData.statistieken.totaalSpeeltijd >= 1000;
+          break;
+
+        // Dagelijkse streak achievements
+        case 'dagelijkse_streak_7': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 7;
+          break;
+        }
+        case 'dagelijkse_streak_30': {
+          const streakData = this.getStreakData();
+          behaald = streakData.huidigeStreak >= 30;
+          break;
+        }
+
+        // Speciale achievements
         case 'perfecte_sessie': {
-          // Aanname: perfecte sessie is een unieke prestatie, niet op basis van totaal opdrachten
-          // Hier moet een logica toegevoegd worden om te controleren of alle scores 5 zijn.
-          // Voor nu, als er een perfecte sessie is, is de achievement behaald.
-          // Een meer accurate check zou de sessie-data moeten doorlopen.
-          // Voor nu, als er een sessie is met gemiddelde 5, is het voldoende.
-          // Dit is een aanname en kan aangepast worden.
           behaald = Object.values(leerData.sessies).some((s: SessieData) => s.gemiddeldeScore === 5);
           break;
         }
         case 'speed_runner': {
-          // Aanname: speed_runner is een unieke prestatie, niet op basis van totaal opdrachten
-          // Hier moet een logica toegevoegd worden om te controleren of 5 opdrachten in 10 minuten zijn.
-          // Voor nu, als er een sessie is met 5 opdrachten en duur < 10 min, is het voldoende.
-          // Dit is een aanname en kan aangepast worden.
           behaald = Object.values(leerData.sessies).some((s: SessieData) => s.opdrachtenGedaan === 5 && (s.duur || 0) < 10);
           break;
         }
-        case 'diepe_denker':
-          // Aanname: diepe_denker is een unieke prestatie, niet op basis van totaal opdrachten
-          // Hier moet een logica toegevoegd worden om te controleren of er opdrachten zijn met gemiddelde 4+.
-          // Voor nu, als er een opdracht is met gemiddelde 4+, is het voldoende.
-          // Dit is een aanname en kan aangepast worden.
-          behaald = Object.values(leerData.opdrachten).some(op => op.gemiddeldeScore >= 4);
+        case 'diepe_denker': {
+          // Verzamel alle scores met datum informatie
+          const scoresMetDatum: { score: number; datum: string }[] = [];
+          
+          Object.values(leerData.opdrachten).forEach(opdracht => {
+            if (opdracht.scoreGeschiedenis) {
+              scoresMetDatum.push(...opdracht.scoreGeschiedenis);
+            }
+          });
+          
+          // Sorteer op datum (nieuwste eerst) en neem laatste 30
+          const laatste30Scores = scoresMetDatum
+            .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+            .slice(0, 30);
+          
+          // Bereken gemiddelde van laatste 30 scores
+          if (laatste30Scores.length >= 30) {
+            const gemiddelde = laatste30Scores.reduce((sum, item) => sum + item.score, 0) / laatste30Scores.length;
+            behaald = gemiddelde >= 4;
+          }
           break;
-        case 'showstopper':
-          // Aanname: showstopper is een unieke prestatie, niet op basis van totaal opdrachten
-          // Hier moet een logica toegevoegd worden om te controleren of er 10 perfecte scores op rij zijn.
-          // Dit is een aanname en kan aangepast worden.
-          behaald = false; // Geen eenvoudige manier om 10 perfecte scores op rij te controleren
+        }
+        case 'showstopper': {
+          // Check voor 10 perfecte scores op rij
+          const perfecteScores = Object.values(leerData.opdrachten)
+            .flatMap(op => op.scoreGeschiedenis || [])
+            .filter(score => score.score === 5)
+            .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime());
+          
+          // Zoek naar 10 opeenvolgende perfecte scores
+          let opeenvolgendePerfecteScores = 0;
+          for (let i = 0; i < perfecteScores.length - 1; i++) {
+            const huidigeDatum = new Date(perfecteScores[i].datum);
+            const volgendeDatum = new Date(perfecteScores[i + 1].datum);
+            const dagenVerschil = Math.abs(huidigeDatum.getTime() - volgendeDatum.getTime()) / (1000 * 60 * 60 * 24);
+            
+            if (dagenVerschil <= 1) {
+              opeenvolgendePerfecteScores++;
+            } else {
+              opeenvolgendePerfecteScores = 0;
+            }
+            
+            if (opeenvolgendePerfecteScores >= 9) { // 10 scores = 9 opeenvolgende
+              behaald = true;
+              break;
+            }
+          }
           break;
+        }
       }
 
       if (behaald) {
@@ -1536,6 +1603,33 @@ class LeerDataManager {
 
   private saveAchievements(achievements: Achievement[]): void {
     this.saveToLocalStorage(LEER_DATA_KEYS.ACHIEVEMENTS, achievements);
+  }
+
+  // Helper functies voor achievement checks
+  private getCategorieOpdrachtCounts(leerData: LeerData): Record<string, number> {
+    const counts: Record<string, number> = {};
+    
+    Object.values(leerData.opdrachten).forEach(opdracht => {
+      if (opdracht.aantalKeerGedaan > 0) {
+        counts[opdracht.categorie] = (counts[opdracht.categorie] || 0) + opdracht.aantalKeerGedaan;
+      }
+    });
+    
+    return counts;
+  }
+
+  private getAlleUniekeCategorieen(): string[] {
+    const categorieen = new Set<string>();
+    this._alleOpdrachten.forEach(opdracht => {
+      if (opdracht.Categorie) {
+        categorieen.add(opdracht.Categorie);
+      }
+    });
+    return Array.from(categorieen);
+  }
+
+  private getTotaalOpdrachtenInCategorie(categorie: string): number {
+    return this._alleOpdrachten.filter(opdracht => opdracht.Categorie === categorie).length;
   }
 
   getAchievementDefinitions(): { algemeen: Omit<Achievement, 'behaaldOp'>[], leitner: Omit<LeitnerAchievement, 'behaaldOp'>[] } {

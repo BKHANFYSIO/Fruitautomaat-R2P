@@ -1275,6 +1275,41 @@
   border-color: #ffd700;
 }
 
+/* Geen data melding */
+.geen-data-melding {
+  text-align: center;
+  padding: 40px 20px;
+  color: #e0e0e0;
+}
+
+.geen-data-melding h3 {
+  color: #61dafb;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+
+.geen-data-melding p {
+  margin-bottom: 15px;
+  line-height: 1.6;
+  color: #b0b0b0;
+}
+
+.geen-data-melding ul {
+  text-align: left;
+  margin: 20px 0;
+  padding-left: 20px;
+}
+
+.geen-data-melding li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #b0b0b0;
+}
+
+.geen-data-melding strong {
+  color: #61dafb;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .leeranalyse-modal {

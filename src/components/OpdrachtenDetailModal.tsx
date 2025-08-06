@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import './OpdrachtenDetailModal.css';
+import { opdrachtTypeIconen } from '../data/constants';
 
 type OpdrachtDetailKeys = keyof OpdrachtDetail;
 
@@ -7,6 +8,7 @@ interface OpdrachtDetail {
   opdracht: string;
   antwoord: string;
   bron: 'systeem' | 'gebruiker';
+  opdrachtType?: string;
   box?: number;
   status?: 'actief' | 'gepauzeerd';
   volgendeHerhaling?: string;
@@ -19,6 +21,8 @@ interface OpdrachtenDetailModalProps {
   onClose: () => void;
   categorieNaam: string;
   opdrachten: OpdrachtDetail[];
+  geselecteerdeOpdrachten?: string[];
+  onOpdrachtSelectie?: (opdrachtTekst: string, isGeselecteerd: boolean) => void;
 }
 
 export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
@@ -26,6 +30,8 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
   onClose,
   categorieNaam,
   opdrachten,
+  geselecteerdeOpdrachten = [],
+  onOpdrachtSelectie,
 }) => {
   const [zichtbareAntwoorden, setZichtbareAntwoorden] = useState<string[]>([]);
   const [zoekterm, setZoekterm] = useState('');
@@ -70,6 +76,13 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
     setSortConfig({ key, direction });
   };
 
+  const getSortIndicator = (key: OpdrachtDetailKeys) => {
+    if (sortConfig && sortConfig.key === key) {
+      return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    }
+    return ' ↕';
+  };
+
   const toggleAntwoord = (opdrachtTekst: string) => {
     setZichtbareAntwoorden(prev => 
       prev.includes(opdrachtTekst) ? prev.filter(o => o !== opdrachtTekst) : [...prev, opdrachtTekst]
@@ -100,19 +113,32 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
           <table className="opdrachten-table">
             <thead>
               <tr>
-                <th onClick={() => requestSort('opdracht')} style={{ cursor: 'pointer' }}>Opdracht</th>
-                <th onClick={() => requestSort('antwoord')} style={{ cursor: 'pointer' }}>Antwoord</th>
-                <th onClick={() => requestSort('bron')} style={{ cursor: 'pointer' }}>Bron</th>
-                <th onClick={() => requestSort('box')} style={{ cursor: 'pointer' }}>Box</th>
-                <th onClick={() => requestSort('status')} style={{ cursor: 'pointer' }}>Status</th>
-                <th onClick={() => requestSort('volgendeHerhaling')} style={{ cursor: 'pointer' }}>Volgende Herhaling</th>
-                <th onClick={() => requestSort('pogingen')} style={{ cursor: 'pointer' }}>Pogingen</th>
-                <th onClick={() => requestSort('succesPercentage')} style={{ cursor: 'pointer' }}>Succes %</th>
+                <th style={{ width: '30px' }}>Selectie</th>
+                <th onClick={() => requestSort('opdracht')} style={{ cursor: 'pointer' }}>Opdracht{getSortIndicator('opdracht')}</th>
+                <th onClick={() => requestSort('antwoord')} style={{ cursor: 'pointer' }}>Antwoord{getSortIndicator('antwoord')}</th>
+                <th onClick={() => requestSort('bron')} style={{ cursor: 'pointer' }}>Bron{getSortIndicator('bron')}</th>
+                <th onClick={() => requestSort('opdrachtType')} style={{ cursor: 'pointer' }}>Type{getSortIndicator('opdrachtType')}</th>
+                <th onClick={() => requestSort('box')} style={{ cursor: 'pointer' }}>Box{getSortIndicator('box')}</th>
+                <th onClick={() => requestSort('status')} style={{ cursor: 'pointer' }}>Status{getSortIndicator('status')}</th>
+                <th onClick={() => requestSort('volgendeHerhaling')} style={{ cursor: 'pointer' }}>Volgende Herhaling{getSortIndicator('volgendeHerhaling')}</th>
+                <th onClick={() => requestSort('pogingen')} style={{ cursor: 'pointer' }}>Pogingen{getSortIndicator('pogingen')}</th>
+                <th onClick={() => requestSort('succesPercentage')} style={{ cursor: 'pointer' }}>Succes %{getSortIndicator('succesPercentage')}</th>
               </tr>
             </thead>
             <tbody>
               {gesorteerdeEnGefilterdeOpdrachten.map((opdracht) => (
                 <tr key={opdracht.opdracht}>
+                  <td className="selectie-kolom">
+                    <input
+                      type="checkbox"
+                      checked={geselecteerdeOpdrachten.includes(opdracht.opdracht)}
+                      onChange={() => {}} // Geen actie - alleen weergave
+                      title={geselecteerdeOpdrachten.includes(opdracht.opdracht) 
+                        ? "Deze opdracht is geselecteerd op basis van categorie/filter selectie" 
+                        : "Deze opdracht is NIET geselecteerd op basis van categorie/filter selectie"}
+                      disabled={true}
+                    />
+                  </td>
                   <td className="opdracht-kolom">{opdracht.opdracht}</td>
                   <td className="antwoord-kolom">
                     {zichtbareAntwoorden.includes(opdracht.opdracht) ? (
@@ -137,7 +163,20 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
                     )}
                   </td>
                   <td className="bron-kolom">
-                    <span className="bron-icon">{opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}</span>
+                    <span 
+                      className="bron-icon" 
+                      title={opdracht.bron === 'systeem' ? 'Systeem opdracht' : 'Eigen opdracht'}
+                    >
+                      {opdracht.bron === 'systeem' ? '🏛️' : '👤'}
+                    </span>
+                  </td>
+                  <td className="type-kolom">
+                    <span 
+                      className="type-icon" 
+                      title={opdracht.opdrachtType || 'Onbekend type'}
+                    >
+                      {opdracht.opdrachtType ? opdrachtTypeIconen[opdracht.opdrachtType] || '❓' : '❓'}
+                    </span>
                   </td>
                   <td className="box-kolom">{opdracht.box ?? '-'}</td>
                   <td className="status-kolom">

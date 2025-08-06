@@ -192,6 +192,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [geselecteerdeCategorieVoorDetail, setGeselecteerdeCategorieVoorDetail] = useState<string | null>(null);
     const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
+    const [geselecteerdeOpdrachtenVoorDetail, setGeselecteerdeOpdrachtenVoorDetail] = useState<string[]>([]);
 
 
 
@@ -254,6 +255,21 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         const leitnerData = leerDataManager.loadLeitnerData();
         const leerData = leerDataManager.loadLeerData();
 
+        // Bereken welke opdrachten geselecteerd zijn op basis van categorie selectie en filters
+        const geselecteerdeOpdrachten = opdrachten
+            .filter(op => {
+                // Filter op bron
+                if (filters.bronnen.length > 0 && op.bron && !filters.bronnen.includes(op.bron)) {
+                    return false;
+                }
+                // Filter op type
+                if (filters.opdrachtTypes.length > 0 && op.opdrachtType && !filters.opdrachtTypes.includes(op.opdrachtType)) {
+                    return false;
+                }
+                return true;
+            })
+            .map(op => op.Opdracht);
+
         setOpdrachtenVoorDetail(opdrachten.map(op => {
             const opId = `${op.Hoofdcategorie || 'Overig'}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
             const leitnerInfo = leitnerData.boxes.find(box => box.opdrachten.includes(opId));
@@ -261,13 +277,14 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
             let succesPercentage = 0;
             if (leerInfo && leerInfo.aantalKeerGedaan > 0) {
-                succesPercentage = Math.round((leerInfo.aantalKeerGedaan / leerInfo.aantalKeerGedaan) * 100);
+                succesPercentage = Math.round((leerInfo.gemiddeldeScore / 5) * 100);
             }
 
             return {
                 opdracht: op.Opdracht,
                 antwoord: op.Antwoordsleutel || '',
                 bron: op.bron,
+                opdrachtType: op.opdrachtType,
                 box: leitnerInfo?.boxId,
                 status: leerDataManager.isOpdrachtPaused(opId) ? 'gepauzeerd' : 'actief',
                 pogingen: leerInfo?.aantalKeerGedaan ?? 0,
@@ -276,6 +293,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         }));
         setGeselecteerdeCategorieVoorDetail(categorie.naam);
         setDetailModalOpen(true);
+        
+        // Sla de geselecteerde opdrachten op voor de modal
+        setGeselecteerdeOpdrachtenVoorDetail(geselecteerdeOpdrachten);
       };
       
   // Leitner data hooks voor pauze functionaliteit
@@ -1047,8 +1067,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           {setFilters && (
             <div className="filter-sectie">
               <div className="filter-header">
-                <h4>🔍 Filters</h4>
-                <span className="filter-info">Filters synchroniseren met hoofdmenu</span>
+                <h4 className="filter-titel">🔍 Filters Aanpassen</h4>
+                <span className="filter-info">Selecteer op bron en/of type. Combinaties mogelijk. Selecties worden bewaard.</span>
               </div>
               <div className="filter-groepen">
                 <div className="filter-groep">
@@ -1148,6 +1168,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         onClose={() => setDetailModalOpen(false)}
         categorieNaam={geselecteerdeCategorieVoorDetail || ''}
         opdrachten={opdrachtenVoorDetail}
+        geselecteerdeOpdrachten={geselecteerdeOpdrachtenVoorDetail}
       />
       
       {/* Opslaan modal */}

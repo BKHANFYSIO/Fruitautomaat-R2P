@@ -117,7 +117,7 @@ export interface Achievement {
   beschrijving: string;
   behaaldOp: string;
   icon: string;
-  categorie: 'onboarding' | 'progressie' | 'kwaliteit' | 'consistentie' | 'exploratie' | 'speciaal';
+  categorie: 'onboarding' | 'progressie' | 'streak' | 'categorie_mastery' | 'leertijd' | 'dagelijkse_streak' | 'speciaal';
 }
 
 export interface LeitnerAchievement {
