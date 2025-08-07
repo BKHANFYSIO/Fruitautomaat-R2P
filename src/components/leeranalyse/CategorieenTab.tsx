@@ -3,8 +3,6 @@ import { getLeerDataManager } from '../../data/leerDataManager';
 import StatBar from '../StatBar';
 import type { TabProps } from './LeeranalyseTypes';
 import { 
-  ScoreTrendSparkline, 
-  LeitnerVerdelingBar, 
   MasteryIndicator, 
   RankingCard 
 } from './LeeranalyseComponents';
