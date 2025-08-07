@@ -1743,12 +1743,48 @@ class LeerDataManager {
     };
   }
 
+  public getTotaalBeschikbareOpdrachten(): number {
+    return this._alleOpdrachten.length;
+  }
+
+  public getAlleBeschikbareCategorieen(): Record<string, any> {
+    if (!this._alleOpdrachten.length) {
+      return {};
+    }
+
+    // Maak een map van subcategorie naar hoofdcategorie
+    const subNaarHoofdMap = new Map<string, string>();
+    const alleCategorieen = new Set<string>();
+    
+    this._alleOpdrachten.forEach(op => {
+      if (!subNaarHoofdMap.has(op.Categorie)) {
+        subNaarHoofdMap.set(op.Categorie, op.Hoofdcategorie || 'Overig');
+      }
+      alleCategorieen.add(op.Categorie);
+    });
+
+    // Groepeer categorieën per hoofdcategorie
+    const categorieenPerHoofd: Record<string, string[]> = {};
+    alleCategorieen.forEach(categorie => {
+      const hoofdCat = subNaarHoofdMap.get(categorie) || 'Overig';
+      if (!categorieenPerHoofd[hoofdCat]) {
+        categorieenPerHoofd[hoofdCat] = [];
+      }
+      categorieenPerHoofd[hoofdCat].push(categorie);
+    });
+
+    return categorieenPerHoofd;
+  }
+
   public getHoofdcategorieStatistieken(): Record<string, any> {
     const leerData = this.loadLeerData();
     if (!leerData || !this._alleOpdrachten.length) {
       return {};
     }
 
+    // Haal alle beschikbare categorieën op
+    const alleCategorieen = this.getAlleBeschikbareCategorieen();
+    
     // Maak een map van subcategorie naar hoofdcategorie
     const subNaarHoofdMap = new Map<string, string>();
     this._alleOpdrachten.forEach(op => {
@@ -1759,27 +1795,43 @@ class LeerDataManager {
 
     const hoofdCategorieStats: Record<string, any> = {};
 
-    for (const subCat in leerData.statistieken.categorieStatistieken) {
-      const subStat = leerData.statistieken.categorieStatistieken[subCat];
-      const hoofdCat = subNaarHoofdMap.get(subCat) || 'Overig';
+    // Loop door alle beschikbare hoofdcategorieën
+    for (const hoofdCat in alleCategorieen) {
+      const subCategorieen = alleCategorieen[hoofdCat];
+      
+      hoofdCategorieStats[hoofdCat] = {
+        categorie: hoofdCat,
+        aantalOpdrachten: 0,
+        gemiddeldeScore: [],
+        laatsteActiviteit: '1970-01-01T00:00:00.000Z',
+        subCategorieen: []
+      };
 
-      if (!hoofdCategorieStats[hoofdCat]) {
-        hoofdCategorieStats[hoofdCat] = {
-          categorie: hoofdCat,
-          aantalOpdrachten: 0,
-          gemiddeldeScore: [],
-          laatsteActiviteit: '1970-01-01T00:00:00.000Z',
-          subCategorieen: []
-        };
-      }
-
-      const hoofdStat = hoofdCategorieStats[hoofdCat];
-      hoofdStat.aantalOpdrachten += subStat.aantalOpdrachten;
-      hoofdStat.gemiddeldeScore.push(subStat.gemiddeldeScore);
-      if (new Date(subStat.laatsteActiviteit) > new Date(hoofdStat.laatsteActiviteit)) {
-        hoofdStat.laatsteActiviteit = subStat.laatsteActiviteit;
-      }
-      hoofdStat.subCategorieen.push(subStat);
+      // Loop door alle subcategorieën van deze hoofdcategorie
+      subCategorieen.forEach((subCat: string) => {
+        const subStat = leerData.statistieken.categorieStatistieken[subCat];
+        
+        if (subStat) {
+          // Er zijn statistieken voor deze subcategorie
+          const hoofdStat = hoofdCategorieStats[hoofdCat];
+          hoofdStat.aantalOpdrachten += subStat.aantalOpdrachten;
+          hoofdStat.gemiddeldeScore.push(subStat.gemiddeldeScore);
+          if (new Date(subStat.laatsteActiviteit) > new Date(hoofdStat.laatsteActiviteit)) {
+            hoofdStat.laatsteActiviteit = subStat.laatsteActiviteit;
+          }
+          hoofdStat.subCategorieen.push(subStat);
+        } else {
+          // Geen statistieken voor deze subcategorie - maak een lege statistiek
+          const legeSubStat = {
+            categorie: subCat,
+            aantalOpdrachten: 0,
+            gemiddeldeScore: 0,
+            laatsteActiviteit: '1970-01-01T00:00:00.000Z',
+            totaalOpdrachten: this._alleOpdrachten.filter(op => op.Categorie === subCat).length
+          };
+          hoofdCategorieStats[hoofdCat].subCategorieen.push(legeSubStat);
+        }
+      });
     }
     
     // Bereken het uiteindelijke gemiddelde
@@ -2533,23 +2585,38 @@ class LeerDataManager {
 
   getLeitnerBoxVerdelingVoorCategorie(categorie: string): { [boxId: number]: number } {
     const leitnerData = this.loadLeitnerData();
+    const hoofdcategorieStatistieken = this.getHoofdcategorieStatistieken();
+    const hoofdcategorie = hoofdcategorieStatistieken[categorie];
     const verdeling: { [boxId: number]: number } = {};
-    const pausedOpdrachten = leitnerData.pausedOpdrachten || [];
+
+    // Initialiseer verdeling
+    for (let i = 0; i <= 7; i++) {
+      verdeling[i] = 0;
+    }
 
     if (!leitnerData.isLeitnerActief) {
-      // Als Leitner niet actief is, retourneer een lege verdeling
-      for (let i = 0; i <= 7; i++) {
-        verdeling[i] = 0;
-      }
       return verdeling;
     }
 
-    leitnerData.boxes.forEach(box => {
-      const count = box.opdrachten.filter(opdrachtId => 
-        opdrachtId.startsWith(categorie + '_') && !pausedOpdrachten.includes(opdrachtId)
-      ).length;
-      verdeling[box.boxId] = count;
-    });
+    const pausedOpdrachten = new Set(leitnerData.pausedOpdrachten || []);
+
+    if (hoofdcategorie && hoofdcategorie.subCategorieen.length > 0) {
+      // Hoofdcategorie: aggregeer van subcategorieën
+      hoofdcategorie.subCategorieen.forEach((subCat: { categorie: string }) => {
+        const subVerdeling = this.getLeitnerBoxVerdelingVoorCategorie(subCat.categorie);
+        Object.entries(subVerdeling).forEach(([boxId, count]) => {
+          verdeling[parseInt(boxId)] += count;
+        });
+      });
+    } else {
+      // Subcategorie of op zichzelf staande categorie
+      leitnerData.boxes.forEach(box => {
+        const count = box.opdrachten.filter(opdrachtId => 
+          opdrachtId.startsWith(categorie + '_') && !pausedOpdrachten.has(opdrachtId)
+        ).length;
+        verdeling[box.boxId] = (verdeling[box.boxId] || 0) + count;
+      });
+    }
 
     return verdeling;
   }
@@ -2558,16 +2625,27 @@ class LeerDataManager {
     const leerData = this.loadLeerData();
     if (!leerData) return [];
 
+    const hoofdcategorieStatistieken = this.getHoofdcategorieStatistieken();
+    const hoofdcategorie = hoofdcategorieStatistieken[categorie];
+
+    let categorieen: string[] = [];
+    if (hoofdcategorie && hoofdcategorie.subCategorieen.length > 0) {
+      categorieen = hoofdcategorie.subCategorieen.map((sc: { categorie: string }) => sc.categorie);
+    } else {
+      categorieen = [categorie];
+    }
+
     const categorieOpdrachten = Object.values(leerData.opdrachten).filter(
-      op => op.categorie === categorie
+      op => categorieen.includes(op.categorie)
     );
 
-    const scoreGeschiedenis = categorieOpdrachten.flatMap(op => op.scoreGeschiedenis || []);
-
-    // Sorteer op datum en neem de laatste 10
-    return scoreGeschiedenis
-      .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime())
-      .slice(-10);
+    const scoreGeschiedenis = categorieOpdrachten.flatMap(op => 
+      (op.scoreGeschiedenis || [])
+        .map((scoreEntry, index) => ({ ...scoreEntry, poging: index + 1, modus: op.modusGeschiedenis?.[index]?.modus }))
+        .filter(entry => entry.poging === 1 && entry.modus === 'normaal')
+    );
+    
+    return scoreGeschiedenis.sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime());
   }
 
   getCategorieMastery(categorie: string): { level: 'Brons' | 'Zilver' | 'Goud' | 'Geen'; percentage: number } {
@@ -2578,7 +2656,6 @@ class LeerDataManager {
       return { level: 'Geen', percentage: 0 };
     }
 
-    // We kennen een gewicht toe aan elke box. Hogere boxen wegen zwaarder.
     const gewichten = { 0: 0, 1: 1, 2: 2, 3: 4, 4: 6, 5: 8, 6: 10, 7: 12 };
     
     let gewogenScore = 0;
@@ -2587,7 +2664,7 @@ class LeerDataManager {
       gewogenScore += verdeling[boxIndex] * (gewichten[boxIndex as keyof typeof gewichten] || 0);
     }
 
-    const maximaalMogelijkeScore = totaalOpdrachten * gewichten[7]; // Maximaal is alles in Box 7
+    const maximaalMogelijkeScore = totaalOpdrachten * gewichten[7];
     const percentage = maximaalMogelijkeScore > 0 ? Math.round((gewogenScore / maximaalMogelijkeScore) * 100) : 0;
 
     let level: 'Brons' | 'Zilver' | 'Goud' | 'Geen' = 'Geen';
@@ -2600,6 +2677,43 @@ class LeerDataManager {
     }
 
     return { level, percentage };
+  }
+
+  getCategorieDekking(categorie: string): { dekkingsPercentage: number; geprobeerdeOpdrachten: number; totaalOpdrachten: number } {
+    const leerData = this.loadLeerData();
+    const hoofdcategorieStatistieken = this.getHoofdcategorieStatistieken();
+    const hoofdcategorie = hoofdcategorieStatistieken[categorie];
+
+    let totaalOpdrachten = 0;
+    let geprobeerdeOpdrachten = 0;
+
+    if (hoofdcategorie && hoofdcategorie.subCategorieen.length > 0) {
+      hoofdcategorie.subCategorieen.forEach((subCat: { categorie: string; }) => {
+        const subDekking = this.getCategorieDekking(subCat.categorie);
+        totaalOpdrachten += subDekking.totaalOpdrachten;
+        geprobeerdeOpdrachten += subDekking.geprobeerdeOpdrachten;
+      });
+    } else {
+      totaalOpdrachten = this._alleOpdrachten.filter(op => op.Categorie === categorie).length;
+      if (totaalOpdrachten > 0 && leerData && leerData.opdrachten) {
+        const geprobeerdeIds = Object.values(leerData.opdrachten)
+          .filter(op => op.categorie === categorie)
+          .map(op => op.opdrachtId);
+        geprobeerdeOpdrachten = new Set(geprobeerdeIds).size;
+      }
+    }
+
+    if (totaalOpdrachten === 0) {
+      return { dekkingsPercentage: 0, geprobeerdeOpdrachten: 0, totaalOpdrachten: 0 };
+    }
+    
+    const dekkingsPercentage = (geprobeerdeOpdrachten / totaalOpdrachten) * 100;
+
+    return {
+      dekkingsPercentage,
+      geprobeerdeOpdrachten,
+      totaalOpdrachten,
+    };
   }
 
   getCategorieBeheersing(categorie: string): {
@@ -2626,13 +2740,26 @@ class LeerDataManager {
       };
     }
 
-    // Leitner statistieken
-    const boxVerdeling = this.getLeitnerBoxVerdelingVoorCategorie(categorie);
-    const totaalOpdrachten = Object.values(boxVerdeling).reduce((sum, count) => sum + count, 0);
-    const beheerstOpdrachten = boxVerdeling[7] || 0;
-    const beheersingPercentage = totaalOpdrachten > 0 ? (beheerstOpdrachten / totaalOpdrachten) * 100 : 0;
+    const hoofdcategorieStatistieken = this.getHoofdcategorieStatistieken();
+    const hoofdcategorie = hoofdcategorieStatistieken[categorie];
+    
+    const isHoofdcategorie = hoofdcategorie && hoofdcategorie.subCategorieen.length > 0;
+    const categorieenLijst = isHoofdcategorie 
+      ? hoofdcategorie.subCategorieen.map((sc: { categorie: string }) => sc.categorie)
+      : [categorie];
 
-    // Gemiddelde box berekening
+    const boxVerdeling = this.getLeitnerBoxVerdelingVoorCategorie(categorie);
+    const beheerstOpdrachten = boxVerdeling[7] || 0;
+    
+    let totaalOpdrachtenInCategorie = 0;
+    if (isHoofdcategorie) {
+      totaalOpdrachtenInCategorie = hoofdcategorie.subCategorieen.reduce((sum: number, sub: { aantalOpdrachten: number }) => sum + sub.aantalOpdrachten, 0);
+    } else {
+      totaalOpdrachtenInCategorie = this._alleOpdrachten.filter(op => op.Categorie === categorie).length;
+    }
+    
+    const beheersingPercentage = totaalOpdrachtenInCategorie > 0 ? (beheerstOpdrachten / totaalOpdrachtenInCategorie) * 100 : 0;
+
     let totaalBoxScore = 0;
     let totaalOpdrachtenMetBox = 0;
     Object.entries(boxVerdeling).forEach(([boxId, count]) => {
@@ -2643,40 +2770,39 @@ class LeerDataManager {
     });
     const gemiddeldeBox = totaalOpdrachtenMetBox > 0 ? totaalBoxScore / totaalOpdrachtenMetBox : 0;
 
-    // Vandaag beschikbare opdrachten
     const alleVandaagBeschikbaar = this.getLeitnerOpdrachtenVoorVandaag();
     const vandaagBeschikbaar = alleVandaagBeschikbaar.filter(item => {
-      const opdrachtCategorie = item.opdrachtId.split('_')[0];
-      return opdrachtCategorie === categorie;
+      const opdrachtCategorie = this._alleOpdrachten.find(op => op.id === item.opdrachtId)?.Categorie;
+      return opdrachtCategorie && categorieenLijst.includes(opdrachtCategorie);
     }).length;
 
-    // Score trend berekening
     const scoreGeschiedenis = this.getScoreGeschiedenisVoorCategorie(categorie);
     let scoreTrend: 'stijgend' | 'dalend' | 'stabiel' = 'stabiel';
-    if (scoreGeschiedenis.length >= 3) {
-      const recenteScores = scoreGeschiedenis.slice(-3).map(s => s.score);
-      const oudereScores = scoreGeschiedenis.slice(-6, -3).map(s => s.score);
-      
-      if (recenteScores.length > 0 && oudereScores.length > 0) {
-        const recenteGemiddelde = recenteScores.reduce((a, b) => a + b, 0) / recenteScores.length;
-        const oudereGemiddelde = oudereScores.reduce((a, b) => a + b, 0) / oudereScores.length;
+    if (scoreGeschiedenis.length >= 5) {
+        const helft = Math.ceil(scoreGeschiedenis.length / 2);
+        const eersteHelft = scoreGeschiedenis.slice(0, helft);
+        const tweedeHelft = scoreGeschiedenis.slice(-helft);
         
-        if (recenteGemiddelde > oudereGemiddelde + 0.5) scoreTrend = 'stijgend';
-        else if (recenteGemiddelde < oudereGemiddelde - 0.5) scoreTrend = 'dalend';
-      }
+        const avgEersteHelft = eersteHelft.reduce((sum, s) => sum + s.score, 0) / eersteHelft.length;
+        const avgTweedeHelft = tweedeHelft.reduce((sum, s) => sum + s.score, 0) / tweedeHelft.length;
+
+        if (avgTweedeHelft > avgEersteHelft + 0.2) scoreTrend = 'stijgend';
+        else if (avgTweedeHelft < avgEersteHelft - 0.2) scoreTrend = 'dalend';
     }
 
-    // Consistentie score (lage variatie = betere beheersing)
     const scores = scoreGeschiedenis.map(s => s.score);
-    const gemiddeldeScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const variantie = scores.length > 0 ? scores.reduce((sum, score) => sum + Math.pow(score - gemiddeldeScore, 2), 0) / scores.length : 0;
-    const standaardDeviatie = Math.sqrt(variantie);
-    const consistentieScore = Math.max(0, 100 - (standaardDeviatie * 20)); // Hogere score = meer consistent
+    let consistentieScore = -1;
+    if (scores.length >= 5) {
+      const gemiddeldeScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const variantie = scores.reduce((sum, score) => sum + Math.pow(score - gemiddeldeScore, 2), 0) / scores.length;
+      const standaardDeviatie = Math.sqrt(variantie);
+      consistentieScore = Math.max(0, 100 - (standaardDeviatie * 20));
+    }
 
     return {
       beheersingPercentage,
       beheerstOpdrachten,
-      totaalOpdrachten,
+      totaalOpdrachten: totaalOpdrachtenInCategorie,
       gemiddeldeBox,
       vandaagBeschikbaar,
       scoreTrend,
@@ -2684,39 +2810,52 @@ class LeerDataManager {
     };
   }
 
-  getCategorieVergelijking(): {
+  getCategorieRanking(type: 'hoofd' | 'sub'): {
     besteCategorie: string;
     zwaksteCategorie: string;
-    categorieRanking: { categorie: string; beheersingPercentage: number; gemiddeldeBox: number }[];
+    categorieRanking: { 
+      categorie: string; 
+      combiScore: number;
+      dekking: number;
+      gemBox: number;
+      beheersing: number;
+    }[];
   } {
-    const leerData = this.loadLeerData();
-    if (!leerData) {
-      return {
-        besteCategorie: '',
-        zwaksteCategorie: '',
-        categorieRanking: []
-      };
+    const hoofdcategorieStatistieken = this.getHoofdcategorieStatistieken();
+    let categorieenLijst: string[] = [];
+
+    if (type === 'hoofd') {
+      categorieenLijst = Object.keys(hoofdcategorieStatistieken);
+    } else {
+      categorieenLijst = Object.values(hoofdcategorieStatistieken).flatMap((hc: any) => hc.subCategorieen.map((sc: any) => sc.categorie));
     }
 
-    const categorieen = Object.keys(leerData.statistieken.categorieStatistieken);
-    const ranking: { categorie: string; beheersingPercentage: number; gemiddeldeBox: number }[] = [];
+    const ranking = categorieenLijst.map(categorie => {
+      const dekkingData = this.getCategorieDekking(categorie);
+      if (dekkingData.geprobeerdeOpdrachten === 0) {
+        return null; // Filter deze later uit
+      }
 
-    categorieen.forEach(categorie => {
-      const beheersing = this.getCategorieBeheersing(categorie);
-      ranking.push({
-        categorie,
-        beheersingPercentage: beheersing.beheersingPercentage,
-        gemiddeldeBox: beheersing.gemiddeldeBox
-      });
-    });
+      const beheersingData = this.getCategorieBeheersing(categorie);
+      
+      const genormaliseerdeGemBox = (beheersingData.gemiddeldeBox / 7) * 100;
+      const combiScore = (dekkingData.dekkingsPercentage * 0.4) + (genormaliseerdeGemBox * 0.4) + (beheersingData.beheersingPercentage * 0.2);
+      
+      return { 
+        categorie, 
+        combiScore,
+        dekking: dekkingData.dekkingsPercentage,
+        gemBox: beheersingData.gemiddeldeBox,
+        beheersing: beheersingData.beheersingPercentage,
+      };
+    }).filter(item => item !== null) as { categorie: string; combiScore: number; dekking: number; gemBox: number; beheersing: number; }[];
 
-    // Sorteer op beheersing percentage
-    ranking.sort((a, b) => b.beheersingPercentage - a.beheersingPercentage);
+    ranking.sort((a, b) => b.combiScore - a.combiScore);
 
     return {
-      besteCategorie: ranking.length > 0 ? ranking[0].categorie : '',
-      zwaksteCategorie: ranking.length > 0 ? ranking[ranking.length - 1].categorie : '',
-      categorieRanking: ranking
+      besteCategorie: ranking.length > 0 ? ranking[0].categorie : 'Nog geen data',
+      zwaksteCategorie: ranking.length > 0 ? ranking[ranking.length - 1].categorie : 'Nog geen data',
+      categorieRanking: ranking,
     };
   }
 
@@ -2842,6 +2981,189 @@ class LeerDataManager {
       leitnerData.boxIntervallen[boxId] = minuten;
       this.saveLeitnerData(leitnerData);
     }
+  }
+
+  public getLeitnerBoxHerhalingenTijdlijnData(aantalDagen: number = 30): {
+    datum: string;
+    box0: number;
+    box1: number;
+    box2: number;
+    box3: number;
+    box4: number;
+    box5: number;
+    box6: number;
+    box7: number; // Aantal vragen in box 7 (niet herhalingen)
+    totaalHerhalingen: number; // Som van box0-box6
+  }[] {
+    const leerData = this.loadLeerData();
+    const leitnerData = this.loadLeitnerData();
+    if (!leerData || !leitnerData.isLeitnerActief) return [];
+
+    const tijdlijnData: { [datum: string]: any } = {};
+    const opdrachten = Object.values(leerData.opdrachten);
+
+    // Initialiseer alle datums
+    const nu = new Date();
+    for (let i = aantalDagen - 1; i >= 0; i--) {
+      const datum = new Date(nu);
+      datum.setDate(datum.getDate() - i);
+      const datumString = datum.toISOString().split('T')[0];
+      tijdlijnData[datumString] = {
+        datum: datumString,
+        box0: 0,
+        box1: 0,
+        box2: 0,
+        box3: 0,
+        box4: 0,
+        box5: 0,
+        box6: 0,
+        box7: 0,
+        totaalHerhalingen: 0
+      };
+    }
+
+    // Groepeer opdrachten per datum en box
+    opdrachten.forEach(op => {
+      if (op.laatsteDatum) {
+        const datum = op.laatsteDatum.split('T')[0];
+        if (tijdlijnData[datum]) {
+          // Check of dit een Leitner opdracht is
+          const isLeitnerOpdracht = leitnerData.boxes.some(box => 
+            box.opdrachten.includes(op.opdrachtId)
+          );
+
+          if (isLeitnerOpdracht) {
+            // Tel herhalingen (niet eerste keer)
+            if (op.aantalKeerGedaan > 1) {
+              // Vind in welke box deze opdracht zat op deze datum
+              // Dit is een vereenvoudigde benadering - we kijken naar de huidige box
+              leitnerData.boxes.forEach(box => {
+                if (box.opdrachten.includes(op.opdrachtId)) {
+                  const boxKey = `box${box.boxId}` as keyof typeof tijdlijnData[typeof datum];
+                  if (boxKey in tijdlijnData[datum]) {
+                    tijdlijnData[datum][boxKey]++;
+                  }
+                }
+              });
+            }
+          }
+        }
+      }
+    });
+
+    // Voor box 7, tel het aantal vragen dat er op elke datum in zat
+    // Dit is een vereenvoudigde benadering - we gebruiken de huidige box 7 data
+    const box7Count = leitnerData.boxes.find(box => box.boxId === 7)?.opdrachten.length || 0;
+    Object.values(tijdlijnData).forEach(dag => {
+      dag.box7 = box7Count; // Voor nu gebruiken we de huidige count voor alle dagen
+      // Bereken totaal herhalingen (som van box0-box6)
+      dag.totaalHerhalingen = dag.box0 + dag.box1 + dag.box2 + dag.box3 + dag.box4 + dag.box5 + dag.box6;
+    });
+
+    return Object.values(tijdlijnData)
+      .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime());
+  }
+
+  public getLeitnerBoxHerhalingenWeekelijkseData(aantalWeken: number = 12): {
+    week: string;
+    box0: number;
+    box1: number;
+    box2: number;
+    box3: number;
+    box4: number;
+    box5: number;
+    box6: number;
+    box7: number;
+    totaalHerhalingen: number;
+  }[] {
+    const dagelijkseData = this.getLeitnerBoxHerhalingenTijdlijnData(aantalWeken * 7);
+    const weekData: { [weekKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const weekStart = new Date(datum);
+      weekStart.setDate(datum.getDate() - datum.getDay()); // Begin van de week (zondag)
+      const weekKey = weekStart.toISOString().split('T')[0];
+
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = {
+          week: weekKey,
+          box0: 0,
+          box1: 0,
+          box2: 0,
+          box3: 0,
+          box4: 0,
+          box5: 0,
+          box6: 0,
+          box7: 0,
+          totaalHerhalingen: 0
+        };
+      }
+
+      weekData[weekKey].box0 += dag.box0;
+      weekData[weekKey].box1 += dag.box1;
+      weekData[weekKey].box2 += dag.box2;
+      weekData[weekKey].box3 += dag.box3;
+      weekData[weekKey].box4 += dag.box4;
+      weekData[weekKey].box5 += dag.box5;
+      weekData[weekKey].box6 += dag.box6;
+      weekData[weekKey].box7 = Math.max(weekData[weekKey].box7, dag.box7); // Gebruik max voor box 7
+      weekData[weekKey].totaalHerhalingen += dag.totaalHerhalingen;
+    });
+
+    return Object.values(weekData).sort((a, b) => 
+      new Date(a.week).getTime() - new Date(b.week).getTime()
+    );
+  }
+
+  public getLeitnerBoxHerhalingenMaandelijkseData(aantalMaanden: number = 12): {
+    maand: string;
+    box0: number;
+    box1: number;
+    box2: number;
+    box3: number;
+    box4: number;
+    box5: number;
+    box6: number;
+    box7: number;
+    totaalHerhalingen: number;
+  }[] {
+    const dagelijkseData = this.getLeitnerBoxHerhalingenTijdlijnData(aantalMaanden * 31);
+    const maandData: { [maandKey: string]: any } = {};
+
+    dagelijkseData.forEach(dag => {
+      const datum = new Date(dag.datum);
+      const maandKey = `${datum.getFullYear()}-${String(datum.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!maandData[maandKey]) {
+        maandData[maandKey] = {
+          maand: maandKey,
+          box0: 0,
+          box1: 0,
+          box2: 0,
+          box3: 0,
+          box4: 0,
+          box5: 0,
+          box6: 0,
+          box7: 0,
+          totaalHerhalingen: 0
+        };
+      }
+
+      maandData[maandKey].box0 += dag.box0;
+      maandData[maandKey].box1 += dag.box1;
+      maandData[maandKey].box2 += dag.box2;
+      maandData[maandKey].box3 += dag.box3;
+      maandData[maandKey].box4 += dag.box4;
+      maandData[maandKey].box5 += dag.box5;
+      maandData[maandKey].box6 += dag.box6;
+      maandData[maandKey].box7 = Math.max(maandData[maandKey].box7, dag.box7); // Gebruik max voor box 7
+      maandData[maandKey].totaalHerhalingen += dag.totaalHerhalingen;
+    });
+
+    return Object.values(maandData).sort((a, b) => 
+      new Date(a.maand).getTime() - new Date(b.maand).getTime()
+    );
   }
 }
 

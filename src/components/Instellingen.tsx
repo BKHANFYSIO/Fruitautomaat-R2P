@@ -27,6 +27,8 @@ interface InstellingenProps {
   // Categorie beheer
   onOpenCategorieBeheer: () => void;
   onOpenCategorieSelectie?: () => void;
+  // Huidige modus voor automatische tab selectie
+  currentGameMode?: 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus';
 }
 
 export const Instellingen = React.memo(({
@@ -45,6 +47,8 @@ export const Instellingen = React.memo(({
   // Categorie beheer
   onOpenCategorieBeheer,
   // onOpenCategorieSelectie, // Niet meer gebruikt
+  // Huidige modus voor automatische tab selectie
+  currentGameMode,
 }: InstellingenProps) => {
   // Settings context
   const {
@@ -97,6 +101,11 @@ export const Instellingen = React.memo(({
     setIsSpinVergrendelingActiefVrijeLeermodus,
     isSpinVergrendelingActiefLeitnerLeermodus,
     setIsSpinVergrendelingActiefLeitnerLeermodus,
+    // Kale modus instellingen
+    isKaleModusActiefVrijeLeermodus,
+    setIsKaleModusActiefVrijeLeermodus,
+    isKaleModusActiefLeitnerLeermodus,
+    setIsKaleModusActiefLeitnerLeermodus,
     // isBox0IntervalVerkort, // Niet meer gebruikt
     // setIsBox0IntervalVerkort, // Niet meer gebruikt
     // isRolTijdVerkort, // Niet meer gebruikt
@@ -105,6 +114,20 @@ export const Instellingen = React.memo(({
 
   // Tab state
   const [activeTab, setActiveTab] = useState('algemeen');
+
+  // Automatisch naar het juiste tabblad gaan op basis van de huidige modus
+  useEffect(() => {
+    if (isOpen && currentGameMode) {
+      setActiveTab(currentGameMode);
+    }
+  }, [isOpen, currentGameMode]);
+
+  // Automatisch leerfeedback uitschakelen wanneer kale modus wordt ingeschakeld
+  useEffect(() => {
+    if (isKaleModusActiefVrijeLeermodus && isLeerFeedbackActief) {
+      setIsLeerFeedbackActief(false);
+    }
+  }, [isKaleModusActiefVrijeLeermodus, isLeerFeedbackActief, setIsLeerFeedbackActief]);
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
@@ -193,6 +216,28 @@ export const Instellingen = React.memo(({
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
       
+      // Verwijder categorie selecties
+      localStorage.removeItem('geselecteerdeCategorieen_normaal');
+      localStorage.removeItem('geselecteerdeCategorieen_leitner');
+      localStorage.removeItem('geselecteerdeCategorieen_multiplayer');
+      localStorage.removeItem('geselecteerdeCategorieen_highscore');
+      localStorage.removeItem('multiplayer_categorie_selecties');
+      localStorage.removeItem('vrije_leermodus_categorie_selecties');
+      localStorage.removeItem('leitner_categorie_selecties');
+      
+      // Verwijder filters
+      localStorage.removeItem('opdrachtFilters');
+      
+      // Verwijder UI state
+      localStorage.removeItem('filterDashboardExpanded');
+      localStorage.removeItem('orientatie_melding_getoond');
+      
+      // Verwijder bonusopdrachten
+      localStorage.removeItem('bonusOpdrachten');
+      
+      // Verwijder eigen opdrachten
+      localStorage.removeItem('fruitautomaat_user_opdrachten');
+      
       alert('Alle gegevens zijn verwijderd. De pagina wordt herladen om de wijzigingen toe te passen.');
       window.location.reload();
     }
@@ -219,6 +264,10 @@ export const Instellingen = React.memo(({
       setIsJokerSpinActiefMultiplayer(true);
       setIsSpinVergrendelingActiefVrijeLeermodus(true);
       setIsSpinVergrendelingActiefLeitnerLeermodus(true);
+      
+      // Kale modus instellingen herstellen
+      setIsKaleModusActiefVrijeLeermodus(false);
+      setIsKaleModusActiefLeitnerLeermodus(false);
       
       // Leermodus instellingen herstellen
       setIsSerieuzeLeerModusActief(false);
@@ -475,7 +524,7 @@ export const Instellingen = React.memo(({
                   <div className="data-beheer-knoppen">
                     <button 
                       onClick={() => {
-                        if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Dit kan niet ongedaan gemaakt worden.')) {
+                        if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Je kunt ze later weer uploaden via het Excel bestand als je dat nog hebt.')) {
                           onVerwijderGebruikerOpdrachten();
                           alert('Alle eigen opdrachten zijn verwijderd.');
                         }
@@ -489,28 +538,28 @@ export const Instellingen = React.memo(({
                       onClick={handleClearHighscoresAndRecords}
                       className="data-beheer-knop single-player-knop"
                     >
-                      🎯 Verwijder Highscores & Records (alleen Highscore Modus)
+                      🎯 Verwijder Highscores & Records
                     </button>
                     
                     <button 
                       onClick={handleClearBonusOpdrachten}
                       className="data-beheer-knop bonus-knop"
                     >
-                      🎭 Verwijder Bonusopdrachten (alleen multiplayer)
+                      🎭 Verwijder Bonusopdrachten
                     </button>
                     
                     <button 
                       onClick={handleClearLeeranalyseData}
                       className="data-beheer-knop leeranalyse-knop"
                     >
-                      📊 Verwijder Leeranalyse & Statistieken (alleen Leer Modus)
+                      📊 Verwijder Leeranalyse & Statistieken
                     </button>
                     
                     <button 
                       onClick={handleClearLeitnerData}
                       className="data-beheer-knop leitner-knop"
                     >
-                      📚 Verwijder Leitner-systeem Data (alleen Leer Modus)
+                      📚 Verwijder Leitner-systeem Data
                     </button>
                     
                     <button 
@@ -520,6 +569,10 @@ export const Instellingen = React.memo(({
                       🗑️ Verwijder Alle Gegevens
                     </button>
                   </div>
+                  
+                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
+                    <strong>Verwijder Alle Gegevens</strong> verwijdert: alle leerdata, highscores, bonusopdrachten, eigen opdrachten, categorie selecties, filters, instellingen en UI voorkeuren. Dit is een complete reset van alle opgeslagen data.
+                  </p>
                 </div>
               </>
             )}
@@ -762,15 +815,37 @@ export const Instellingen = React.memo(({
                       type="checkbox"
                       checked={isLeerFeedbackActief}
                       onChange={(e) => setIsLeerFeedbackActief(e.target.checked)}
+                      disabled={isKaleModusActiefVrijeLeermodus}
                     />
                     Leerzame feedback en tips tonen
+                    {isKaleModusActiefVrijeLeermodus && (
+                      <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
+                        (uitgeschakeld in geen fruitrol animatie)
+                      </span>
+                    )}
                   </label>
                   <p className="setting-description">
                     Toon leerzame feedback en tips over effectief leren bij spin combinaties. Standaard aan gezet in Leer Modus. Als uitgeschakeld krijg je alleen de Leer Modus zonder feedback.
+                    {isKaleModusActiefVrijeLeermodus && (
+                      <span style={{ color: '#888', display: 'block', marginTop: '5px' }}>
+                        <strong>Let op:</strong> In geen fruitrol animatie worden geen leerzame tips getoond om afleiding te voorkomen.
+                      </span>
+                    )}
                   </p>
-                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
-                    <strong>Data beheer:</strong> Je kunt je leeranalyse gegevens verwijderen via de "Data Beheer" sectie onderaan deze pagina.
+                  
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isKaleModusActiefVrijeLeermodus}
+                      onChange={(e) => setIsKaleModusActiefVrijeLeermodus(e.target.checked)}
+                    />
+                    Geen fruitrol animatie (alleen opdrachten rol)
+                  </label>
+                  <p className="setting-description">
+                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Ideaal voor snelle oefening zonder afleiding.
                   </p>
+                  
+
                 </div>
 
                 {/* Leeranalyse en certificaat knoppen */}
@@ -792,6 +867,25 @@ export const Instellingen = React.memo(({
                   </div>
                   <p className="setting-description">
                     <em>Genereer een professioneel certificaat met je leerprestaties voor je portfolio.</em>
+                  </p>
+                </div>
+
+                {/* Data Beheer Sectie */}
+                <div className="settings-group">
+                  <h4>Data Beheer</h4>
+                  <p className="setting-description">
+                    In Vrije Leermodus worden je leerprestaties opgeslagen in het geheugen van je browser. Deze data wordt gebruikt voor leeranalyses en certificaat generatie.
+                  </p>
+                  <button 
+                    className="data-beheer-knop" 
+                    onClick={() => {
+                      setActiveTab('algemeen');
+                    }}
+                  >
+                    🗂️ Data Beheer Openen
+                  </button>
+                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '5px' }}>
+                    <em>Ga naar het "Algemeen" tabblad om je leeranalyse gegevens te beheren of te verwijderen.</em>
                   </p>
                 </div>
               </>
@@ -821,6 +915,19 @@ export const Instellingen = React.memo(({
                   <p className="setting-description">
                     Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
                   </p>
+                  
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isKaleModusActiefLeitnerLeermodus}
+                      onChange={(e) => setIsKaleModusActiefLeitnerLeermodus(e.target.checked)}
+                    />
+                    Geen fruitrol animatie (alleen opdrachten rol)
+                  </label>
+                  <p className="setting-description">
+                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Ideaal voor snelle oefening zonder afleiding.
+                  </p>
+                  
                   {leermodusType === 'leitner' && (
                     <>
                       <label>
@@ -863,7 +970,11 @@ export const Instellingen = React.memo(({
                         Negeer Box 0 wachttijd als er geen andere opdrachten zijn
                       </label>
                       <p className="setting-description">
-                        Als er geen nieuwe opdrachten of reguliere herhalingen beschikbaar zijn, maakt deze optie de opdrachten in Box 0 direct herhaalbaar, zelfs als de wachttijd nog niet voorbij is.
+                        <strong>Normaal:</strong> Nieuwe vragen komen in Box 0 en je moet 10 minuten wachten voordat je ze opnieuw kunt oefenen.
+                        <br /><br />
+                        <strong>Met deze optie:</strong> Als je aan je dagelijkse limiet nieuwe vragen zit of er zijn geen andere opdrachten beschikbaar, kun je de vragen in Box 0 direct herhalen zonder de 10 minuten wachttijd.
+                        <br /><br />
+                        <strong>Voordeel:</strong> Je kunt altijd blijven oefenen, zelfs als je geen nieuwe vragen meer kunt krijgen.
                       </p>
                       
                       <button
@@ -896,6 +1007,25 @@ export const Instellingen = React.memo(({
                   </div>
                   <p className="setting-description">
                     <em>Genereer een professioneel certificaat met je leerprestaties voor je portfolio.</em>
+                  </p>
+                </div>
+
+                {/* Data Beheer Sectie */}
+                <div className="settings-group">
+                  <h4>Data Beheer</h4>
+                  <p className="setting-description">
+                    In Leitner Leermodus worden je leerprestaties en box-progressie opgeslagen in het geheugen van je browser. Deze data wordt gebruikt voor het Leitner-systeem, leeranalyses en certificaat generatie.
+                  </p>
+                  <button 
+                    className="data-beheer-knop" 
+                    onClick={() => {
+                      setActiveTab('algemeen');
+                    }}
+                  >
+                    🗂️ Data Beheer Openen
+                  </button>
+                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '5px' }}>
+                    <em>Ga naar het "Algemeen" tabblad om je leeranalyse gegevens te beheren of te verwijderen.</em>
                   </p>
                 </div>
               </>

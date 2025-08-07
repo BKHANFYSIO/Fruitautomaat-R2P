@@ -1,0 +1,158 @@
+.opdrachten-voltooid-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.opdrachten-voltooid-modal-content {
+  background: #2c2c2c;
+  padding: 25px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 550px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  border: 1px solid #444;
+  color: #f0f0f0;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.opdrachten-voltooid-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.opdrachten-voltooid-modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #48bb78; /* Groene succes kleur */
+}
+
+.opdrachten-voltooid-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0 10px;
+  line-height: 1;
+}
+
+.opdrachten-voltooid-modal-close:hover {
+  color: #fff;
+}
+
+.opdrachten-voltooid-modal-body {
+  margin-bottom: 25px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 15px;
+  animation: bounce 0.6s ease-in-out;
+}
+
+.main-message {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #ddd;
+}
+
+.info-section {
+  background-color: rgba(72, 187, 120, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #48bb78;
+  text-align: left;
+  margin-top: 20px;
+}
+
+.info-section p {
+  margin: 0 0 10px 0;
+  color: #ddd;
+  font-weight: 600;
+}
+
+.info-section ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #ccc;
+}
+
+.info-section li {
+  margin-bottom: 5px;
+}
+
+.opdrachten-voltooid-modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.opdrachten-voltooid-modal-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.opdrachten-voltooid-modal-button:active {
+  transform: scale(0.98);
+}
+
+.opdrachten-voltooid-modal-button.primary {
+  background-color: #48bb78; /* Groen */
+  color: white;
+}
+
+.opdrachten-voltooid-modal-button.primary:hover {
+  background-color: #38a169;
+}
+
+.opdrachten-voltooid-modal-button.secondary {
+  background-color: #555;
+  color: #f0f0f0;
+}
+
+.opdrachten-voltooid-modal-button.secondary:hover {
+  background-color: #666;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+

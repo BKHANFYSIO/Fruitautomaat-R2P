@@ -31,6 +31,17 @@
   line-height: 1.2;
 }
 
+.infinity-symbol {
+  color: #f39c12;
+  font-weight: bold;
+  background-color: rgba(243, 156, 18, 0.1);
+  border: 1px solid #f39c12;
+  border-radius: 3px;
+  padding: 1px 4px;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+
 .highscore-display {
   background-color: #1c2a38;
   border-radius: 8px;

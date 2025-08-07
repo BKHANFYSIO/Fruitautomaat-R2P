@@ -36,6 +36,8 @@ interface FruitautomaatProps {
   leermodusType?: 'normaal' | 'leitner';
   onPauseOpdracht?: () => void;
   isBeoordelingDirect?: boolean;
+  // Kale modus prop
+  isKaleModusActief?: boolean;
 }
 
 export const Fruitautomaat = ({ 
@@ -57,7 +59,8 @@ export const Fruitautomaat = ({
   isSerieuzeLeerModusActief = false,
   leermodusType,
   onPauseOpdracht,
-  isBeoordelingDirect = false
+  isBeoordelingDirect = false,
+  isKaleModusActief = false
 }: FruitautomaatProps) => {
   const { isRolTijdVerkort } = useSettings();
   
@@ -79,14 +82,17 @@ export const Fruitautomaat = ({
       const baseDelay = isRolTijdVerkort ? 200 : 1000;
       const interval = isRolTijdVerkort ? 100 : 500;
 
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); playRolStop(); }, baseDelay);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); playRolStop(); }, baseDelay + interval);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); playRolStop(); }, baseDelay + interval * 2);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); playRolStop(); }, baseDelay + interval * 3);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); playRolStop(); }, baseDelay + interval * 4);
-      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); playRolStop(); }, baseDelay + interval * 5);
+      // Alleen rol-stop geluid spelen als kale modus niet actief is
+      const shouldPlaySound = !isKaleModusActief;
+
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot1: false })); if (shouldPlaySound) playRolStop(); }, baseDelay);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot2: false })); if (shouldPlaySound) playRolStop(); }, baseDelay + interval);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, jackpot3: false })); if (shouldPlaySound) playRolStop(); }, baseDelay + interval * 2);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, categorie: false })); if (shouldPlaySound) playRolStop(); }, baseDelay + interval * 3);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, opdracht: false })); if (shouldPlaySound) playRolStop(); }, baseDelay + interval * 4);
+      setTimeout(() => { setActiveSpin(s => ({ ...s, naam: false })); if (shouldPlaySound) playRolStop(); }, baseDelay + interval * 5);
     }
-  }, [isSpinning, playRolStop, isRolTijdVerkort, isBeoordelingDirect]);
+  }, [isSpinning, playRolStop, isRolTijdVerkort, isBeoordelingDirect, isKaleModusActief]);
 
   const categorieItems = useMemo(() => {
     return [
@@ -117,11 +123,13 @@ export const Fruitautomaat = ({
       {welcomeMessage}
       <div className="fruitautomaat-body">
         <div className="fruitautomaat-rollen-wrapper">
-          <div className="jackpot-rij">
-            <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[0]} isSpinning={activeSpin.jackpot1} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[0]]?.symbool || '')} />
-            <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[1]} isSpinning={activeSpin.jackpot2} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[1]]?.symbool || '')} />
-            <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[2]} isSpinning={activeSpin.jackpot3} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[2]]?.symbool || '')} />
-          </div>
+          {!isKaleModusActief && (
+            <div className="jackpot-rij">
+              <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[0]} isSpinning={activeSpin.jackpot1} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[0]]?.symbool || '')} />
+              <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[1]} isSpinning={activeSpin.jackpot2} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[1]]?.symbool || '')} />
+              <Rol items={fruitDisplayItems} stopAt={resultaat.jackpot[2]} isSpinning={activeSpin.jackpot3} className="jackpot-rol-item" isWinnend={!isSpinning && spinAnalyse?.winnendeSymbolen?.includes(fruitDisplayItems[resultaat.jackpot[2]]?.symbool || '')} />
+            </div>
+          )}
 
           <div className="opdracht-rij">
             <div className="opdracht-rol categorie-rol">

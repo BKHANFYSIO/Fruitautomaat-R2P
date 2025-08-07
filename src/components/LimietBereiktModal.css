@@ -70,6 +70,39 @@
   color: #ddd;
 }
 
+.instellingen-verwijzing {
+  background-color: rgba(100, 149, 237, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #6495ed;
+  margin: 15px 0;
+}
+
+.instellingen-verwijzing p {
+  margin: 0 0 10px 0;
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+.instellingen-knop-limiet {
+  background-color: #6495ed;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.instellingen-knop-limiet:hover {
+  background-color: #5a7fd8;
+}
+
 .limiet-bereikt-modal-footer {
   display: flex;
   justify-content: flex-end;

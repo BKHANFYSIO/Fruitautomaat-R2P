@@ -60,7 +60,7 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
         <div className="scorebord-header">
           <h2>Leer Dashboard</h2>
           <div className="ronde-teller">
-            <>Leer Modus<br/>Oneindig</>
+            <span className="infinity-symbol" title="Oneindige leermodus - je kunt oneindig door blijven gaan zonder limiet">∞</span>
           </div>
         </div>
         
@@ -111,7 +111,7 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
         {maxRondes !== undefined && (
           <div className="ronde-teller">
             {isSerieuzeLeerModusActief ? (
-              <>Leer Modus<br/>Oneindig</>
+              <span className="infinity-symbol" title="Oneindige leermodus - je kunt oneindig door blijven gaan zonder limiet">∞</span>
             ) : maxRondes > 0 ? (
               `Ronde ${huidigeRonde} van ${maxRondes}`
             ) : (

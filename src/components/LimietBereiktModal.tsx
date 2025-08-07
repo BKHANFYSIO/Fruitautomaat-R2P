@@ -6,9 +6,10 @@ interface LimietBereiktModalProps {
   onClose: () => void;
   onConfirm: () => void;
   maxVragen: number;
+  onOpenInstellingen?: () => void;
 }
 
-export const LimietBereiktModal: React.FC<LimietBereiktModalProps> = ({ isOpen, onClose, onConfirm, maxVragen }) => {
+export const LimietBereiktModal: React.FC<LimietBereiktModalProps> = ({ isOpen, onClose, onConfirm, maxVragen, onOpenInstellingen }) => {
   if (!isOpen) {
     return null;
   }
@@ -27,6 +28,20 @@ export const LimietBereiktModal: React.FC<LimietBereiktModalProps> = ({ isOpen, 
           <p className="uitleg-tekst">
             Het wordt aangeraden om niet te veel nieuwe onderwerpen op één dag te introduceren. Dit helpt om de hoeveelheid herhalingen beheersbaar te houden en bevordert een beter leereffect op de lange termijn.
           </p>
+          {onOpenInstellingen && (
+            <div className="instellingen-verwijzing">
+              <p>
+                <strong>Tip:</strong> Je kunt deze limiet aanpassen in de instellingen onder het "Leitner Leermodus" tabblad.
+              </p>
+              <button 
+                onClick={onOpenInstellingen} 
+                className="instellingen-knop-limiet"
+                type="button"
+              >
+                ⚙️ Instellingen openen
+              </button>
+            </div>
+          )}
           <p>
             Wil je de limiet voor vandaag negeren en toch doorgaan met nieuwe vragen?
           </p>

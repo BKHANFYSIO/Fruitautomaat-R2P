@@ -25,6 +25,7 @@ import { Leeranalyse } from './components/Leeranalyse';
 import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
 import { DevPanel } from './components/DevPanel';
 import { LimietBereiktModal } from './components/LimietBereiktModal';
+import { OpdrachtenVoltooidModal } from './components/OpdrachtenVoltooidModal';
 import { FilterDashboard } from './components/FilterDashboard';
 
 
@@ -125,6 +126,9 @@ function App() {
     isBox0IntervalVerkort,
     setIsBox0IntervalVerkort,
     negeerBox0Wachttijd,
+    // Kale modus instellingen
+    isKaleModusActiefVrijeLeermodus,
+    isKaleModusActiefLeitnerLeermodus,
   } = useSettings();
 
   // Game engine hook
@@ -162,6 +166,25 @@ const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[
     return [];
   }
 });
+
+  // Bepaal of kale modus actief is voor de hele component
+  const isKaleModusActiefGlobal = (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner' && isKaleModusActiefLeitnerLeermodus) ||
+                                  (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'normaal' && isKaleModusActiefVrijeLeermodus);
+
+  // Bepaal de huidige spelmodus voor automatische tab selectie
+  const getCurrentGameMode = (): 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus' => {
+    if (gameMode === 'multi') {
+      return 'multiplayer';
+    } else if (isSerieuzeLeerModusActief) {
+      if (leermodusType === 'leitner') {
+        return 'leitnerleermodus';
+      } else {
+        return 'vrijeleermodus';
+      }
+    } else {
+      return 'highscore';
+    }
+  };
 const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>(() => {
   try {
     const saved = localStorage.getItem('geselecteerdeCategorieen_leitner');
@@ -199,7 +222,8 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
 
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
-const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
+  const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
+  const [isOpdrachtenVoltooidModalOpen, setIsOpdrachtenVoltooidModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
 
   // State om bij te houden of de multiplayer waarschuwing al is getoond
@@ -989,7 +1013,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   };
 
   const voerSpinUit = (gekozenSpeler: Speler) => {
+    // Bepaal of kale modus actief is
+    const isKaleModusActief = (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner' && isKaleModusActiefLeitnerLeermodus) ||
+                               (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'normaal' && isKaleModusActiefVrijeLeermodus);
+    
+      // Alleen geluid en animatie spelen als kale modus niet actief is
+  if (!isKaleModusActief) {
     playSpinStart();
+  }
     setIsAanHetSpinnen(true);
     setGamePhase('spinning');
 
@@ -1012,7 +1043,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       boxNummer = result.box;
 
       if (!gekozenOpdracht) {
-        alert('Alle opdrachten (zowel nieuw als te herhalen) in de geselecteerde categorieën zijn voltooid. Selecteer andere categorieën om verder te gaan.');
+        setIsOpdrachtenVoltooidModalOpen(true);
         setIsAanHetSpinnen(false);
         setGamePhase('idle');
         return;
@@ -1098,6 +1129,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     });
 
     // Wacht tot de animatie klaar is en update dan de state
+    const timeoutDuration = isKaleModusActief ? 100 : 3600; // Korte timeout voor kale modus
+    
     setTimeout(() => {
       setHuidigeOpdracht({ opdracht: gekozenOpdracht!, type: opdrachtType, box: boxNummer });
       setHuidigeSpeler(gekozenSpeler);
@@ -1112,8 +1145,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setHuidigeSpinAnalyse(analyse);
       setIsAanHetSpinnen(false);
 
-      // Toon leerfeedback in serieuze leer-modus bij combinaties
-      if (gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
+      // Toon leerfeedback in serieuze leer-modus bij combinaties (alleen als kale modus niet actief is)
+      if (!isKaleModusActief && gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
         setNotificatie({ 
           zichtbaar: true, 
           bericht: analyse.beschrijving, 
@@ -1146,7 +1179,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       if (isSpinVergrendelingActief) {
         setIsAntwoordVergrendeld(true);
       }
-    }, 3600); // Net iets langer dan de langste rol animatie
+    }, timeoutDuration);
   };
 
 
@@ -1560,7 +1593,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     }
   };
 
-  const handleStartFocusSessie = (categorie: string) => {
+  const handleStartFocusSessie = (categorie: string, leermodusType: 'normaal' | 'leitner' = 'normaal') => {
     // Deze functie verwacht nu een "Hoofdcategorie - Subcategorie" of alleen "Hoofdcategorie"
     const isHoofdcategorie = !categorie.includes(' - ');
 
@@ -1576,17 +1609,18 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
     const uniekeGeselecteerdeIds = [...new Set(geselecteerdeIds)];
 
-    // Focus sessie geldt voor 'normale' leermodus
+    // Focus sessie voor de gekozen leermodus
     setGeselecteerdeCategorieen(uniekeGeselecteerdeIds);
     setGameMode('single');
     setIsSerieuzeLeerModusActief(true);
-    setLeermodusType('normaal');
+    setLeermodusType(leermodusType);
 
     setIsLeeranalyseOpen(false);
     // Optioneel: toon een notificatie
+    const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
     setNotificatie({
       zichtbaar: true,
-      bericht: `Focus modus gestart voor: ${categorie}`,
+      bericht: `${leermodusNaam} gestart voor: ${categorie}`,
       type: 'succes',
     });
     setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 4000);
@@ -1630,6 +1664,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           // Categorie beheer
           onOpenCategorieBeheer={handleOpenLeitnerCategorieBeheer}
           onOpenCategorieSelectie={() => setIsCategorieSelectieOpen(true)}
+          // Huidige modus voor automatische tab selectie
+          currentGameMode={getCurrentGameMode()}
         >
           {/* Opdrachtenbeheer Content */}
           <BestandsUploader
@@ -1715,6 +1751,19 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           setIsLimietModalOpen(false);
         }}
         maxVragen={maxNewLeitnerQuestionsPerDay}
+        onOpenInstellingen={() => {
+          setIsLimietModalOpen(false);
+          setIsInstellingenOpen(true);
+        }}
+      />
+
+      <OpdrachtenVoltooidModal
+        isOpen={isOpdrachtenVoltooidModalOpen}
+        onClose={() => setIsOpdrachtenVoltooidModalOpen(false)}
+        onOpenCategorieSelectie={(tab = 'leitner') => {
+          setIsOpdrachtenVoltooidModalOpen(false);
+          setIsCategorieBeheerOpen(true);
+        }}
       />
 
 
@@ -1842,7 +1891,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                     </div>
                     {leitnerStats.vandaagBeschikbaar > 0 && (
                       <p className="leitner-priority">
-                        ⭐ Prioriteit voor herhaling wordt gegeven aan opdrachten die vandaag herhaald moeten worden.
+                        ⭐ Herhalingen komen eerst, nieuwe opdrachten daarna.
                       </p>
                     )}
                   </div>
@@ -1950,6 +1999,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             leermodusType={leermodusType}
             onPauseOpdracht={handlePauseOpdracht}
             isBeoordelingDirect={isBeoordelingDirect}
+            isKaleModusActief={isKaleModusActiefGlobal}
             welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>

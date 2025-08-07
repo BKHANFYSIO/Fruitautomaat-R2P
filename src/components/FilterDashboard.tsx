@@ -17,7 +17,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   // State voor accordeon functionaliteit
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem('filterDashboardExpanded');
-    return saved ? JSON.parse(saved) : true; // Standaard open
+    return saved ? JSON.parse(saved) : false; // Standaard ingeklapt
   });
 
   // Sla de expanded state op in localStorage
