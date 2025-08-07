@@ -1,3 +1,4 @@
+
 import { Line } from 'react-chartjs-2';
 import type { SparklineData, LeitnerVerdeling, MasteryData } from './LeeranalyseTypes';
 
@@ -157,16 +158,16 @@ export const RankingCard = ({
       <div className="categorie-naam" style={{ color: getTypeColor(type) }}>
         {rankingData.categorie}
       </div>
-      <div className="categorie-score">
-        Score: {rankingData.score.toFixed(1)}
-      </div>
-      <div className="categorie-details">
-        <small>
-          Dekking: {rankingData.dekking.toFixed(0)}% | 
-          Gem. Box: {rankingData.gemiddeldeBox.toFixed(1)} | 
-          Beheersing: {rankingData.beheersing.toFixed(0)}%
-        </small>
-      </div>
+              <div className="categorie-score">
+          Score: {rankingData.score?.toFixed(1) ?? 'N/A'}
+        </div>
+        <div className="categorie-details">
+          <small>
+            Dekking: {rankingData.dekking?.toFixed(0) ?? 'N/A'}% | 
+            Gem. Box: {rankingData.gemiddeldeBox?.toFixed(1) ?? 'N/A'} | 
+            Beheersing: {rankingData.beheersing?.toFixed(0) ?? 'N/A'}%
+          </small>
+        </div>
     </div>
   );
 };

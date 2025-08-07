@@ -66,17 +66,15 @@ interface SettingsContextType {
   negeerBox0Wachttijd: boolean;
   setNegeerBox0Wachttijd: (negeer: boolean) => void;
   
-  // Kale modus settings
-  isKaleModusActiefVrijeLeermodus: boolean;
-  setIsKaleModusActiefVrijeLeermodus: (actief: boolean) => void;
-  isKaleModusActiefLeitnerLeermodus: boolean;
-  setIsKaleModusActiefLeitnerLeermodus: (actief: boolean) => void;
-  
   // Dev settings
   isBox0IntervalVerkort: boolean;
   setIsBox0IntervalVerkort: (verkort: boolean) => void;
   isRolTijdVerkort: boolean;
   setIsRolTijdVerkort: (verkort: boolean) => void;
+  isKaleModusActiefVrijeLeermodus: boolean;
+  setIsKaleModusActiefVrijeLeermodus: (actief: boolean) => void;
+  isKaleModusActiefLeitnerLeermodus: boolean;
+  setIsKaleModusActiefLeitnerLeermodus: (actief: boolean) => void;
   
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
@@ -178,14 +176,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
   const [negeerBox0Wachttijd, setNegeerBox0Wachttijd] = useState(() => loadFromStorage('negeerBox0Wachttijd', true));
-  
-  // Kale modus settings
-  const [isKaleModusActiefVrijeLeermodus, setIsKaleModusActiefVrijeLeermodus] = useState(() => loadFromStorage('isKaleModusActiefVrijeLeermodus', false));
-  const [isKaleModusActiefLeitnerLeermodus, setIsKaleModusActiefLeitnerLeermodus] = useState(() => loadFromStorage('isKaleModusActiefLeitnerLeermodus', false));
 
   // Dev settings
   const [isBox0IntervalVerkort, setIsBox0IntervalVerkort] = useState(() => loadFromStorage('isBox0IntervalVerkort', false));
   const [isRolTijdVerkort, setIsRolTijdVerkort] = useState(() => loadFromStorage('isRolTijdVerkort', false));
+  const [isKaleModusActiefVrijeLeermodus, setIsKaleModusActiefVrijeLeermodus] = useState(() => loadFromStorage('isKaleModusActiefVrijeLeermodus', false));
+  const [isKaleModusActiefLeitnerLeermodus, setIsKaleModusActiefLeitnerLeermodus] = useState(() => loadFromStorage('isKaleModusActiefLeitnerLeermodus', false));
 
   // Bonus settings
   const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(() => loadFromStorage('isLokaleBonusOpslagActief', false));
@@ -292,16 +288,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [isRolTijdVerkort]);
 
   useEffect(() => {
-    saveToStorage('isLokaleBonusOpslagActief', isLokaleBonusOpslagActief);
-  }, [isLokaleBonusOpslagActief]);
-
-  useEffect(() => {
     saveToStorage('isKaleModusActiefVrijeLeermodus', isKaleModusActiefVrijeLeermodus);
   }, [isKaleModusActiefVrijeLeermodus]);
 
   useEffect(() => {
     saveToStorage('isKaleModusActiefLeitnerLeermodus', isKaleModusActiefLeitnerLeermodus);
   }, [isKaleModusActiefLeitnerLeermodus]);
+
+  useEffect(() => {
+    saveToStorage('isLokaleBonusOpslagActief', isLokaleBonusOpslagActief);
+  }, [isLokaleBonusOpslagActief]);
 
   const value: SettingsContextType = {
     // Game settings
@@ -360,17 +356,15 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     negeerBox0Wachttijd,
     setNegeerBox0Wachttijd,
     
-    // Kale modus settings
-    isKaleModusActiefVrijeLeermodus,
-    setIsKaleModusActiefVrijeLeermodus,
-    isKaleModusActiefLeitnerLeermodus,
-    setIsKaleModusActiefLeitnerLeermodus,
-    
     // Dev settings
     isBox0IntervalVerkort,
     setIsBox0IntervalVerkort,
     isRolTijdVerkort,
     setIsRolTijdVerkort,
+    isKaleModusActiefVrijeLeermodus,
+    setIsKaleModusActiefVrijeLeermodus,
+    isKaleModusActiefLeitnerLeermodus,
+    setIsKaleModusActiefLeitnerLeermodus,
     
     // Bonus settings
     isLokaleBonusOpslagActief,

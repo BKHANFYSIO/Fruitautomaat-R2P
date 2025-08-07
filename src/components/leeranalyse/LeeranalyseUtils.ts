@@ -45,16 +45,8 @@ export const formatTijd = (seconds: number) => {
   }
 };
 
-// Helper functie voor het formatteren van datums
-export const formatDatum = (datum: string): string => {
-  return new Date(datum).toLocaleDateString('nl-NL', {
-    day: 'numeric',
-    month: 'short'
-  });
-};
-
 // Helper functie voor het genereren van grafiek labels
-export const generateChartLabels = (data: any[], _tijdsRange: string) => {
+export const generateChartLabels = (data: any[]) => {
   return data.map(d => {
     if ('datum' in d) {
       return new Date(d.datum).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -71,7 +63,7 @@ export const generateChartLabels = (data: any[], _tijdsRange: string) => {
 };
 
 // Helper functie voor het genereren van grafiek configuratie
-export const generateChartConfig = (_tijdsRange: string, grafiekType: string) => {
+export const generateChartConfig = (tijdsRange: string, grafiekType: string) => {
   const baseConfig = grafiekType === 'lijn' ? lineChartConfig : barChartConfig;
   
   return {
@@ -81,8 +73,8 @@ export const generateChartConfig = (_tijdsRange: string, grafiekType: string) =>
         display: true,
         title: {
           display: true,
-                  text: _tijdsRange === 'week' || _tijdsRange === 'maand' ? 'Datum' :
-              _tijdsRange === 'drieMaanden' || _tijdsRange === 'halfJaar' ? 'Week' : 'Maand'
+          text: tijdsRange === 'week' || tijdsRange === 'maand' ? 'Datum' :
+                tijdsRange === 'drieMaanden' || tijdsRange === 'halfJaar' ? 'Week' : 'Maand'
         },
         ticks: {
           color: '#e0e0e0',

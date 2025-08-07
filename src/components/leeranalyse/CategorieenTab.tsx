@@ -3,6 +3,8 @@ import { getLeerDataManager } from '../../data/leerDataManager';
 import StatBar from '../StatBar';
 import type { TabProps } from './LeeranalyseTypes';
 import { 
+  ScoreTrendSparkline, 
+  LeitnerVerdelingBar, 
   MasteryIndicator, 
   RankingCard 
 } from './LeeranalyseComponents';
@@ -36,8 +38,6 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
   const toggleHoofdCategorie = (categorie: string) => {
     setOpenAnalyseCategorieen(prev => ({ ...prev, [categorie]: !prev[categorie] }));
   };
-
-
 
   return (
     <div className="categorieen-tab">
