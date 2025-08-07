@@ -1,4 +1,4 @@
-import type { LeerData, Achievement, LeitnerData, LeitnerAchievement } from '../../data/types';
+import type { LeerData, Achievement, LeitnerData } from '../../data/types';
 
 export interface LeeranalyseProps {
   isOpen: boolean;

@@ -1,18 +1,46 @@
 import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
+import { getLeerDataManager } from '../../data/leerDataManager';
 import type { TabProps } from './LeeranalyseTypes';
 import { barChartConfig } from '../../utils/chartConfigs';
 
 interface LeitnerTabProps extends TabProps {
-  leitnerStats: any;
-  leitnerBoxData: any;
 }
 
 const LeitnerTab: React.FC<LeitnerTabProps> = ({
-  leitnerStats,
-  leitnerBoxData
+  leerData,
+  leitnerData
 }) => {
   const [showLeitnerUitleg, setShowLeitnerUitleg] = useState(false);
+
+  // Data generatie
+  const leerDataManager = React.useMemo(() => {
+    if (!leerData) return null;
+    return getLeerDataManager();
+  }, [leerData]);
+
+  const leitnerStats = React.useMemo(() => {
+    if (!leerDataManager || !leitnerData) return null;
+    return leerDataManager.getLeitnerStatistieken();
+  }, [leerDataManager, leitnerData]);
+
+  const leitnerBoxData = React.useMemo(() => {
+    if (!leerDataManager || !leitnerStats) return null;
+    
+    const boxVerdeling = Object.values(leitnerStats.opdrachtenPerBox);
+    const chartColors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#48bb78', '#ed8936'];
+    
+    return {
+      labels: ['Box 0', 'Box 1', 'Box 2', 'Box 3', 'Box 4', 'Box 5', 'Box 6', 'Beheerst'],
+      datasets: [{
+        label: 'Aantal opdrachten',
+        data: boxVerdeling,
+        backgroundColor: chartColors,
+        borderColor: chartColors,
+        borderWidth: 1
+      }]
+    };
+  }, [leerDataManager, leitnerStats]);
 
   if (!leitnerStats) {
     return (

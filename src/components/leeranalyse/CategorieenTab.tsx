@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { getLeerDataManager } from '../../data/leerDataManager';
 import StatBar from '../StatBar';
-import { TabProps } from './LeeranalyseTypes';
+import type { TabProps } from './LeeranalyseTypes';
 import { 
-  ScoreTrendSparkline, 
-  LeitnerVerdelingBar, 
   MasteryIndicator, 
   RankingCard 
 } from './LeeranalyseComponents';
@@ -39,64 +37,7 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
     setOpenAnalyseCategorieen(prev => ({ ...prev, [categorie]: !prev[categorie] }));
   };
 
-  const renderCardContent = (categorie: any) => {
-    const beheersing = leerDataManager.getCategorieBeheersing(categorie.categorie);
-    const verdeling = leerDataManager.getLeitnerBoxVerdelingVoorCategorie(categorie.categorie);
-    const scoreGeschiedenis = leerDataManager.getScoreGeschiedenisVoorCategorie(categorie.categorie);
 
-    return (
-      <>
-        <div className="beheersing-statistieken">
-          <div className="beheersing-row">
-            <div className="beheersing-item">
-              <span className="beheersing-label">🎯 Beheersing:</span>
-              <span className="beheersing-waarde">{beheersing.beheersingPercentage.toFixed(1)}%</span>
-            </div>
-            <div className="beheersing-item">
-              <span className="beheersing-label">📦 Gem. box:</span>
-              <span className="beheersing-waarde">{beheersing.gemiddeldeBox.toFixed(1)}</span>
-            </div>
-          </div>
-          <div className="beheersing-row">
-            <div className="beheersing-item">
-              <span className="beheersing-label">✅ Beheerst:</span>
-              <span className="beheersing-waarde">{beheersing.beheerstOpdrachten}/{beheersing.totaalOpdrachten}</span>
-            </div>
-            <div className="beheersing-item">
-              <span className="beheersing-label">⚡ Vandaag:</span>
-              <span className="beheersing-waarde">{beheersing.vandaagBeschikbaar} beschikbaar</span>
-            </div>
-          </div>
-        </div>
-        <div className="score-trend-info">
-          <div className="trend-item">
-            <span className="trend-label">📈 Score trend:</span>
-            <span className={`trend-waarde ${beheersing.scoreTrend}`}>
-              {beheersing.scoreTrend === 'stijgend' ? '↗️ Stijgend' : 
-               beheersing.scoreTrend === 'dalend' ? '↘️ Dalend' : '➡️ Stabiel'}
-            </span>
-          </div>
-          <div className="trend-item">
-            <span className="trend-label">🎯 Consistentie:</span>
-            <span className="trend-waarde">{beheersing.consistentieScore.toFixed(0)}%</span>
-          </div>
-        </div>
-        <LeitnerVerdelingBar verdeling={verdeling} />
-        <ScoreTrendSparkline data={scoreGeschiedenis} />
-        <div className="categorie-acties">
-          <button
-            className="focus-knop"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onStartFocusSessie) onStartFocusSessie(categorie.categorie);
-            }}
-          >
-            🎯 Focus Oefening
-          </button>
-        </div>
-      </>
-    );
-  };
 
   return (
     <div className="categorieen-tab">

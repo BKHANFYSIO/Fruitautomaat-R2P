@@ -4,19 +4,66 @@ import type { TabProps } from './LeeranalyseTypes';
 import { formatDatum } from './LeeranalyseUtils';
 
 interface AchievementsTabProps extends TabProps {
-  algemeneAchievementData: any;
-  leitnerAchievementData: any;
-  aangepasteDoughnutConfig: any;
 }
 
 const AchievementsTab: React.FC<AchievementsTabProps> = ({
   achievements,
   leitnerData,
-  achievementDefs,
-  algemeneAchievementData,
-  leitnerAchievementData,
-  aangepasteDoughnutConfig
+  achievementDefs
 }) => {
+  // Data generatie
+  const algemeneAchievementData = React.useMemo(() => {
+    if (!achievements || !achievementDefs) return null;
+    
+    const behaaldeAlgemeen = achievements.filter((a: any) => 
+      achievementDefs.algemeen.some((def: any) => def.id === a.id)
+    ).length;
+    const totaalAlgemeen = achievementDefs.algemeen.length;
+    
+    return {
+      labels: ['Behaald', 'Niet behaald'],
+      datasets: [{
+        data: [behaaldeAlgemeen, totaalAlgemeen - behaaldeAlgemeen],
+        backgroundColor: ['#48bb78', '#e2e8f0'],
+        borderColor: ['#38a169', '#cbd5e0'],
+        borderWidth: 2
+      }]
+    };
+  }, [achievements, achievementDefs]);
+
+  const leitnerAchievementData = React.useMemo(() => {
+    if (!achievements || !achievementDefs) return null;
+    
+    const behaaldeLeitner = achievements.filter((a: any) => 
+      achievementDefs.leitner.some((def: any) => def.id === a.id)
+    ).length;
+    const totaalLeitner = achievementDefs.leitner.length;
+    
+    return {
+      labels: ['Behaald', 'Niet behaald'],
+      datasets: [{
+        data: [behaaldeLeitner, totaalLeitner - behaaldeLeitner],
+        backgroundColor: ['#667eea', '#e2e8f0'],
+        borderColor: ['#5a67d8', '#cbd5e0'],
+        borderWidth: 2
+      }]
+    };
+  }, [achievements, achievementDefs]);
+
+  const aangepasteDoughnutConfig = React.useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: '#e0e0e0',
+          font: { size: 12 }
+        }
+      }
+    }
+  }), []);
+
   if (!achievements && !leitnerData) {
     return (
       <div className="geen-data">

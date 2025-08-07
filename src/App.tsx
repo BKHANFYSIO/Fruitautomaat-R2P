@@ -1760,7 +1760,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       <OpdrachtenVoltooidModal
         isOpen={isOpdrachtenVoltooidModalOpen}
         onClose={() => setIsOpdrachtenVoltooidModalOpen(false)}
-        onOpenCategorieSelectie={(tab = 'leitner') => {
+        onOpenCategorieSelectie={() => {
           setIsOpdrachtenVoltooidModalOpen(false);
           setIsCategorieBeheerOpen(true);
         }}

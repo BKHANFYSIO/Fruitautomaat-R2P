@@ -1,6 +1,6 @@
 import React from 'react';
 import { getLeerDataManager } from '../../data/leerDataManager';
-import { TabProps } from './LeeranalyseTypes';
+import type { TabProps } from './LeeranalyseTypes';
 import { formatNumber } from './LeeranalyseUtils';
 
 interface OverzichtTabProps extends TabProps {

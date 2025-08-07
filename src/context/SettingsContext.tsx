@@ -66,6 +66,12 @@ interface SettingsContextType {
   negeerBox0Wachttijd: boolean;
   setNegeerBox0Wachttijd: (negeer: boolean) => void;
   
+  // Kale modus settings
+  isKaleModusActiefVrijeLeermodus: boolean;
+  setIsKaleModusActiefVrijeLeermodus: (actief: boolean) => void;
+  isKaleModusActiefLeitnerLeermodus: boolean;
+  setIsKaleModusActiefLeitnerLeermodus: (actief: boolean) => void;
+  
   // Dev settings
   isBox0IntervalVerkort: boolean;
   setIsBox0IntervalVerkort: (verkort: boolean) => void;
@@ -172,6 +178,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
   const [negeerBox0Wachttijd, setNegeerBox0Wachttijd] = useState(() => loadFromStorage('negeerBox0Wachttijd', true));
+  
+  // Kale modus settings
+  const [isKaleModusActiefVrijeLeermodus, setIsKaleModusActiefVrijeLeermodus] = useState(() => loadFromStorage('isKaleModusActiefVrijeLeermodus', false));
+  const [isKaleModusActiefLeitnerLeermodus, setIsKaleModusActiefLeitnerLeermodus] = useState(() => loadFromStorage('isKaleModusActiefLeitnerLeermodus', false));
 
   // Dev settings
   const [isBox0IntervalVerkort, setIsBox0IntervalVerkort] = useState(() => loadFromStorage('isBox0IntervalVerkort', false));
@@ -285,6 +295,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     saveToStorage('isLokaleBonusOpslagActief', isLokaleBonusOpslagActief);
   }, [isLokaleBonusOpslagActief]);
 
+  useEffect(() => {
+    saveToStorage('isKaleModusActiefVrijeLeermodus', isKaleModusActiefVrijeLeermodus);
+  }, [isKaleModusActiefVrijeLeermodus]);
+
+  useEffect(() => {
+    saveToStorage('isKaleModusActiefLeitnerLeermodus', isKaleModusActiefLeitnerLeermodus);
+  }, [isKaleModusActiefLeitnerLeermodus]);
+
   const value: SettingsContextType = {
     // Game settings
     gameMode,
@@ -341,6 +359,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsMaxNewQuestionsLimitActief,
     negeerBox0Wachttijd,
     setNegeerBox0Wachttijd,
+    
+    // Kale modus settings
+    isKaleModusActiefVrijeLeermodus,
+    setIsKaleModusActiefVrijeLeermodus,
+    isKaleModusActiefLeitnerLeermodus,
+    setIsKaleModusActiefLeitnerLeermodus,
     
     // Dev settings
     isBox0IntervalVerkort,

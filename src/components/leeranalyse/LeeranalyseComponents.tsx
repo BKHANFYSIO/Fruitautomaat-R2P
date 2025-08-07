@@ -1,6 +1,5 @@
-import React from 'react';
 import { Line } from 'react-chartjs-2';
-import { SparklineData, LeitnerVerdeling, MasteryData } from './LeeranalyseTypes';
+import type { SparklineData, LeitnerVerdeling, MasteryData } from './LeeranalyseTypes';
 
 export const ScoreTrendSparkline = ({ data }: { data: SparklineData[] }) => {
   if (data.length < 2) {

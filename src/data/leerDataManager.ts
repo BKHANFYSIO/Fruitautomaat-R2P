@@ -2772,7 +2772,10 @@ class LeerDataManager {
 
     const alleVandaagBeschikbaar = this.getLeitnerOpdrachtenVoorVandaag();
     const vandaagBeschikbaar = alleVandaagBeschikbaar.filter(item => {
-      const opdrachtCategorie = this._alleOpdrachten.find(op => op.id === item.opdrachtId)?.Categorie;
+      const opdrachtCategorie = this._alleOpdrachten.find(op => {
+        const opdrachtId = `${op.Hoofdcategorie || ''}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+        return opdrachtId === item.opdrachtId;
+      })?.Categorie;
       return opdrachtCategorie && categorieenLijst.includes(opdrachtCategorie);
     }).length;
 
