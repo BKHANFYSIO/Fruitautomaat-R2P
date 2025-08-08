@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import './OpdrachtenDetailModal.css';
 import { opdrachtTypeIconen } from '../data/constants';
+import { AntwoordContent } from './AntwoordContent';
 
 type OpdrachtDetailKeys = keyof OpdrachtDetail;
 
@@ -143,7 +144,11 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
                     {zichtbareAntwoorden.includes(opdracht.opdracht) ? (
                       <>
                         <div className="antwoord-tekst">
-                          {opdracht.antwoord || <div className="geen-antwoord">Deze opdracht heeft geen opgegeven antwoordsleutel. Zoek zelf naar bronnen om je eigen antwoord te controleren.</div>}
+                          {opdracht.antwoord ? (
+                            <AntwoordContent text={opdracht.antwoord} />
+                          ) : (
+                            <div className="geen-antwoord">Deze opdracht heeft geen opgegeven antwoordsleutel. Zoek zelf naar bronnen om je eigen antwoord te controleren.</div>
+                          )}
                         </div>
                         <button 
                           className="antwoord-toggle-knop verberg" 

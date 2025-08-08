@@ -1,0 +1,58 @@
+{
+  "https://img.youtube.com/vi/${id}/hqdefault.jpg": {
+    "originalUrl": "https://img.youtube.com/vi/${id}/hqdefault.jpg",
+    "meta": {
+      "site": "img.youtube.com",
+      "kind": "image"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-08T13:40:43.430Z",
+    "lastSeen": "2025-08-08T13:40:43.430Z"
+  },
+  "https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1": {
+    "originalUrl": "https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1",
+    "meta": {
+      "site": "youtube.com",
+      "kind": "youtube"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-08T13:40:43.430Z",
+    "lastSeen": "2025-08-08T13:40:43.430Z"
+  },
+  "https://player.vimeo.com/video/${item.id}": {
+    "originalUrl": "https://player.vimeo.com/video/${item.id}",
+    "meta": {
+      "site": "player.vimeo.com",
+      "kind": "vimeo"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-08T13:40:43.430Z",
+    "lastSeen": "2025-08-08T13:40:43.430Z"
+  },
+  "https://www.startwondverzorging.nl/CONTENT/images/Wondgenezing-fases.jpg": {
+    "originalUrl": "https://www.startwondverzorging.nl/CONTENT/images/Wondgenezing-fases.jpg",
+    "meta": {
+      "site": "startwondverzorging.nl",
+      "kind": "image"
+    },
+    "localPath": "/answer-media/d5ecf6e02761b923a2656bc4df7602a4f5cc33aa.jpg",
+    "contentHash": "d5ecf6e02761b923a2656bc4df7602a4f5cc33aa",
+    "etag": "\"ebeb-5ba3a504-9c61fb73a0961138;;;\"",
+    "lastModified": "Thu, 20 Sep 2018 13:47:48 GMT",
+    "status": "ok",
+    "lastChecked": "2025-08-08T21:50:06.621Z",
+    "lastSeen": "2025-08-08T21:50:06.621Z"
+  },
+  "https://www.youtube.com/watch?v=G6eDhgTmNIA": {
+    "originalUrl": "https://www.youtube.com/watch?v=G6eDhgTmNIA",
+    "meta": {
+      "site": "youtube.com",
+      "kind": "youtube",
+      "title": "Active Range of Motion (Knee Joint)",
+      "author": "Physiotutors"
+    },
+    "status": "ok",
+    "lastChecked": "2025-08-08T21:50:06.621Z",
+    "lastSeen": "2025-08-08T21:50:06.621Z"
+  }
+}

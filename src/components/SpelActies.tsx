@@ -4,6 +4,7 @@ import './SpelActies.css';
 import { AiPromptModal } from './AiPromptModal';
 import { CRITERIA } from '../data/criteria';
 import { Modal } from './Modal';
+import { AntwoordContent } from './AntwoordContent';
 import './Modal.css'; // Nodig voor antwoord-content styling
 
 interface SpelActiesProps {
@@ -82,7 +83,7 @@ export const SpelActies = ({ opdracht }: SpelActiesProps) => {
             </div>
             <div className="antwoord-sectie">
               <h4>Antwoordsleutel</h4>
-              <p>{antwoordSleutelText}</p>
+              <AntwoordContent text={antwoordSleutelText} />
             </div>
           </div>
         </Modal>

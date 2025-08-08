@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "check:links": "node scripts/check-links.mjs",
+    "media:cache": "node scripts/media-cache.mjs",
+    "allowlist:write": "node scripts/allowlist-write.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.0",

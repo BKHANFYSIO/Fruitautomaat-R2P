@@ -1,0 +1,72 @@
+.antwoord-richtext {
+  color: #e0e0e0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.antwoord-richtext p {
+  margin: 0 0 0.6rem 0;
+}
+
+.antwoord-richtext a {
+  color: #7ec8ff;
+  text-decoration: underline;
+}
+
+.media-embeds {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.media-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid #444;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.media-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.media-image {
+  background: #1f1f1f;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.media-image img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+
+.media-link {
+  margin-top: 6px;
+  font-size: 0.9rem;
+}
+
+.apa-citation {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #bbb;
+}
+
+.geen-antwoord {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+
