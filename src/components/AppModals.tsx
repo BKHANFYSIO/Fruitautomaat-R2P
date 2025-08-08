@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
-import type { Opdracht, Achievement } from '../data/types';
-import type { HighScore, HighScoreLibrary } from '../data/highScoreManager';
+import type { Opdracht } from '../data/types';
+import type { HighScoreLibrary } from '../data/highScoreManager';
 import { Instellingen } from './Instellingen';
 import { Uitleg } from './Uitleg';
 import { SessieSamenvatting } from './SessieSamenvatting';
@@ -45,7 +45,7 @@ type Props = {
   // Leeranalyse
   isLeeranalyseOpen: boolean;
   onCloseLeeranalyse: () => void;
-  onStartFocusSessie: (categorie: string, leermodusType: 'normaal' | 'leitner') => void;
+  onStartFocusSessie: (categorie: string, leermodusType?: 'normaal' | 'leitner') => void;
   openLeeranalyseToAchievements: boolean;
 
   // Categorie selectie
@@ -57,11 +57,11 @@ type Props = {
   onBulkCategorieSelectie: (bulkCategorieen: string[], type: 'select' | 'deselect') => void;
   onOpenLeitnerBeheer: () => void;
   highScoreLibrary: HighScoreLibrary;
-  setGeselecteerdeHighscoreCategorieen: (cats: string[]) => void;
+  setGeselecteerdeHighscoreCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   geselecteerdeLeitnerCategorieen: string[];
-  setGeselecteerdeLeitnerCategorieen: (cats: string[]) => void;
+  setGeselecteerdeLeitnerCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   geselecteerdeMultiplayerCategorieen: string[];
-  setGeselecteerdeMultiplayerCategorieen: (cats: string[]) => void;
+  setGeselecteerdeMultiplayerCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   geselecteerdeHighscoreCategorieen: string[];
   initialActiveTab: 'highscore' | 'multiplayer' | 'normaal' | 'leitner';
   filters: any;

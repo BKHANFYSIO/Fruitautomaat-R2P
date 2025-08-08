@@ -1,7 +1,6 @@
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import type { TabProps } from './LeeranalyseTypes';
-import type { Achievement, LeitnerAchievement, LeerData, LeitnerData } from '../../data/types';
 import { formatDate } from './LeeranalyseUtils';
 
 interface AchievementsTabProps extends TabProps {

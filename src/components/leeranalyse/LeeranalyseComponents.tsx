@@ -1,6 +1,6 @@
 
 import { Line } from 'react-chartjs-2';
-import type { SparklineData, LeitnerVerdeling, MasteryData } from './LeeranalyseTypes';
+import type { SparklineData, LeitnerVerdeling, MasteryData, RankingData } from './LeeranalyseTypes';
 
 export const ScoreTrendSparkline = ({ data }: { data: SparklineData[] }) => {
   if (data.length < 2) {
@@ -136,7 +136,7 @@ export const RankingCard = ({
   type, 
   categoryType 
 }: { 
-  rankingData: { categorie?: string; score?: number; dekking?: number; gemiddeldeBox?: number; beheersing?: number } | null, 
+  rankingData: (RankingData & { dekking?: number; gemiddeldeBox?: number; beheersing?: number }) | null, 
   type: 'Beste' | 'Verbeterpunt', 
   categoryType: 'Hoofd' | 'Sub' 
 }) => {

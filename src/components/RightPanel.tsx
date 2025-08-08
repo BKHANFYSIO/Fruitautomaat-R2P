@@ -1,5 +1,6 @@
-import React, { RefObject } from 'react';
-import type { Opdracht, Speler, Achievement, GamePhase } from '../data/types';
+import React from 'react';
+import type { RefObject } from 'react';
+import type { Opdracht, Speler, GamePhase } from '../data/types';
 import { Fruitautomaat } from './Fruitautomaat';
 import { ActieDashboard } from './ActieDashboard';
 import { NotificatieBanner } from './NotificatieBanner';
@@ -126,6 +127,7 @@ export const RightPanel: React.FC<Props> = ({
             spelers={spelers}
             huidigeSpeler={huidigeSpeler}
             onPartnerKies={onPartnerKies}
+            isGeluidActief={isGeluidActief}
             onGebruikExtraSpin={onGebruikExtraSpin}
             isJokerSpinActief={isJokerSpinActief}
             puntenVoorVerdubbeling={puntenVoorVerdubbeling}
