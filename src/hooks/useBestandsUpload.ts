@@ -28,8 +28,7 @@ export function useBestandsUpload(
       try {
         const arrayBuffer = event.target?.result as ArrayBuffer;
         const nieuweOpdrachten = parseExcelData(arrayBuffer, 'gebruiker');
-        const huidigeOpdrachten = nieuweOpdrachten.filter(o => o.bron === 'gebruiker');
-        // NB: hierboven zijn alleen nieuwe; dedupe doen we op basis van alle 'gebruiker' items in app-context
+        // NB: deduplicatie is elders afgevangen
         laadNieuweOpdrachten(nieuweOpdrachten, vervang);
         if (vervang) {
           showNotificatie(`${nieuweOpdrachten.length} opdrachten succesvol vervangen!`, 'succes', 4000);

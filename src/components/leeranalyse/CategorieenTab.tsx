@@ -97,14 +97,14 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
             <div className="vergelijking-cards">
               {hoofdcategorieRanking && hoofdcategorieRanking.categorieRanking && hoofdcategorieRanking.categorieRanking.length >= 2 && (
                 <>
-                  <RankingCard rankingData={hoofdcategorieRanking.categorieRanking[0]} type="Beste" categoryType="Hoofd" />
-                  <RankingCard rankingData={hoofdcategorieRanking.categorieRanking[hoofdcategorieRanking.categorieRanking.length - 1]} type="Verbeterpunt" categoryType="Hoofd" />
+                  <RankingCard rankingData={hoofdcategorieRanking.categorieRanking[0] as any} type="Beste" categoryType="Hoofd" />
+                  <RankingCard rankingData={hoofdcategorieRanking.categorieRanking[hoofdcategorieRanking.categorieRanking.length - 1] as any} type="Verbeterpunt" categoryType="Hoofd" />
                 </>
               )}
               {subcategorieRanking && subcategorieRanking.categorieRanking && subcategorieRanking.categorieRanking.length >= 2 && (
                 <>
-                  <RankingCard rankingData={subcategorieRanking.categorieRanking[0]} type="Beste" categoryType="Sub" />
-                  <RankingCard rankingData={subcategorieRanking.categorieRanking[subcategorieRanking.categorieRanking.length - 1]} type="Verbeterpunt" categoryType="Sub" />
+                  <RankingCard rankingData={subcategorieRanking.categorieRanking[0] as any} type="Beste" categoryType="Sub" />
+                  <RankingCard rankingData={subcategorieRanking.categorieRanking[subcategorieRanking.categorieRanking.length - 1] as any} type="Verbeterpunt" categoryType="Sub" />
                 </>
               )}
             </div>
