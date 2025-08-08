@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { getLeerDataManager } from '../../data/leerDataManager';
 import StatBar from '../StatBar';
-import type { TabProps, RankingData } from './LeeranalyseTypes';
+import type { TabProps } from './LeeranalyseTypes';
 import { 
   MasteryIndicator, 
   RankingCard 
 } from './LeeranalyseComponents';
 
+type CategorieRankingItem = {
+  categorie: string;
+  combiScore?: number;
+  dekking?: number;
+  gemBox?: number;
+  beheersing?: number;
+  score?: number;
+  percentage?: number;
+  gemiddeldeBox?: number;
+};
+
 interface CategorieenTabProps extends TabProps {
   showInfoModal: (title: string, content: string) => void;
-  hoofdcategorieRanking: { categorieRanking: RankingData[] } | null;
-  subcategorieRanking: { categorieRanking: RankingData[] } | null;
+  hoofdcategorieRanking: { categorieRanking: CategorieRankingItem[] } | null;
+  subcategorieRanking: { categorieRanking: CategorieRankingItem[] } | null;
 }
 
 const CategorieenTab: React.FC<CategorieenTabProps> = ({ 
