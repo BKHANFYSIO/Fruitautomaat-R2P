@@ -4,6 +4,15 @@ import type { ReactNode } from 'react';
 type GameMode = 'single' | 'multi';
 type BonusKans = 'standaard' | 'verhoogd' | 'fors_verhoogd';
 
+type LeermodusInstellingenView = {
+  type: 'normaal' | 'leitner';
+  isSpinVergrendelingActief: boolean;
+  isKaleModusActief: boolean;
+  maxNewLeitnerQuestionsPerDay?: number;
+  isMaxNewQuestionsLimitActief?: boolean;
+  negeerBox0Wachttijd?: boolean;
+};
+
 interface SettingsContextType {
   // Game settings
   gameMode: GameMode;
@@ -79,6 +88,30 @@ interface SettingsContextType {
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
   setIsLokaleBonusOpslagActief: (actief: boolean) => void;
+
+  // Gegroepeerde per-modus instellingen (read-only views)
+  highscoreInstellingen: Readonly<{
+    isSpinVergrendelingActief: boolean;
+    isJokerSpinActief: boolean;
+  }>;
+  multiplayerInstellingen: Readonly<{
+    isSpinVergrendelingActief: boolean;
+    isJokerSpinActief: boolean;
+  }>;
+  vrijeLeermodusInstellingen: Readonly<{
+    isSpinVergrendelingActief: boolean;
+    isKaleModusActief: boolean;
+  }>;
+  leitnerLeermodusInstellingen: Readonly<{
+    isSpinVergrendelingActief: boolean;
+    isKaleModusActief: boolean;
+    maxNewLeitnerQuestionsPerDay: number;
+    isMaxNewQuestionsLimitActief: boolean;
+    negeerBox0Wachttijd: boolean;
+  }>;
+
+  // Actieve leermodus (alleen geldig bij single + serieuze leermodus)
+  actieveLeermodusInstellingen: Readonly<LeermodusInstellingenView> | null;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -369,6 +402,48 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     // Bonus settings
     isLokaleBonusOpslagActief,
     setIsLokaleBonusOpslagActief,
+
+    // Gegroepeerde per-modus instellingen (read-only views)
+    highscoreInstellingen: {
+      isSpinVergrendelingActief: isSpinVergrendelingActiefHighscore,
+      isJokerSpinActief: isJokerSpinActiefHighscore,
+    },
+    multiplayerInstellingen: {
+      isSpinVergrendelingActief: isSpinVergrendelingActiefMultiplayer,
+      isJokerSpinActief: isJokerSpinActiefMultiplayer,
+    },
+    vrijeLeermodusInstellingen: {
+      isSpinVergrendelingActief: isSpinVergrendelingActiefVrijeLeermodus,
+      isKaleModusActief: isKaleModusActiefVrijeLeermodus,
+    },
+    leitnerLeermodusInstellingen: {
+      isSpinVergrendelingActief: isSpinVergrendelingActiefLeitnerLeermodus,
+      isKaleModusActief: isKaleModusActiefLeitnerLeermodus,
+      maxNewLeitnerQuestionsPerDay,
+      isMaxNewQuestionsLimitActief,
+      negeerBox0Wachttijd,
+    },
+
+    actieveLeermodusInstellingen: (
+      isSerieuzeLeerModusActief && gameMode === 'single'
+        ? (
+            leermodusType === 'leitner'
+              ? {
+                  type: 'leitner',
+                  isSpinVergrendelingActief: isSpinVergrendelingActiefLeitnerLeermodus,
+                  isKaleModusActief: isKaleModusActiefLeitnerLeermodus,
+                  maxNewLeitnerQuestionsPerDay,
+                  isMaxNewQuestionsLimitActief,
+                  negeerBox0Wachttijd,
+                }
+              : {
+                  type: 'normaal',
+                  isSpinVergrendelingActief: isSpinVergrendelingActiefVrijeLeermodus,
+                  isKaleModusActief: isKaleModusActiefVrijeLeermodus,
+                }
+          )
+        : null
+    ),
   };
 
   return (

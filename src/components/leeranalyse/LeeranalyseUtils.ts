@@ -46,16 +46,16 @@ export const formatTijd = (seconds: number) => {
 };
 
 // Helper functie voor het genereren van grafiek labels
-export const generateChartLabels = (data: any[]) => {
+export const generateChartLabels = (data: Array<{ datum?: string; week?: string; maand?: string }>) => {
   return data.map(d => {
     if ('datum' in d) {
-      return new Date(d.datum).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      return new Date(d.datum as string).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' });
     } else if ('week' in d) {
-      const date = new Date(d.week);
+      const date = new Date(d.week as string);
       const weekNumber = getWeekNumber(date);
       return `Week ${weekNumber} (${date.getFullYear()})`;
     } else if ('maand' in d) {
-      const [year, month] = d.maand.split('-');
+      const [year, month] = (d.maand as string).split('-');
       return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' });
     }
     return '';

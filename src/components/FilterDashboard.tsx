@@ -50,7 +50,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     // Voorkom dat beide bronnen worden uitgeschakeld
     if (filters.bronnen.includes(bron) && filters.bronnen.length === 1) {
-      alert('Er moet minimaal één bron geselecteerd zijn');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er moet minimaal één bron geselecteerd zijn', type: 'fout', timeoutMs: 3000 } }));
       return; // Laat minimaal één bron geselecteerd
     }
     

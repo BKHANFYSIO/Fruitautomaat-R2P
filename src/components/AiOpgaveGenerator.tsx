@@ -132,7 +132,7 @@ ${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator 
     const prompt = generatePrompt();
     try {
       await navigator.clipboard.writeText(prompt);
-      alert('Prompt gekopieerd naar klembord!');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Prompt gekopieerd naar klembord!', type: 'succes', timeoutMs: 2500 } }));
     } catch (err) {
       // Fallback voor oudere browsers
       const textArea = document.createElement('textarea');
@@ -141,7 +141,7 @@ ${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator 
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert('Prompt gekopieerd naar klembord!');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Prompt gekopieerd naar klembord!', type: 'succes', timeoutMs: 2500 } }));
     }
   };
 

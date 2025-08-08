@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
-import type { TabProps, TijdsRange, GrafiekType, FocusMetric } from './LeeranalyseTypes';
+import type { TabProps, TijdsRange, GrafiekType, FocusMetric, ActiviteitData, PrestatieData, FocusData, SessieKwaliteitData, TopCategorieData, LeerpatronenData, SessiePatronenData, LeitnerBoxHerhalingenData, StreakData } from './LeeranalyseTypes';
 import { generateChartLabels } from './LeeranalyseUtils';
 import { lineChartConfig, barChartConfig } from '../../utils/chartConfigs';
+import { getLeerDataManager } from '../../data/leerDataManager';
 
 
 // Array van kleuren voor grafieken
@@ -10,15 +11,15 @@ const chartColorArray = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', 
 
 interface TijdlijnTabProps extends TabProps {
   // Data props
-  activiteitData: any;
-  prestatieData: any;
-  focusData: any;
-  sessieKwaliteitData: any;
-  topCategorieData: any;
-  leerpatronenData: any;
-  sessiePatronenData: any;
-  leitnerBoxHerhalingenData: any;
-  streakData: any;
+  activiteitData: ActiviteitData[] | null;
+  prestatieData: PrestatieData[] | null;
+  focusData: FocusData[] | null;
+  sessieKwaliteitData: SessieKwaliteitData[] | null;
+  topCategorieData: TopCategorieData[] | null;
+  leerpatronenData: LeerpatronenData[] | null;
+  sessiePatronenData: SessiePatronenData[] | null;
+  leitnerBoxHerhalingenData: LeitnerBoxHerhalingenData[] | null;
+  streakData: StreakData | null;
 }
 
 const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
@@ -42,6 +43,119 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   const [leerpatronenTijdsRange, setLeerpatronenTijdsRange] = useState<TijdsRange>('week');
   const [leitnerBoxHerhalingenTijdsRange, setLeitnerBoxHerhalingenTijdsRange] = useState<TijdsRange>('week');
 
+  // Eenmalige initialisatie-flags om handmatige keuzes van de gebruiker niet te overschrijven
+  const initDone = useRef({
+    activiteit: false,
+    prestatie: false,
+    focus: false,
+    sessieKwaliteit: false,
+    topCategorie: false,
+    leerpatronen: false,
+    leitnerBox: false
+  });
+
+  // Bepaal automatische range op basis van span in dagen van de dataset
+  const bepaalAutoRange = (dataArray: Array<{ datum?: string; week?: string; maand?: string; [k: string]: unknown }> | null | undefined): TijdsRange => {
+    if (!dataArray || dataArray.length === 0) return 'week';
+
+    const parseItemDate = (item: { datum?: string; week?: string; maand?: string }): Date | null => {
+      if (item.datum) {
+        return new Date(item.datum as string);
+      }
+      if (item.week) {
+        return new Date(item.week as string);
+      }
+      if (item.maand) {
+        const [y, m] = String(item.maand as string).split('-');
+        const year = Number(y);
+        const month = Number(m);
+        if (!isNaN(year) && !isNaN(month)) {
+          return new Date(year, month - 1, 1);
+        }
+      }
+      return null;
+    };
+
+    let minTime = Number.POSITIVE_INFINITY;
+    let maxTime = Number.NEGATIVE_INFINITY;
+    for (const item of dataArray) {
+      // Bepaal of dit item daadwerkelijke activiteit bevat (minstens één numerieke waarde > 0)
+      const heeftWaarde = Object.entries(item).some(([key, value]) => {
+        if (key === 'datum' || key === 'week' || key === 'maand') return false;
+        return typeof value === 'number' && value > 0;
+      });
+
+      if (!heeftWaarde) continue;
+
+      const d = parseItemDate(item);
+      if (d && !isNaN(d.getTime())) {
+        const t = d.getTime();
+        if (t < minTime) minTime = t;
+        if (t > maxTime) maxTime = t;
+      }
+    }
+
+    if (!isFinite(minTime) || !isFinite(maxTime)) return 'week';
+
+    const dagen = Math.ceil((maxTime - minTime) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (dagen <= 7) return 'week';
+    if (dagen <= 31) return 'maand';
+    if (dagen <= 92) return 'drieMaanden';
+    if (dagen <= 183) return 'halfJaar';
+    return 'jaar';
+  };
+
+  // Initialiseer per sectie automatisch de meest passende periode (eenmalig)
+  useEffect(() => {
+    if (!initDone.current.activiteit && activiteitData && activiteitData.length > 0) {
+      setActiviteitTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(activiteitData as any) : prev));
+      initDone.current.activiteit = true;
+    }
+  }, [activiteitData]);
+
+  useEffect(() => {
+    if (!initDone.current.prestatie && prestatieData && prestatieData.length > 0) {
+      setPrestatieTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(prestatieData as any) : prev));
+      initDone.current.prestatie = true;
+    }
+  }, [prestatieData]);
+
+  useEffect(() => {
+    if (!initDone.current.focus && focusData && focusData.length > 0) {
+      setFocusTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(focusData as any) : prev));
+      initDone.current.focus = true;
+    }
+  }, [focusData]);
+
+  useEffect(() => {
+    if (!initDone.current.sessieKwaliteit && sessieKwaliteitData && sessieKwaliteitData.length > 0) {
+      setSessieKwaliteitTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(sessieKwaliteitData as any) : prev));
+      initDone.current.sessieKwaliteit = true;
+    }
+  }, [sessieKwaliteitData]);
+
+  useEffect(() => {
+    if (!initDone.current.topCategorie && topCategorieData && topCategorieData.length > 0) {
+      setTopCategorieTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(topCategorieData as any) : prev));
+      initDone.current.topCategorie = true;
+    }
+  }, [topCategorieData]);
+
+  useEffect(() => {
+    if (!initDone.current.leerpatronen && leerpatronenData && leerpatronenData.length > 0) {
+      setLeerpatronenTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(leerpatronenData as any) : prev));
+      initDone.current.leerpatronen = true;
+    }
+  }, [leerpatronenData]);
+
+  useEffect(() => {
+    if (!initDone.current.leitnerBox && leitnerBoxHerhalingenData && leitnerBoxHerhalingenData.length > 0) {
+      setLeitnerBoxHerhalingenTijdsRange(prev => (prev === 'week' ? bepaalAutoRange(leitnerBoxHerhalingenData as any) : prev));
+      initDone.current.leitnerBox = true;
+    }
+  }, [leitnerBoxHerhalingenData]);
+
   // State voor grafiek types
   const [activiteitGrafiekType, setActiviteitGrafiekType] = useState<GrafiekType>('lijn');
   const [prestatieGrafiekType, setPrestatieGrafiekType] = useState<GrafiekType>('lijn');
@@ -53,6 +167,181 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
 
   // State voor focus metric
   const [focusMetric, setFocusMetric] = useState<FocusMetric>('tijd');
+
+  // Data manager
+  const leerDataManager = React.useMemo(() => getLeerDataManager(), []);
+
+  // Sla/lees gebruikerskeuze per grafiek op uit localStorage
+  const storageLoadedRef = useRef(false);
+  useEffect(() => {
+    if (storageLoadedRef.current) return;
+    try {
+      const readRange = (key: string): TijdsRange | null => {
+        const v = localStorage.getItem(key);
+        if (v === 'week' || v === 'maand' || v === 'drieMaanden' || v === 'halfJaar' || v === 'jaar') return v;
+        return null;
+      };
+      const readType = (key: string): GrafiekType | null => {
+        const v = localStorage.getItem(key);
+        if (v === 'lijn' || v === 'staaf' || v === 'gestapeld') return v;
+        return null;
+      };
+      const readMetric = (key: string): FocusMetric | null => {
+        const v = localStorage.getItem(key);
+        if (v === 'tijd' || v === 'aantal') return v;
+        return null;
+      };
+
+      // Periode
+      const r1 = readRange('tijdlijn_activiteit_range'); if (r1) setActiviteitTijdsRange(r1);
+      const r2 = readRange('tijdlijn_prestatie_range'); if (r2) setPrestatieTijdsRange(r2);
+      const r3 = readRange('tijdlijn_focus_range'); if (r3) setFocusTijdsRange(r3);
+      const r4 = readRange('tijdlijn_sessie_range'); if (r4) setSessieKwaliteitTijdsRange(r4);
+      const r5 = readRange('tijdlijn_topcat_range'); if (r5) setTopCategorieTijdsRange(r5);
+      const r6 = readRange('tijdlijn_leerpatronen_range'); if (r6) setLeerpatronenTijdsRange(r6);
+      const r7 = readRange('tijdlijn_leitnerbox_range'); if (r7) setLeitnerBoxHerhalingenTijdsRange(r7);
+
+      // Types
+      const t1 = readType('tijdlijn_activiteit_type'); if (t1) setActiviteitGrafiekType(t1);
+      const t2 = readType('tijdlijn_prestatie_type'); if (t2) setPrestatieGrafiekType(t2);
+      const t3 = readType('tijdlijn_focus_type'); if (t3) setFocusGrafiekType(t3);
+      const t4 = readType('tijdlijn_sessie_type'); if (t4) setSessieKwaliteitGrafiekType(t4);
+      const t5 = readType('tijdlijn_topcat_type'); if (t5) setTopCategorieGrafiekType(t5);
+      const t6 = readType('tijdlijn_leerpatronen_type'); if (t6) setLeerpatronenGrafiekType(t6);
+      const t7 = readType('tijdlijn_leitnerbox_type'); if (t7) setLeitnerBoxHerhalingenGrafiekType(t7);
+
+      // Focus metric
+      const fm = readMetric('tijdlijn_focus_metric'); if (fm) setFocusMetric(fm);
+    } catch {}
+    storageLoadedRef.current = true;
+  }, []);
+
+  useEffect(() => { try { localStorage.setItem('tijdlijn_activiteit_range', activiteitTijdsRange); } catch {} }, [activiteitTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_prestatie_range', prestatieTijdsRange); } catch {} }, [prestatieTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_focus_range', focusTijdsRange); } catch {} }, [focusTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_sessie_range', sessieKwaliteitTijdsRange); } catch {} }, [sessieKwaliteitTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_topcat_range', topCategorieTijdsRange); } catch {} }, [topCategorieTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_leerpatronen_range', leerpatronenTijdsRange); } catch {} }, [leerpatronenTijdsRange]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_leitnerbox_range', leitnerBoxHerhalingenTijdsRange); } catch {} }, [leitnerBoxHerhalingenTijdsRange]);
+
+  useEffect(() => { try { localStorage.setItem('tijdlijn_activiteit_type', activiteitGrafiekType); } catch {} }, [activiteitGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_prestatie_type', prestatieGrafiekType); } catch {} }, [prestatieGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_focus_type', focusGrafiekType); } catch {} }, [focusGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_sessie_type', sessieKwaliteitGrafiekType); } catch {} }, [sessieKwaliteitGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_topcat_type', topCategorieGrafiekType); } catch {} }, [topCategorieGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_leerpatronen_type', leerpatronenGrafiekType); } catch {} }, [leerpatronenGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_leitnerbox_type', leitnerBoxHerhalingenGrafiekType); } catch {} }, [leitnerBoxHerhalingenGrafiekType]);
+  useEffect(() => { try { localStorage.setItem('tijdlijn_focus_metric', focusMetric); } catch {} }, [focusMetric]);
+
+  // Helper: mapping range -> granulariteit en venster
+  const getGranulariteitEnVenster = (range: TijdsRange): { gran: 'dag' | 'week' | 'maand'; venster: number } => {
+    switch (range) {
+      case 'week':
+        return { gran: 'dag', venster: 7 };
+      case 'maand':
+        return { gran: 'dag', venster: 31 };
+      case 'drieMaanden':
+        return { gran: 'week', venster: 12 };
+      case 'halfJaar':
+        return { gran: 'week', venster: 26 };
+      case 'jaar':
+        return { gran: 'maand', venster: 12 };
+      default:
+        return { gran: 'dag', venster: 7 };
+    }
+  };
+
+  // Globale reset naar automatische periodes (niet per sectie)
+  const resetNaarAutomatisch = () => {
+    try {
+      localStorage.removeItem('tijdlijn_activiteit_range');
+      localStorage.removeItem('tijdlijn_prestatie_range');
+      localStorage.removeItem('tijdlijn_focus_range');
+      localStorage.removeItem('tijdlijn_sessie_range');
+      localStorage.removeItem('tijdlijn_topcat_range');
+      localStorage.removeItem('tijdlijn_leerpatronen_range');
+      localStorage.removeItem('tijdlijn_leitnerbox_range');
+    } catch {}
+
+    // Bepaal opnieuw op basis van langere dagelijkse data (duurzaam voor half jaar+)
+    const actDaily = leerDataManager.getDagelijkseActiviteitData(365) as Array<{ datum?: string; week?: string; maand?: string }>;
+    setActiviteitTijdsRange(bepaalAutoRange(actDaily));
+
+    const prestDaily = leerDataManager.getPrestatieDagelijkseData(365) as Array<{ datum?: string; week?: string; maand?: string }>;
+    setPrestatieTijdsRange(bepaalAutoRange(prestDaily));
+
+    const focusDaily = leerDataManager.getFocusDagelijkseData(365, focusMetric) as Array<{ datum?: string; week?: string; maand?: string }>;
+    setFocusTijdsRange(bepaalAutoRange(focusDaily));
+
+    const sessieDaily = leerDataManager.getSessieKwaliteitDagelijkseData(365) as Array<{ datum?: string; week?: string; maand?: string }>;
+    setSessieKwaliteitTijdsRange(bepaalAutoRange(sessieDaily));
+
+    const topDaily = leerDataManager.getTopCategorieDagelijkseData(365) as Array<{ datum?: string; week?: string; maand?: string }>;
+    setTopCategorieTijdsRange(bepaalAutoRange(topDaily));
+
+    const leitnerDaily = leerDataManager.getLeitnerTijdlijnData(365);
+    setLeerpatronenTijdsRange(bepaalAutoRange(leitnerDaily));
+
+    const leitnerBoxDaily = leerDataManager.getLeitnerBoxHerhalingenTijdlijnData(365);
+    setLeitnerBoxHerhalingenTijdsRange(bepaalAutoRange(leitnerBoxDaily));
+  };
+
+  // Range-gebonden data ophalen per sectie
+  const activiteitDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(activiteitTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getDagelijkseActiviteitData(venster);
+    if (gran === 'week') return leerDataManager.getWeekelijkseData(venster);
+    return leerDataManager.getMaandelijkseData(venster);
+  }, [leerData, leerDataManager, activiteitTijdsRange]);
+
+  const prestatieDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(prestatieTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getPrestatieDagelijkseData(venster);
+    if (gran === 'week') return leerDataManager.getPrestatieWeekelijkseData(venster);
+    return leerDataManager.getPrestatieMaandelijkseData(venster);
+  }, [leerData, leerDataManager, prestatieTijdsRange]);
+
+  const focusDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(focusTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getFocusDagelijkseData(venster, focusMetric);
+    if (gran === 'week') return leerDataManager.getFocusWeekelijkseData(venster, focusMetric);
+    return leerDataManager.getFocusMaandelijkseData(venster, focusMetric);
+  }, [leerData, leerDataManager, focusTijdsRange, focusMetric]);
+
+  const sessieKwaliteitDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(sessieKwaliteitTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getSessieKwaliteitDagelijkseData(venster);
+    if (gran === 'week') return leerDataManager.getSessieKwaliteitWeekelijkseData(venster);
+    return leerDataManager.getSessieKwaliteitMaandelijkseData(venster);
+  }, [leerData, leerDataManager, sessieKwaliteitTijdsRange]);
+
+  const topCategorieDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(topCategorieTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getTopCategorieDagelijkseData(venster);
+    if (gran === 'week') return leerDataManager.getTopCategorieWeekelijkseData(venster);
+    return leerDataManager.getTopCategorieMaandelijkseData(venster);
+  }, [leerData, leerDataManager, topCategorieTijdsRange]);
+
+  const leerpatronenDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(leerpatronenTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getLeitnerTijdlijnData(venster);
+    if (gran === 'week') return leerDataManager.getLeitnerWeekelijkseData(venster);
+    return leerDataManager.getLeitnerMaandelijkseData(venster);
+  }, [leerData, leerDataManager, leerpatronenTijdsRange]);
+
+  const leitnerBoxHerhalingenDataView = React.useMemo(() => {
+    const { gran, venster } = getGranulariteitEnVenster(leitnerBoxHerhalingenTijdsRange);
+    if (!leerData) return [];
+    if (gran === 'dag') return leerDataManager.getLeitnerBoxHerhalingenTijdlijnData(venster);
+    if (gran === 'week') return leerDataManager.getLeitnerBoxHerhalingenWeekelijkseData(venster);
+    return leerDataManager.getLeitnerBoxHerhalingenMaandelijkseData(venster);
+  }, [leerData, leerDataManager, leitnerBoxHerhalingenTijdsRange]);
 
   if (!leerData) {
     return (
@@ -66,7 +355,8 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   const renderTijdsRangeSelector = (
     tijdsRange: TijdsRange,
     setTijdsRange: (range: TijdsRange) => void,
-    label: string
+    label: string,
+    autoBronData: any[]
   ) => (
     <div className="tijdsrange-selector">
       <label>{label}:</label>
@@ -101,6 +391,37 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
         >
           Laatste jaar
         </button>
+        {(() => {
+          const getRangeLabel = (range: TijdsRange): string => {
+            switch (range) {
+              case 'week':
+                return 'Laatste week';
+              case 'maand':
+                return 'Laatste maand';
+              case 'drieMaanden':
+                return 'Laatste 3 maanden';
+              case 'halfJaar':
+                return 'Laatste half jaar';
+              case 'jaar':
+                return 'Laatste jaar';
+              default:
+                return 'Laatste week';
+            }
+          };
+          const autoRange = bepaalAutoRange(autoBronData);
+          const isAutoActive = tijdsRange === autoRange;
+          return (
+            <button
+              className={`range-btn ${isAutoActive ? 'active' : ''}`}
+              onClick={() => setTijdsRange(autoRange)}
+              title={isAutoActive
+                ? `Automatisch bepaald: ${getRangeLabel(autoRange)}`
+                : `Bepaal automatisch op basis van de beschikbare data (${getRangeLabel(autoRange)})`}
+            >
+              {isAutoActive ? `Automatisch bepaald (${getRangeLabel(autoRange)})` : 'Bepaal automatisch'}
+            </button>
+          );
+        })()}
       </div>
     </div>
   );
@@ -141,12 +462,24 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   return (
     <div className="tijdlijn-tab">
       <h3>📅 Tijdlijn Analyse</h3>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button
+          className="type-btn"
+          onClick={(e) => {
+            e.preventDefault();
+            resetNaarAutomatisch();
+          }}
+          title="Reset alle grafieken naar automatische periode op basis van data"
+        >
+          🔄 Reset naar automatisch
+        </button>
+      </div>
       
       {/* Dagelijkse Activiteit */}
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>📊 Activiteit Overzicht</h4>
-          {renderTijdsRangeSelector(activiteitTijdsRange, setActiviteitTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(activiteitTijdsRange, setActiviteitTijdsRange, 'Tijdsperiode', activiteitDataView)}
           {renderGrafiekTypeSelector(activiteitGrafiekType, setActiviteitGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -171,18 +504,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {activiteitGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(activiteitData),
+                   labels: generateChartLabels(activiteitDataView),
                   datasets: [
                     {
                       label: 'Opdrachten',
-                      data: activiteitData.map((d: any) => d.opdrachten),
+                       data: activiteitDataView.map((d: any) => d.opdrachten),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Speeltijd (minuten)',
-                      data: activiteitData.map((d: any) => d.speeltijd),
+                       data: activiteitDataView.map((d: any) => d.speeltijd),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
                       yAxisID: 'y1'
@@ -247,18 +580,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(activiteitData),
+                   labels: generateChartLabels(activiteitDataView),
                   datasets: [
                     {
                       label: 'Opdrachten',
-                      data: activiteitData.map((d: any) => d.opdrachten),
+                       data: activiteitDataView.map((d: any) => d.opdrachten),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Speeltijd (minuten)',
-                      data: activiteitData.map((d: any) => d.speeltijd),
+                       data: activiteitDataView.map((d: any) => d.speeltijd),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       yAxisID: 'y1'
@@ -334,7 +667,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>🎯 Prestatie Analyse</h4>
-          {renderTijdsRangeSelector(prestatieTijdsRange, setPrestatieTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(prestatieTijdsRange, setPrestatieTijdsRange, 'Tijdsperiode', prestatieDataView)}
           {renderGrafiekTypeSelector(prestatieGrafiekType, setPrestatieGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -360,18 +693,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {prestatieGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(prestatieData),
+                   labels: generateChartLabels(prestatieDataView),
                   datasets: [
                     {
                       label: 'Gemiddelde Score',
-                      data: prestatieData.map((d: any) => d.gemiddeldeScore),
+                       data: prestatieDataView.map((d: any) => d.gemiddeldeScore),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Gemiddelde Tijd (minuten)',
-                      data: prestatieData.map((d: any) => d.gemiddeldeTijd),
+                       data: prestatieDataView.map((d: any) => d.gemiddeldeTijd),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
                       yAxisID: 'y1'
@@ -437,18 +770,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(prestatieData),
+                   labels: generateChartLabels(prestatieDataView),
                   datasets: [
                     {
                       label: 'Gemiddelde Score',
-                      data: prestatieData.map((d: any) => d.gemiddeldeScore),
+                       data: prestatieDataView.map((d: any) => d.gemiddeldeScore),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Gemiddelde Tijd (minuten)',
-                      data: prestatieData.map((d: any) => d.gemiddeldeTijd),
+                       data: prestatieDataView.map((d: any) => d.gemiddeldeTijd),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       yAxisID: 'y1'
@@ -555,7 +888,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>🎯 Focus Analyse</h4>
-          {renderTijdsRangeSelector(focusTijdsRange, setFocusTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(focusTijdsRange, setFocusTijdsRange, 'Tijdsperiode', focusDataView)}
           {renderGrafiekTypeSelector(focusGrafiekType, setFocusGrafiekType, 'Grafiek type')}
           <div className="metric-selector">
             <label>Metric:</label>
@@ -588,18 +921,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {focusGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(focusData),
+                   labels: generateChartLabels(focusDataView),
                   datasets: [
                     {
                       label: 'Serieuze Modus',
-                      data: focusData.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
+                       data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Normale Modus',
-                      data: focusData.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
+                       data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
                       yAxisID: 'y1'
@@ -664,18 +997,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(focusData),
+                   labels: generateChartLabels(focusDataView),
                   datasets: [
                     {
                       label: 'Serieuze Modus',
-                      data: focusData.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
+                       data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Normale Modus',
-                      data: focusData.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
+                       data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       yAxisID: 'y1'
@@ -751,7 +1084,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>⏱️ Sessie Kwaliteit</h4>
-          {renderTijdsRangeSelector(sessieKwaliteitTijdsRange, setSessieKwaliteitTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(sessieKwaliteitTijdsRange, setSessieKwaliteitTijdsRange, 'Tijdsperiode', sessieKwaliteitDataView)}
           {renderGrafiekTypeSelector(sessieKwaliteitGrafiekType, setSessieKwaliteitGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -767,18 +1100,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {sessieKwaliteitGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(sessieKwaliteitData),
+                   labels: generateChartLabels(sessieKwaliteitDataView),
                   datasets: [
                     {
                       label: 'Aantal Sessies',
-                      data: sessieKwaliteitData.map((d: any) => d.aantalSessies),
+                       data: sessieKwaliteitDataView.map((d: any) => d.aantalSessies),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Gemiddelde Duur (minuten)',
-                      data: sessieKwaliteitData.map((d: any) => d.gemiddeldeDuur),
+                       data: sessieKwaliteitDataView.map((d: any) => d.gemiddeldeDuur),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
                       yAxisID: 'y1'
@@ -843,18 +1176,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(sessieKwaliteitData),
+                   labels: generateChartLabels(sessieKwaliteitDataView),
                   datasets: [
                     {
                       label: 'Aantal Sessies',
-                      data: sessieKwaliteitData.map((d: any) => d.aantalSessies),
+                       data: sessieKwaliteitDataView.map((d: any) => d.aantalSessies),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Gemiddelde Duur (minuten)',
-                      data: sessieKwaliteitData.map((d: any) => d.gemiddeldeDuur),
+                       data: sessieKwaliteitDataView.map((d: any) => d.gemiddeldeDuur),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       yAxisID: 'y1'
@@ -930,7 +1263,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>🏆 Top 5 Categorieën</h4>
-          {renderTijdsRangeSelector(topCategorieTijdsRange, setTopCategorieTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(topCategorieTijdsRange, setTopCategorieTijdsRange, 'Tijdsperiode', topCategorieDataView)}
           {renderGrafiekTypeSelector(topCategorieGrafiekType, setTopCategorieGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -946,13 +1279,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {topCategorieGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(topCategorieData),
+                   labels: generateChartLabels(topCategorieDataView),
                   datasets: Object.keys(topCategorieData[0] || {})
                     .filter(key => !['datum', 'week', 'maand'].includes(key))
                     .slice(0, 5)
                     .map((categorie, index) => ({
                       label: categorie,
-                      data: topCategorieData.map((d: any) => d[categorie] || 0),
+                       data: topCategorieDataView.map((d: any) => d[categorie] || 0),
                       borderColor: chartColorArray[index % chartColorArray.length],
                       backgroundColor: `${chartColorArray[index % chartColorArray.length]}20`,
                       yAxisID: 'y'
@@ -998,13 +1331,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(topCategorieData),
+                   labels: generateChartLabels(topCategorieDataView),
                   datasets: Object.keys(topCategorieData[0] || {})
                     .filter(key => !['datum', 'week', 'maand'].includes(key))
                     .slice(0, 5)
                     .map((categorie, index) => ({
                       label: categorie,
-                      data: topCategorieData.map((d: any) => d[categorie] || 0),
+                       data: topCategorieDataView.map((d: any) => d[categorie] || 0),
                       backgroundColor: chartColorArray[index % chartColorArray.length],
                       borderColor: chartColorArray[index % chartColorArray.length],
                       yAxisID: 'y'
@@ -1061,7 +1394,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>🔄 Leerpatronen</h4>
-          {renderTijdsRangeSelector(leerpatronenTijdsRange, setLeerpatronenTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(leerpatronenTijdsRange, setLeerpatronenTijdsRange, 'Tijdsperiode', leerpatronenDataView)}
           {renderGrafiekTypeSelector(leerpatronenGrafiekType, setLeerpatronenGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -1079,18 +1412,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {leerpatronenGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(leerpatronenData),
+                   labels: generateChartLabels(leerpatronenDataView),
                   datasets: [
                     {
                       label: 'Nieuwe Opdrachten',
-                      data: leerpatronenData.map((d: any) => d.nieuweOpdrachten),
+                       data: leerpatronenDataView.map((d: any) => d.nieuweOpdrachten),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Herhalingen',
-                      data: leerpatronenData.map((d: any) => d.herhalingen),
+                       data: leerpatronenDataView.map((d: any) => d.herhalingen),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
                       yAxisID: 'y1'
@@ -1155,18 +1488,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : leerpatronenGrafiekType === 'gestapeld' ? (
               <Bar 
                 data={{
-                  labels: generateChartLabels(leerpatronenData),
+                   labels: generateChartLabels(leerpatronenDataView),
                   datasets: [
                     {
                       label: 'Nieuwe Opdrachten',
-                      data: leerpatronenData.map((d: any) => d.nieuweOpdrachten),
+                       data: leerpatronenDataView.map((d: any) => d.nieuweOpdrachten),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       stack: 'stack1'
                     },
                     {
                       label: 'Herhalingen',
-                      data: leerpatronenData.map((d: any) => d.herhalingen),
+                       data: leerpatronenDataView.map((d: any) => d.herhalingen),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       stack: 'stack1'
@@ -1213,18 +1546,18 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(leerpatronenData),
+                   labels: generateChartLabels(leerpatronenDataView),
                   datasets: [
                     {
                       label: 'Nieuwe Opdrachten',
-                      data: leerpatronenData.map((d: any) => d.nieuweOpdrachten),
+                       data: leerpatronenDataView.map((d: any) => d.nieuweOpdrachten),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Herhalingen',
-                      data: leerpatronenData.map((d: any) => d.herhalingen),
+                       data: leerpatronenDataView.map((d: any) => d.herhalingen),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
                       yAxisID: 'y1'
@@ -1392,7 +1725,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       <div className="tijdlijn-sectie">
         <div className="dagelijkse-activiteit-header">
           <h4>📚 Leitner Box Herhalingen</h4>
-          {renderTijdsRangeSelector(leitnerBoxHerhalingenTijdsRange, setLeitnerBoxHerhalingenTijdsRange, 'Tijdsperiode')}
+          {renderTijdsRangeSelector(leitnerBoxHerhalingenTijdsRange, setLeitnerBoxHerhalingenTijdsRange, 'Tijdsperiode', leitnerBoxHerhalingenDataView)}
           {renderGrafiekTypeSelector(leitnerBoxHerhalingenGrafiekType, setLeitnerBoxHerhalingenGrafiekType, 'Grafiek type')}
         </div>
         <p className="grafiek-uitleg">
@@ -1408,53 +1741,53 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             {leitnerBoxHerhalingenGrafiekType === 'lijn' ? (
               <Line 
                 data={{
-                  labels: generateChartLabels(leitnerBoxHerhalingenData),
+                   labels: generateChartLabels(leitnerBoxHerhalingenDataView),
                   datasets: [
                     {
                       label: 'Box 0',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box0),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box0),
                       borderColor: '#ef4444',
                       backgroundColor: '#ef444420',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 1',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box1),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box1),
                       borderColor: '#f97316',
                       backgroundColor: '#f9731620',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 2',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box2),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box2),
                       borderColor: '#eab308',
                       backgroundColor: '#eab30820',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 3',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box3),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box3),
                       borderColor: '#22c55e',
                       backgroundColor: '#22c5520',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 4',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box4),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box4),
                       borderColor: '#06b6d4',
                       backgroundColor: '#06b6d420',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 5',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box5),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box5),
                       borderColor: '#8b5cf6',
                       backgroundColor: '#8b5cf620',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 6',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box6),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box6),
                       borderColor: '#ec4899',
                       backgroundColor: '#ec489920',
                       yAxisID: 'y'
@@ -1501,53 +1834,53 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
             ) : (
               <Bar 
                 data={{
-                  labels: generateChartLabels(leitnerBoxHerhalingenData),
+                   labels: generateChartLabels(leitnerBoxHerhalingenDataView),
                   datasets: [
                     {
                       label: 'Box 0',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box0),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box0),
                       backgroundColor: '#ef4444',
                       borderColor: '#ef4444',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 1',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box1),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box1),
                       backgroundColor: '#f97316',
                       borderColor: '#f97316',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 2',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box2),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box2),
                       backgroundColor: '#eab308',
                       borderColor: '#eab308',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 3',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box3),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box3),
                       backgroundColor: '#22c55e',
                       borderColor: '#22c55e',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 4',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box4),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box4),
                       backgroundColor: '#06b6d4',
                       borderColor: '#06b6d4',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 5',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box5),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box5),
                       backgroundColor: '#8b5cf6',
                       borderColor: '#8b5cf6',
                       yAxisID: 'y'
                     },
                     {
                       label: 'Box 6',
-                      data: leitnerBoxHerhalingenData.map((d: any) => d.box6),
+                       data: leitnerBoxHerhalingenDataView.map((d: any) => d.box6),
                       backgroundColor: '#ec4899',
                       borderColor: '#ec4899',
                       yAxisID: 'y'

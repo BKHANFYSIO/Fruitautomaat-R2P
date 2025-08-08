@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense } from 'react';
 import { BonusOpdrachtBeheer } from './BonusOpdrachtBeheer';
-import { AiOpgaveGenerator } from './AiOpgaveGenerator';
-import { Leeranalyse } from './Leeranalyse';
-import { CertificaatModal } from './CertificaatModal';
+const AiOpgaveGeneratorLazy = lazy(() => import('./AiOpgaveGenerator').then(m => ({ default: m.AiOpgaveGenerator })));
+const LeeranalyseLazy = lazy(() => import('./Leeranalyse').then(m => ({ default: m.Leeranalyse })));
+const CertificaatModalLazy = lazy(() => import('./CertificaatModal').then(m => ({ default: m.CertificaatModal })));
 import * as XLSX from 'xlsx';
 import './Instellingen.css';
 import { generateCertificaat } from '../utils/certificaatGenerator';
@@ -187,7 +188,7 @@ export const Instellingen = React.memo(({
           localStorage.removeItem(key);
         }
       });
-      alert('Leeranalyse gegevens zijn verwijderd.');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leeranalyse gegevens zijn verwijderd.', type: 'succes', timeoutMs: 3000 } }));
     }
   };
 
@@ -200,7 +201,7 @@ export const Instellingen = React.memo(({
           localStorage.removeItem(key);
         }
       });
-      alert('Leitner-systeem gegevens zijn verwijderd.');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leitner-systeem gegevens zijn verwijderd.', type: 'succes', timeoutMs: 3000 } }));
     }
   };
 
@@ -238,7 +239,7 @@ export const Instellingen = React.memo(({
       // Verwijder eigen opdrachten
       localStorage.removeItem('fruitautomaat_user_opdrachten');
       
-      alert('Alle gegevens zijn verwijderd. De pagina wordt herladen om de wijzigingen toe te passen.');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle gegevens zijn verwijderd. De pagina wordt herladen...', type: 'succes', timeoutMs: 2500 } }));
       window.location.reload();
     }
   };
@@ -284,7 +285,7 @@ export const Instellingen = React.memo(({
       // Bonus instellingen herstellen
       setIsLokaleBonusOpslagActief(false);
       
-      alert('Alle instellingen zijn hersteld naar de standaardwaarden.');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle instellingen zijn hersteld naar standaard.', type: 'succes', timeoutMs: 2500 } }));
     }
   };
 
@@ -334,7 +335,7 @@ export const Instellingen = React.memo(({
       const achievements = leerDataManager.loadAchievements();
 
       if (!leerData) {
-        alert('Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.');
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.', type: 'fout', timeoutMs: 4000 } }));
         return;
       }
 
@@ -349,7 +350,7 @@ export const Instellingen = React.memo(({
       setIsCertificaatModalOpen(false);
     } catch (error) {
       console.error('Fout bij certificaat generatie:', error);
-      alert('Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.');
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.', type: 'fout', timeoutMs: 4000 } }));
     }
   };
 
@@ -526,7 +527,7 @@ export const Instellingen = React.memo(({
                       onClick={() => {
                         if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Je kunt ze later weer uploaden via het Excel bestand als je dat nog hebt.')) {
                           onVerwijderGebruikerOpdrachten();
-                          alert('Alle eigen opdrachten zijn verwijderd.');
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle eigen opdrachten zijn verwijderd.', type: 'succes', timeoutMs: 2500 } }));
                         }
                       }}
                       className="data-beheer-knop opdrachten-knop"
@@ -1034,21 +1035,27 @@ export const Instellingen = React.memo(({
         </div>
       </div>
       
-      <AiOpgaveGenerator 
-        isOpen={isAiGeneratorOpen}
-        onClose={() => setIsAiGeneratorOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <AiOpgaveGeneratorLazy 
+          isOpen={isAiGeneratorOpen}
+          onClose={() => setIsAiGeneratorOpen(false)}
+        />
+      </Suspense>
       
-      <Leeranalyse 
-        isOpen={isLeeranalyseOpen}
-        onClose={() => setIsLeeranalyseOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <LeeranalyseLazy 
+          isOpen={isLeeranalyseOpen}
+          onClose={() => setIsLeeranalyseOpen(false)}
+        />
+      </Suspense>
       
-      <CertificaatModal
-        isOpen={isCertificaatModalOpen}
-        onClose={() => setIsCertificaatModalOpen(false)}
-        onGenerate={handleCertificaatGenereren}
-      />
+      <Suspense fallback={null}>
+        <CertificaatModalLazy
+          isOpen={isCertificaatModalOpen}
+          onClose={() => setIsCertificaatModalOpen(false)}
+          onGenerate={handleCertificaatGenereren}
+        />
+      </Suspense>
 
       {/* Serieuze Modus Waarschuwing Modal */}
       {isSerieuzeModusWaarschuwingOpen && (

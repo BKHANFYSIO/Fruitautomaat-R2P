@@ -474,7 +474,7 @@ class LeerDataManager {
     _feedback: string,
     sessieId?: string,
     tijdGenomen?: number,
-    serieuzeModus?: boolean
+    leermodus?: 'normaal' | 'leitner'
   ): Achievement[] {
     const leerData = this.loadLeerData();
     if (!leerData) return [];
@@ -516,11 +516,11 @@ class LeerDataManager {
     }
 
     // Voeg modus toe aan geschiedenis als beschikbaar
-    if (serieuzeModus !== undefined) {
+    if (leermodus !== undefined) {
       if (!opdrachtData.modusGeschiedenis) {
         opdrachtData.modusGeschiedenis = [];
       }
-      const modus = serieuzeModus ? 'leitner' : 'normaal';
+      const modus = leermodus;
       opdrachtData.modusGeschiedenis.push({ modus, datum: new Date().toISOString() });
       // Beperk modus geschiedenis tot de laatste 50 entries
       if (opdrachtData.modusGeschiedenis.length > 50) {
@@ -2873,7 +2873,9 @@ class LeerDataManager {
 
     const tePlaatsenOpdrachten = nieuweOpdrachten.slice(0, aantal);
     if (tePlaatsenOpdrachten.length === 0) {
-      alert("Geen nieuwe opdrachten gevonden om toe te voegen voor de test.");
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen nieuwe opdrachten gevonden om toe te voegen voor de test.', type: 'fout', timeoutMs: 3500 } }));
+      }
       return { toegevoegd: 0, categorieen: [] };
     }
 

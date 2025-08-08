@@ -37,3 +37,11 @@ export const BONUS_OPDRACHTEN = [
   { opdracht: "Vertel een mop die je medestudenten aan het lachen brengen", punten: [2, 3] },
   { opdracht: "Doe een imitatie van een persoon. Als geraden wordt wie krijg je bonuspunten", punten: [2, 3] },
 ]; 
+
+// Notificatie presets
+export const NOTIFICATIE_DUUR_MS = {
+  succes: 4000,
+  fout: 5000,
+} as const;
+
+export type NotificatieType = keyof typeof NOTIFICATIE_DUUR_MS; 

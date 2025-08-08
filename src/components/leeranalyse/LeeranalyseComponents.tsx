@@ -136,7 +136,7 @@ export const RankingCard = ({
   type, 
   categoryType 
 }: { 
-  rankingData: any, 
+  rankingData: { categorie?: string; score?: number; dekking?: number; gemiddeldeBox?: number; beheersing?: number } | null, 
   type: 'Beste' | 'Verbeterpunt', 
   categoryType: 'Hoofd' | 'Sub' 
 }) => {

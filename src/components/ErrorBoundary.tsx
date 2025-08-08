@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import type { ReactNode } from 'react';
+import './ErrorBoundary.css';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -58,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             >
               Pagina Verversen
             </button>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="error-details">
                 <summary>Technische Details (Alleen in Development)</summary>
                 <pre>{this.state.error.toString()}</pre>

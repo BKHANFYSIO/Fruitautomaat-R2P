@@ -1,4 +1,4 @@
-import type { LeerData, Achievement, LeitnerData } from '../../data/types';
+import type { LeerData, Achievement, LeitnerData, LeitnerAchievement } from '../../data/types';
 
 export interface LeeranalyseProps {
   isOpen: boolean;
@@ -11,7 +11,10 @@ export interface TabProps {
   leerData: LeerData | null;
   achievements: Achievement[] | null;
   leitnerData: LeitnerData | null;
-  achievementDefs: any;
+  achievementDefs: {
+    algemeen: Omit<Achievement, 'behaaldOp'>[];
+    leitner: Omit<LeitnerAchievement, 'behaaldOp'>[];
+  };
   onStartFocusSessie?: (categorie: string, leermodusType?: 'normaal' | 'leitner') => void;
 }
 

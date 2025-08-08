@@ -836,6 +836,48 @@
   grid-column: 3;
 }
 
+/* Compacte voortgangsbalken onderaan de hoofdcategorie kaart */
+.categorie-progress-bars {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-label {
+  color: #b0b0b0;
+  width: 190px;
+  flex-shrink: 0;
+}
+
+.compact-bar {
+  flex: 1;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
+.compact-segment {
+  height: 100%;
+}
+
+.compact-bar-empty {
+  color: #888;
+  font-size: 0.8rem;
+  padding-left: 8px;
+}
+
 .focus-knop {
   background: linear-gradient(135deg, #61dafb 0%, #21a1f2 100%);
   color: #282c34;

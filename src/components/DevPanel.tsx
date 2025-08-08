@@ -77,6 +77,41 @@ export const DevPanel: React.FC<DevPanelProps> = ({
           </button>
         </div>
       </div>
+
+      <div className="dev-section">
+        <h5>Testen</h5>
+        <div className="dev-controls">
+          <p style={{ margin: '6px 0' }}>
+            Voer tests uit in de terminal (projectroot):
+          </p>
+          <pre style={{ whiteSpace: 'pre-wrap', background: '#222', color: '#ddd', padding: '8px', borderRadius: '6px' }}>
+npm run test
+          </pre>
+          <p style={{ margin: '6px 0' }}>
+            Watch-modus (handig tijdens ontwikkelen):
+          </p>
+          <pre style={{ whiteSpace: 'pre-wrap', background: '#222', color: '#ddd', padding: '8px', borderRadius: '6px' }}>
+npm run test:watch
+          </pre>
+          <p style={{ margin: '6px 0' }}>
+            UI modus (optioneel, interactieve test-UI):
+          </p>
+          <pre style={{ whiteSpace: 'pre-wrap', background: '#222', color: '#ddd', padding: '8px', borderRadius: '6px' }}>
+npm run test:ui
+          </pre>
+          <p style={{ marginTop: '8px', fontSize: '0.95em' }}>
+            Wat testen we nu:
+          </p>
+          <ul style={{ marginTop: 0 }}>
+            <li><strong>analyseerSpin</strong>: controleert acties/bonus bij combinaties (bijv. 3 vraagtekens → bonusopdracht; 3 bellen → kop-of-munt).</li>
+            <li><strong>selectLeitnerOpdracht</strong>: geeft een geldige opdracht terug in niet-serieuze modus.</li>
+            <li><strong>recordOpdrachtVoltooid</strong>: logt het leermodus-type (normaal/leitner) in de historie.</li>
+          </ul>
+          <p style={{ fontSize: '0.95em' }}>
+            Waarom nuttig: deze tests geven snel zekerheid bij refactors, vooral rond spinlogica en leerdata. Bij falen weet je precies waar de breuk zit.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }; 

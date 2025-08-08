@@ -1,11 +1,12 @@
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import type { TabProps } from './LeeranalyseTypes';
+import type { Achievement, LeitnerAchievement, LeerData, LeitnerData } from '../../data/types';
 import { formatDate } from './LeeranalyseUtils';
 
 interface AchievementsTabProps extends TabProps {
-  algemeneAchievementData: any;
-  leitnerAchievementData: any;
+  algemeneAchievementData: { labels: string[]; datasets: Array<{ data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; customData: { totals: number[]; behaald: number[] } }> } | null;
+  leitnerAchievementData: { labels: string[]; datasets: Array<{ data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; customData: { totals: number[]; behaald: number[] } }> } | null;
   aangepasteDoughnutConfig: any;
 }
 
@@ -53,7 +54,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
           <div className="achievements-lijst">
             {/* Groepeer achievements per categorie */}
             {['onboarding', 'progressie', 'kwaliteit', 'consistentie', 'exploratie', 'speciaal'].map(categorie => {
-              const categorieDefs = achievementDefs.algemeen.filter((def: any) => def.categorie === categorie);
+              const categorieDefs = achievementDefs.algemeen.filter((def) => def.categorie === categorie);
               if (categorieDefs.length === 0) return null;
               
               const categorieTitels = {
@@ -70,8 +71,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
                   <div className={`achievement-categorie-header ${categorie}`}>
                     {categorieTitels[categorie as keyof typeof categorieTitels]}
                   </div>
-                  {categorieDefs.map((def: any) => {
-                    const behaald = achievements?.find((a: any) => a.id === def.id);
+                  {categorieDefs.map((def) => {
+                    const behaald = achievements?.find((a) => a.id === def.id);
                     return (
                       <div key={def.id} className={`achievement-card categorie-${def.categorie} ${behaald ? 'behaald' : 'niet-behaald'}`}>
                         <div className="achievement-icon">{behaald ? def.icon : '🔒'}</div>
@@ -93,7 +94,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
           <div className="achievements-lijst">
             {/* Groepeer Leitner achievements per categorie */}
             {['herhaling', 'promotie', 'consistentie'].map(categorie => {
-              const categorieDefs = achievementDefs.leitner.filter((def: any) => def.categorie === categorie);
+              const categorieDefs = achievementDefs.leitner.filter((def) => def.categorie === categorie);
               if (categorieDefs.length === 0) return null;
               
               const categorieTitels = {
@@ -107,8 +108,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
                   <div className={`achievement-categorie-header ${categorie === 'consistentie' ? 'consistentie-leitner' : categorie}`}>
                     {categorieTitels[categorie as keyof typeof categorieTitels]}
                   </div>
-                  {categorieDefs.map((def: any) => {
-                    const behaald = leitnerData?.achievements?.find((a: any) => a.id === def.id);
+                  {categorieDefs.map((def) => {
+                    const behaald = leitnerData?.achievements?.find((a) => a.id === def.id);
                     return (
                       <div key={def.id} className={`achievement-card categorie-${def.categorie === 'consistentie' ? 'consistentie-leitner' : def.categorie} ${behaald ? 'behaald' : 'niet-behaald'}`}>
                         <div className="achievement-icon">{behaald ? def.icon : '🔒'}</div>

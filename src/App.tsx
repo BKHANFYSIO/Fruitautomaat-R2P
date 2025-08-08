@@ -8,52 +8,50 @@ import { getLeerDataManager } from './data/leerDataManager';
 import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
 
 // Components
-import { SpelerInput } from './components/SpelerInput';
-import { Scorebord } from './components/Scorebord';
-import { Fruitautomaat } from './components/Fruitautomaat';
-
-import { BestandsUploader } from './components/BestandsUploader';
-import { CategorieSelectieModal } from './components/CategorieSelectieModal';
-import { Instellingen } from './components/Instellingen';
-import { Uitleg } from './components/Uitleg';
-import { ActieDashboard } from './components/ActieDashboard';
+// left panel subcomponents worden via LeftPanel gebruikt
+// Fruitautomaat en ActieDashboard zijn via RightPanel ingepakt
 import { OrientatieMelding } from './components/OrientatieMelding';
 import { Eindscherm } from './components/Eindscherm';
-import { SessieSamenvatting } from './components/SessieSamenvatting';
+// SessieSamenvatting zit in AppModals
 import { AchievementNotificatie } from './components/AchievementNotificatie';
-import { Leeranalyse } from './components/Leeranalyse';
-import { LeitnerCategorieBeheer } from './components/LeitnerCategorieBeheer';
+// Leeranalyse en overige modals zitten in AppModals
 import { DevPanel } from './components/DevPanel';
-import { LimietBereiktModal } from './components/LimietBereiktModal';
-import { OpdrachtenVoltooidModal } from './components/OpdrachtenVoltooidModal';
-import { FilterDashboard } from './components/FilterDashboard';
+// FilterDashboard zit in LeftPanel
+import { LeftPanel } from './components/LeftPanel';
+import { MobileControls } from './components/MobileControls';
+import { AppModals } from './components/AppModals';
+import { RightPanel } from './components/RightPanel';
 
 
 // Hooks
 import { useAudio } from './hooks/useAudio';
 import { useWindowSize } from './hooks/useWindowSize';
 import { useSwipe } from './hooks/useSwipe';
+import { useMobileScoreLade } from './hooks/useMobileScoreLade';
+import { useLeitnerStats } from './hooks/useLeitnerStats';
 import { useGameEngine } from './hooks/useGameEngine';
 import { useSettings } from './context/SettingsContext';
+import { useCategorieSelectie } from './hooks/useCategorieSelectie';
+import { useNotificatie } from './hooks/useNotificatie';
+import { useSessie } from './hooks/useSessie';
+import { useFullscreen } from './hooks/useFullscreen';
+import { useScrollToTop } from './hooks/useScrollToTop';
+import { useBestandsUpload } from './hooks/useBestandsUpload';
+// import { useSpinFlow } from './hooks/useSpinFlow';
 
 // Styles
 import './App.css';
 
 
-type Notificatie = {
-  zichtbaar: boolean;
-  bericht: string;
-  type: 'succes' | 'fout';
-}
+// Notificatie type en beheer verplaatst naar useNotificatie
 
 // type OpdrachtBronFilter = 'alle' | 'systeem' | 'gebruiker'; // Niet gebruikt
 
-interface Filters {
-  bronnen: ('systeem' | 'gebruiker')[];
-  opdrachtTypes: string[];
-}
-
 function App() {
+  // Testtrigger voor ErrorBoundary in dev: voeg ?forceError=1 toe aan de URL
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('forceError')) {
+    throw new Error('Geforceerde testfout voor ErrorBoundary');
+  }
   // Refs
   const mainContentRef = useRef<HTMLDivElement>(null);
   const actieDashboardRef = useRef<HTMLDivElement>(null);
@@ -69,31 +67,21 @@ function App() {
     }
   }, [opdrachten]);
 
-  // Filters state
-  const [filters, setFilters] = useState<Filters>(() => {
-    const savedFilters = localStorage.getItem('opdrachtFilters');
-    if (savedFilters) {
-      try {
-        const parsed = JSON.parse(savedFilters);
-        // Zorg ervoor dat de structuur klopt en minimaal één bron geselecteerd is
-        if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
-          // Zorg ervoor dat er minimaal één bron geselecteerd is
-          if (parsed.bronnen.length === 0) {
-            parsed.bronnen = ['systeem'];
-          }
-          return parsed;
-        }
-      } catch (e) {
-        console.error("Fout bij het parsen van filters uit localStorage", e);
-      }
-    }
-    return { bronnen: ['systeem'], opdrachtTypes: [] };
-  });
-
-  // Effect to save filters to localStorage
-  useEffect(() => {
-    localStorage.setItem('opdrachtFilters', JSON.stringify(filters));
-  }, [filters]);
+  // Categorie selectie en filters (uitgelicht in aparte hook)
+  const {
+    filters,
+    setFilters,
+    geselecteerdeCategorieen,
+    setGeselecteerdeCategorieen,
+    geselecteerdeLeitnerCategorieen,
+    setGeselecteerdeLeitnerCategorieen,
+    geselecteerdeMultiplayerCategorieen,
+    setGeselecteerdeMultiplayerCategorieen,
+    geselecteerdeHighscoreCategorieen,
+    setGeselecteerdeHighscoreCategorieen,
+    opdrachtenVoorSelectie,
+    alleUniekeCategorieen,
+  } = useCategorieSelectie(opdrachten);
 
 
 
@@ -129,6 +117,8 @@ function App() {
     // Kale modus instellingen
     isKaleModusActiefVrijeLeermodus,
     isKaleModusActiefLeitnerLeermodus,
+    // Gegroepeerde per-modus settings (read-only)
+    actieveLeermodusInstellingen,
   } = useSettings();
 
   // Game engine hook
@@ -157,19 +147,9 @@ function App() {
   } = useGameEngine();
 
   // UI state
-const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>(() => {
-  try {
-    const saved = localStorage.getItem('geselecteerdeCategorieen_normaal');
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Failed to parse geselecteerdeCategorieen_normaal from localStorage", error);
-    return [];
-  }
-});
 
   // Bepaal of kale modus actief is voor de hele component
-  const isKaleModusActiefGlobal = (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner' && isKaleModusActiefLeitnerLeermodus) ||
-                                  (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'normaal' && isKaleModusActiefVrijeLeermodus);
+  const isKaleModusActiefGlobal = Boolean(actieveLeermodusInstellingen?.isKaleModusActief);
 
   // Bepaal de huidige spelmodus voor automatische tab selectie
   const getCurrentGameMode = (): 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus' => {
@@ -185,38 +165,12 @@ const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[
       return 'highscore';
     }
   };
-const [geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen] = useState<string[]>(() => {
-  try {
-    const saved = localStorage.getItem('geselecteerdeCategorieen_leitner');
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Failed to parse geselecteerdeCategorieen_leitner from localStorage", error);
-    return [];
-  }
-});
-const [geselecteerdeMultiplayerCategorieen, setGeselecteerdeMultiplayerCategorieen] = useState<string[]>(() => {
-  try {
-    const saved = localStorage.getItem('geselecteerdeCategorieen_multiplayer');
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Failed to parse geselecteerdeCategorieen_multiplayer from localStorage", error);
-    return [];
-  }
-});
-const [geselecteerdeHighscoreCategorieen, setGeselecteerdeHighscoreCategorieen] = useState<string[]>(() => {
-  try {
-    const saved = localStorage.getItem('geselecteerdeCategorieen_highscore');
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Failed to parse geselecteerdeCategorieen_highscore from localStorage", error);
-    return [];
-  }
-});
+// (verplaatst naar useCategorieSelectie)
 const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [notificatie, setNotificatie] = useState<Notificatie>({ zichtbaar: false, bericht: '', type: 'succes' });
+  const { toggleFullscreen } = useFullscreen();
+  const { notificatie, showNotificatie, hideNotificatie } = useNotificatie();
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
   const [isCategorieBeheerOpen, setIsCategorieBeheerOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
@@ -226,11 +180,22 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isOpdrachtenVoltooidModalOpen, setIsOpdrachtenVoltooidModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
 
+  // Globale notificatie-listener zodat subcomponenten via window events meldingen kunnen tonen
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ev = e as CustomEvent<{ message: string; type?: 'succes' | 'fout'; timeoutMs?: number }>;
+      if (ev.detail && ev.detail.message) {
+        showNotificatie(ev.detail.message, ev.detail.type || 'succes', ev.detail.timeoutMs ?? 4000);
+      }
+    };
+    window.addEventListener('app:notify', handler as EventListener);
+    return () => window.removeEventListener('app:notify', handler as EventListener);
+  }, [showNotificatie]);
+
   // State om bij te houden of de multiplayer waarschuwing al is getoond
   const [multiplayerWaarschuwingGetoond, setMultiplayerWaarschuwingGetoond] = useState(false);
 
-  // File upload state
-  const [geselecteerdBestand, setGeselecteerdBestand] = useState<File | null>(null);
+  // File upload state verplaatst naar useBestandsUpload
 
   // High score state
   const [currentHighScore, setCurrentHighScore] = useState<HighScore | null>(null);
@@ -245,6 +210,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const { width } = useWindowSize();
   const isMobieleWeergave = forceerMobieleWeergave || width <= 1280;
+  const { scrollToTop } = useScrollToTop(mainContentRef as unknown as React.RefObject<HTMLElement | null>);
+
+  // Handlers voor kop-of-munt, partnerkeuze en bonus worden na state-declaraties geïnitialiseerd
 
   // Swipe functionaliteit voor mobiele weergave
   const swipeHandlers = useSwipe({
@@ -262,6 +230,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     minSwipeDistance: 60, // Iets lager voor betere detectie
     maxSwipeTime: 800 // Meer tijd voor comfort
   });
+
+  // Centrale helper voor score-lade in mobiel
+  const { autoShow: autoShowScoreLade } = useMobileScoreLade(
+    isMobieleWeergave,
+    isAutomatischScorebordActief,
+    setIsScoreLadeOpen
+  );
 
   // Effect om de spelerslijst te resetten bij het wisselen naar single-player
   useEffect(() => {
@@ -397,8 +372,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     leerDataManager.savePreferences(preferences);
   }, [isSpinVergrendelingActief]);
 
-  // Leerdata tracking
-  const [huidigeSessieId, setHuidigeSessieId] = useState<string | null>(null);
+  // Leerdata sessiebeheer
+  const { huidigeSessieId, setHuidigeSessieId, startSessie, endSessie } = useSessie({ isSerieuzeLeerModusActief, gameMode });
   const [opdrachtStartTijd, setOpdrachtStartTijd] = useState<number | null>(null);
   
   // Sessie controle
@@ -409,9 +384,26 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [nieuweAchievement, setNieuweAchievement] = useState<Achievement | null>(null);
   const [laatsteBeoordeeldeOpdracht, setLaatsteBeoordeeldeOpdracht] = useState<{ opdracht: any; type: string; box?: number } | null>(null);
 
-  const [leitnerStats, setLeitnerStats] = useState({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
-  const [aantalNieuweLeitnerOpdrachten, setAantalNieuweLeitnerOpdrachten] = useState(0);
-  const [isBox0OverrideActief, setIsBox0OverrideActief] = useState(false);
+  // gefilterdeGeselecteerdeLeitnerCategorieen stond al lager; deze versie vervangt die en wordt boven gebruikt door de hook
+  const gefilterdeGeselecteerdeLeitnerCategorieen = useMemo(() => {
+    return geselecteerdeLeitnerCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
+  }, [geselecteerdeLeitnerCategorieen, alleUniekeCategorieen]);
+
+  const {
+    leitnerStats,
+    aantalNieuweLeitnerOpdrachten,
+    isBox0OverrideActief,
+    // refreshLeitnerStats,
+    setLeitnerStatsDirect,
+  } = useLeitnerStats({
+    leermodusType,
+    isSerieuzeLeerModusActief,
+    opdrachten,
+    opdrachtenVoorSelectie,
+    geselecteerdeLeitnerCategorieenGefilterd: gefilterdeGeselecteerdeLeitnerCategorieen,
+    negeerBox0Wachttijd,
+    extraRecalcDeps: [filters],
+  });
 
   // --- DEV PANEL FUNCTIES ---
   const handleSimuleerVoltooiing = () => {
@@ -424,9 +416,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     
     // Forceer een re-render om stats bij te werken
     const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen);
-    setLeitnerStats(stats);
+    setLeitnerStatsDirect(stats);
     
-    alert('Dagelijkse herhalingen voltooid en achievements gecontroleerd!');
+    showNotificatie('Dagelijkse herhalingen voltooid en achievements gecontroleerd!', 'succes', 3000);
   };
 
   const handleForcePromotie = (boxNummer: number) => {
@@ -438,9 +430,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     
     if (nieuweAchievement) {
       setNieuweAchievement(nieuweAchievement as unknown as Achievement);
-      alert(`Achievement voor het bereiken van Box ${boxNummer} geforceerd!`);
+      showNotificatie(`Achievement voor het bereiken van Box ${boxNummer} geforceerd!`, 'succes', 3000);
     } else {
-      alert(`Kon geen achievement forceren voor Box ${boxNummer}. Mogelijk al behaald.`);
+      showNotificatie(`Kon geen achievement forceren voor Box ${boxNummer}. Mogelijk al behaald.`, 'fout', 4000);
     }
   };
 
@@ -448,8 +440,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const leerDataManager = getLeerDataManager();
     localStorage.removeItem('fruitautomaat_leitner_' + leerDataManager.getSpelerId());
     // Forceer re-render van stats
-    setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
-    alert('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.');
+    setLeitnerStatsDirect({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
+    showNotificatie('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.', 'succes', 4000);
   };
 
   const handleForceHerhalingen = (boxId: number, aantal: number) => {
@@ -458,7 +450,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const { toegevoegd, categorieen } = leerDataManager.forceerHerhalingenInBox(opdrachten, aantal, boxId);
 
     if (toegevoegd === 0) {
-      alert("Kon geen nieuwe opdrachten forceren. Mogelijk zijn alle opdrachten al in het leersysteem.");
+      showNotificatie('Kon geen nieuwe opdrachten forceren. Mogelijk zijn alle opdrachten al in het leersysteem.', 'fout', 4000);
       return;
     }
 
@@ -471,9 +463,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     // Stap 3: Forceer een handmatige, synchrone update van de teller.
     // Dit omzeilt de asynchrone aard van useEffect voor een directe UI-update.
     const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(categorieen);
-    setLeitnerStats(stats);
+    setLeitnerStatsDirect(stats);
     
-    alert(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. De app is nu in Leermodus en de juiste categorieën zijn geselecteerd. Start een opdracht om een herhaling te krijgen.`);
+    showNotificatie(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. Leermodus is actief en categorieën zijn gezet.`, 'succes', 5000);
   };
 
   const handleToggleBox0Interval = () => {
@@ -485,12 +477,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       // Verander naar 15 seconden (0.25 minuten)
       leerDataManager.setTijdelijkInterval(0, 0.25);
       setIsBox0IntervalVerkort(true);
-      alert("Box 0 interval gewijzigd van 10 minuten naar 15 seconden. Opdrachten in box 0 zijn nu klaar voor herhaling na 15 seconden.");
+      showNotificatie('Box 0 interval gewijzigd naar 15 seconden voor snelle herhaling.', 'succes', 4000);
     } else {
       // Reset naar 10 minuten
       leerDataManager.setTijdelijkInterval(0, 10);
       setIsBox0IntervalVerkort(false);
-      alert("Box 0 interval gereset naar 10 minuten.");
+      showNotificatie('Box 0 interval gereset naar 10 minuten.', 'succes', 3000);
     }
   };
   // --- EINDE DEV PANEL FUNCTIES ---
@@ -648,34 +640,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   };
 
   // Volledig gefilterde opdrachten op basis van bron en type
-  const opdrachtenVoorSelectie = useMemo(() => {
-    return opdrachten.filter(op => {
-      // Stap 1: Filter op bron
-      const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes(op.bron as 'systeem' | 'gebruiker');
-      if (!bronMatch) return false;
-
-      // Stap 2: Filter op opdrachtType
-      // Als er geen types zijn geselecteerd, tonen we alles (van de gekozen bron)
-      if (filters.opdrachtTypes.length === 0) return true;
-      
-      // Anders, controleer of het type van de opdracht in de geselecteerde lijst staat
-      return filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
-    });
-  }, [opdrachten, filters]);
-
-  const alleUniekeCategorieen = useMemo(() => {
-    const uniekeNamen = new Set<string>();
-    opdrachtenVoorSelectie.forEach(op => {
-      const uniekeIdentifier = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
-      uniekeNamen.add(uniekeIdentifier);
-    });
-    return [...uniekeNamen];
-  }, [opdrachtenVoorSelectie]);
-
-  // Filter geselecteerde categorieën op basis van beschikbare categorieën na filtering
-  const gefilterdeGeselecteerdeLeitnerCategorieen = useMemo(() => {
-    return geselecteerdeLeitnerCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
-  }, [geselecteerdeLeitnerCategorieen, alleUniekeCategorieen]);
+  // (verplaatst naar useCategorieSelectie)
 
   const gefilterdeGeselecteerdeCategorieen = useMemo(() => {
     return geselecteerdeCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
@@ -689,35 +654,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     return geselecteerdeMultiplayerCategorieen.filter(cat => alleUniekeCategorieen.includes(cat));
   }, [geselecteerdeMultiplayerCategorieen, alleUniekeCategorieen]);
 
-  // Effect om Leitner statistieken te berekenen
-  useEffect(() => {
-    const updateStats = () => {
-      if (leermodusType === 'leitner' && isSerieuzeLeerModusActief && opdrachten.length > 0) {
-        const leerDataManager = getLeerDataManager();
-        
-        // Haal altijd het aantal nieuwe opdrachten op
-        const nieuweOpdrachtenCount = leerDataManager.getNieuweLeitnerOpdrachtenCount(opdrachtenVoorSelectie, gefilterdeGeselecteerdeLeitnerCategorieen);
-        setAantalNieuweLeitnerOpdrachten(nieuweOpdrachtenCount);
-
-        // Bepaal of de Box 0 override actief moet zijn
-        const reguliereStats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(gefilterdeGeselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: false });
-        const moetOverrideActiefZijn = negeerBox0Wachttijd && nieuweOpdrachtenCount === 0 && reguliereStats.reguliereHerhalingenBeschikbaar === 0;
-        setIsBox0OverrideActief(moetOverrideActiefZijn);
-        
-        // Haal de uiteindelijke statistieken op, met de override-logica indien nodig
-        const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(gefilterdeGeselecteerdeLeitnerCategorieen, { negeerBox0WachttijdAlsLeeg: moetOverrideActiefZijn });
-        setLeitnerStats(stats);
-      } else {
-        setLeitnerStats({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
-        setAantalNieuweLeitnerOpdrachten(0);
-        setIsBox0OverrideActief(false);
-      }
-    };
-
-    updateStats();
-    const intervalId = setInterval(updateStats, 5000); 
-    return () => clearInterval(intervalId);
-  }, [leermodusType, isSerieuzeLeerModusActief, gefilterdeGeselecteerdeLeitnerCategorieen, opdrachten, negeerBox0Wachttijd, filters]);
+  // Leitner statistieken effect is verplaatst naar useLeitnerStats
 
   const berekenAantalOpdrachten = (geselecteerde: string[]) => {
     return opdrachtenVoorSelectie.filter(op => {
@@ -735,25 +672,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // We verwijderen niet langer categorieën wanneer filters veranderen.
   // De UI-componenten zijn verantwoordelijk voor het tonen van de juiste (gefilterde) weergave.
 
-  // Effect om normale categorie-selectie op te slaan
-  useEffect(() => {
-      localStorage.setItem('geselecteerdeCategorieen_normaal', JSON.stringify(geselecteerdeCategorieen));
-  }, [geselecteerdeCategorieen]);
-
-  // Effect om Leitner categorie-selectie op te slaan
-  useEffect(() => {
-    localStorage.setItem('geselecteerdeCategorieen_leitner', JSON.stringify(geselecteerdeLeitnerCategorieen));
-  }, [geselecteerdeLeitnerCategorieen]);
-
-  // Effect om multiplayer categorie-selectie op te slaan
-  useEffect(() => {
-    localStorage.setItem('geselecteerdeCategorieen_multiplayer', JSON.stringify(geselecteerdeMultiplayerCategorieen));
-  }, [geselecteerdeMultiplayerCategorieen]);
-
-  // Effect om highscore categorie-selectie op te slaan
-  useEffect(() => {
-    localStorage.setItem('geselecteerdeCategorieen_highscore', JSON.stringify(geselecteerdeHighscoreCategorieen));
-  }, [geselecteerdeHighscoreCategorieen]);
+  // (opslaan debounced verplaatst naar useCategorieSelectie)
 
 
 
@@ -851,7 +770,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const handleSpelerToevoegen = (naam: string) => {
     if (spelers.find((speler) => speler.naam.toLowerCase() === naam.toLowerCase())) {
-      alert('Deze speler bestaat al.');
+      showNotificatie('Deze speler bestaat al.', 'fout', 3000);
       return;
     }
     const nieuweSpeler: Speler = { naam, score: 0, extraSpins: 0, beurten: 0 };
@@ -860,24 +779,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   // Sessie controle functies
   const handleEindigSessie = () => {
-    if (huidigeSessieId) {
-      const leerDataManager = getLeerDataManager();
-      leerDataManager.endSessie(huidigeSessieId);
-      
-      // Haal sessie data op voor samenvatting
-      const leerData = leerDataManager.loadLeerData();
-      const sessieData = leerData?.sessies[huidigeSessieId];
-      
+    if (!huidigeSessieId) return;
+    const sessieData = endSessie();
       if (sessieData) {
         setEindigdeSessieData(sessieData);
         setIsSessieSamenvattingOpen(true);
       }
-      
-      // Reset spel state zodat gebruiker kan overschakelen naar multiplayer
-      setHuidigeSessieId(null);
       setIsSpelGestart(false);
-      setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij sessie eindigen
-    }
+    setIsAntwoordVergrendeld(false);
   };
 
   const handleOpenLeeranalyse = (openToAchievements = false) => {
@@ -900,23 +809,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         ? 'Selecteer eerst de categorieën die je wilt leren. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".'
         : 'Selecteer eerst categorieën. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".';
         
-      setNotificatie({ 
-        zichtbaar: true, 
-        bericht: `Geen opdrachten beschikbaar. ${melding}`,
-        type: 'fout' 
-      });
-      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 5000);
+      showNotificatie(`Geen opdrachten beschikbaar. ${melding}`, 'fout', 5000);
       return;
     }
 
     // Specifieke checks voor spelmodi
     if (gameMode === 'single' && !isSerieuzeLeerModusActief && gefilterdeOpdrachten.length < 10) {
-      setNotificatie({ 
-        zichtbaar: true, 
-        bericht: `Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`,
-        type: 'fout' 
-      });
-      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+      showNotificatie(`Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`, 'fout', 6000);
       return;
     }
 
@@ -932,27 +831,16 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       
       // Toon sessie start melding bij eerste spin in serieuze leer-modus
       if (isSerieuzeLeerModusActief && gameMode === 'single') {
-        setNotificatie({ 
-          zichtbaar: true, 
-          bericht: '📚 Sessie gestart! Vergeet niet je sessie te eindigen voor een samenvatting.', 
-          type: 'succes' 
-        });
-        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 5000);
+        showNotificatie('📚 Sessie gestart! Vergeet niet je sessie te eindigen voor een samenvatting.', 'succes', 5000);
       }
     }
     
     // Start nieuwe sessie als er geen actieve sessie is en we in serieuze leer-modus zijn
     if (isSerieuzeLeerModusActief && gameMode === 'single' && !huidigeSessieId) {
-      const leerDataManager = getLeerDataManager();
-      const nieuweSessieId = leerDataManager.startSessie(true, leermodusType);
-      setHuidigeSessieId(nieuweSessieId);
-      
-      setNotificatie({ 
-        zichtbaar: true, 
-        bericht: '📚 Nieuwe sessie gestart!', 
-        type: 'succes' 
-      });
-      setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 3000);
+      const nieuwe = startSessie(leermodusType);
+      if (nieuwe) {
+        showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 3000);
+      }
     }
     
     if (isAanHetSpinnen || gefilterdeOpdrachten.length === 0 || !heeftVoldoendeSpelers()) return;
@@ -1006,8 +894,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       
       // Scroll naar boven voor mobiele weergave
       if (isMobieleWeergave) {
-        mainContentRef.current?.scrollTo(0, 0);
-        window.scrollTo(0, 0);
+        scrollToTop();
       }
     }
   };
@@ -1147,23 +1034,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
       // Toon leerfeedback in serieuze leer-modus bij combinaties (alleen als kale modus niet actief is)
       if (!isKaleModusActief && gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
-        setNotificatie({ 
-          zichtbaar: true, 
-          bericht: analyse.beschrijving, 
-          type: 'succes' 
-        });
-        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+        showNotificatie(analyse.beschrijving, 'succes', 6000);
       }
 
       if (isJokerSpinActief && analyse.verdiendeSpins > 0) {
         playJokerWin(); // Speel joker win geluid
         setVerdiendeSpinsDezeBeurt(analyse.verdiendeSpins); // Sla op in tijdelijke state
-        setNotificatie({ 
-          zichtbaar: true, 
-          bericht: `${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 
-          type: 'succes' 
-        });
-        setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 6000);
+        showNotificatie(`${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 'succes', 6000);
       }
 
       if (analyse.actie === 'bonus_opdracht' && isBonusOpdrachtenActief) {
@@ -1183,14 +1060,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   };
 
 
-  const handlePartnerKies = useCallback((partnerNaam: string) => {
-    const partner = spelers.find(p => p.naam === partnerNaam);
-    if (partner) {
-      playPartnerChosen(); // Speel partner gekozen geluid
-      setGekozenPartner(partner);
-      setGamePhase('assessment'); // Ga nu naar de beoordelingsfase
-    }
-  }, [spelers, playPartnerChosen]);
+  // (verplaatst naar useSpinFlow)
 
   useEffect(() => {
     if (gameMode === 'single' && geselecteerdeCategorieen.length > 0 && spelers.length === 1) {
@@ -1233,15 +1103,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setLaatsteBeoordeeldeOpdracht(null);
       
       // Toon notificatie
-      setNotificatie({
-        zichtbaar: true,
-        bericht: 'Opdracht gepauzeerd! Deze komt niet terug tot de pauze wordt gestopt.',
-        type: 'succes'
-      });
-      
-      setTimeout(() => {
-        setNotificatie(prev => ({ ...prev, zichtbaar: false }));
-      }, 3000);
+      showNotificatie('Opdracht gepauzeerd! Deze komt niet terug tot de pauze wordt gestopt.', 'succes', 3000);
     }
   }, [huidigeOpdracht, laatsteBeoordeeldeOpdracht, isSerieuzeLeerModusActief, leermodusType]);
 
@@ -1263,7 +1125,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         prestatie,
         huidigeSessieId || undefined,
         tijdGenomen,
-        isSerieuzeLeerModusActief
+        leermodusType
       );
       
       // Toon notificatie voor nieuwe achievements
@@ -1272,7 +1134,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       }
 
       // Forceer een re-render om stats bij te werken
-      setLeitnerStats(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen));
+      setLeitnerStatsDirect(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen));
       
       setOpdrachtStartTijd(null);
     }
@@ -1360,9 +1222,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const isEinde = effectieveMaxRondes > 0 && volgendeBeurtNummer >= effectieveMaxRondes * spelers.length;
     
     // Toon scorebord update alleen als het spel nog niet is afgelopen
-    if (isMobieleWeergave && isAutomatischScorebordActief && !isEinde) {
-      setIsScoreLadeOpen(true);
-      setTimeout(() => setIsScoreLadeOpen(false), 3000);
+    if (!isEinde) {
+      autoShowScoreLade(3000);
     }
     
     if (isEinde) {
@@ -1380,143 +1241,18 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setIsAntwoordVergrendeld(false);
     }
 
-    mainContentRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
+    scrollToTop();
   }, [huidigeOpdracht, huidigeSpeler, huidigeSpinAnalyse, spelers, gekozenPartner, isMobieleWeergave, opgespaardeBonusPunten, effectieveMaxRondes, huidigeRonde, aantalBeurtenGespeeld, verdiendeSpinsDezeBeurt, gameMode, checkSpelEinde, playMultiplayerEnd, isAutomatischScorebordActief, isSerieuzeLeerModusActief, huidigeSessieId, opdrachtStartTijd]);
 
-  const handleFileSelected = (file: File) => {
-    setGeselecteerdBestand(file);
-  };
+  const { 
+    geselecteerdBestand,
+    isBusy: _isUploadBusy,
+    handleFileSelected,
+    handleAnnuleerUpload,
+    handleVerwerkBestand
+  } = useBestandsUpload(parseExcelData, laadNieuweOpdrachten, showNotificatie);
 
-  const handleAnnuleerUpload = () => {
-    setGeselecteerdBestand(null);
-  };
-
-  const handleVerwerkBestand = (vervang: boolean) => {
-    if (!geselecteerdBestand) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const arrayBuffer = event.target?.result as ArrayBuffer;
-        const nieuweOpdrachten = parseExcelData(arrayBuffer, 'gebruiker');
-        // Tel het aantal unieke opdrachten dat daadwerkelijk wordt toegevoegd
-        const huidigeOpdrachten = opdrachten.filter(o => o.bron === 'gebruiker');
-        const bestaandeKeys = new Set(
-          huidigeOpdrachten.map(o => `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`)
-        );
-        const uniekeNieuweOpdrachten = nieuweOpdrachten.filter(o => {
-          const key = `${o.Opdracht}|${o.Categorie}|${o.Hoofdcategorie}`;
-          return !bestaandeKeys.has(key);
-        });
-        
-        laadNieuweOpdrachten(nieuweOpdrachten, vervang);
-        
-        if (vervang) {
-          alert(`${nieuweOpdrachten.length} opdrachten succesvol vervangen!`);
-        } else {
-          const overgeslagen = nieuweOpdrachten.length - uniekeNieuweOpdrachten.length;
-          const bericht = overgeslagen > 0 
-            ? `${uniekeNieuweOpdrachten.length} nieuwe opdrachten toegevoegd, ${overgeslagen} dubbelingen overgeslagen.`
-            : `${uniekeNieuweOpdrachten.length} opdrachten succesvol toegevoegd!`;
-          alert(bericht);
-        }
-        setGeselecteerdBestand(null); // Reset na succes
-        setIsInstellingenOpen(false); // Sluit de instellingen na een succesvolle upload
-      } catch (err) {
-        alert('Fout bij het verwerken van het Excel-bestand. Controleer of het format correct is.');
-        setGeselecteerdBestand(null); // Reset ook bij fout
-      }
-    };
-    reader.onerror = () => {
-      alert('Fout bij het lezen van het bestand.');
-      setGeselecteerdBestand(null); // Reset bij leesfout
-    };
-    reader.readAsArrayBuffer(geselecteerdBestand);
-  };
-
-  const handleKopOfMunt = (keuze: 'kop' | 'munt'): { uitkomst: 'kop' | 'munt'; gewonnen: boolean } => {
-    const uitkomst = Math.random() < 0.5 ? 'kop' : 'munt';
-    const gewonnen = keuze === uitkomst;
-
-    if (huidigeSpeler) {
-      if (gewonnen) {
-        const gewonnenPunten = puntenVoorVerdubbeling * 2;
-        setNotificatie({
-          zichtbaar: true,
-          bericht: `Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`,
-          type: 'succes',
-        });
-        setSpelers(spelers.map(speler =>
-          speler.naam === huidigeSpeler.naam
-            ? { ...speler, score: speler.score + gewonnenPunten }
-            : speler
-        ));
-      } else {
-        setNotificatie({
-          zichtbaar: true,
-          bericht: `Het is ${uitkomst}! Helaas, geen extra punten.`,
-          type: 'fout',
-        });
-      }
-      
-      // Scroll naar boven om de notificatie zichtbaar te maken op mobiel
-      setTimeout(() => {
-        mainContentRef.current?.scrollTo(0, 0);
-        window.scrollTo(0, 0);
-      }, 100); // Korte vertraging om de notificatie eerst te tonen
-    }
-    return { uitkomst, gewonnen };
-  };
-
-  const handleKopOfMuntVoltooid = () => {
-    setTimeout(() => {
-      setNotificatie(prev => ({ ...prev, zichtbaar: false }));
-      setPuntenVoorVerdubbeling(0);
-      
-      // Ga terug naar idle state in plaats van spel beëindigen
-      setGamePhase('idle');
-      setIsAntwoordVergrendeld(false);
-      
-      // Open de score lade op mobiel om de update te tonen
-      if (isMobieleWeergave && isAutomatischScorebordActief && gamePhase !== 'ended') {
-        setIsScoreLadeOpen(true);
-        setTimeout(() => setIsScoreLadeOpen(false), 3000); // Sluit na 3 seconden
-      }
-      mainContentRef.current?.scrollTo(0, 0);
-      window.scrollTo(0, 0); // Extra scroll voor mobiele browsers
-    }, 2500); // Wachttijd om de notificatie te lezen
-  };
-
-  const handleBonusRondeVoltooid = useCallback((geslaagd: boolean) => {
-    if (!huidigeSpeler || !huidigeBonusOpdracht) return;
-
-    if (geslaagd) {
-      const { punten } = huidigeBonusOpdracht;
-      const gewonnenPunten = punten[Math.floor(Math.random() * punten.length)];
-      setNotificatie({ 
-        zichtbaar: true, 
-        bericht: `Goed gedaan! Je kunt ${gewonnenPunten} extra punt(en) verdienen met de hoofdopdracht.`, 
-        type: 'succes' 
-      });
-      setOpgespaardeBonusPunten(gewonnenPunten);
-    } else {
-      setNotificatie({ 
-        zichtbaar: true, 
-        bericht: 'Helaas, geen extra punten deze keer.', 
-        type: 'fout' 
-      });
-    }
-
-    setTimeout(() => {
-      setNotificatie(prev => ({ ...prev, zichtbaar: false }));
-      setHuidigeBonusOpdracht(null);
-      setGamePhase('assessment'); // Ga nu door naar de hoofdopdracht
-      mainContentRef.current?.scrollTo(0, 0);
-      window.scrollTo(0, 0); // Extra scroll voor mobiele browsers
-    }, 3000);
-
-}, [huidigeSpeler, huidigeBonusOpdracht]);
+  // Handlers voor kop-of-munt en bonus zijn verplaatst naar useSpinFlow
 
   const handleHerstart = () => {
     setSpelers(spelers.map(speler => ({ ...speler, score: 0, extraSpins: 0, beurten: 0 })));
@@ -1581,17 +1317,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsScoreLadeOpen(false); // Sluit mobiele menu
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    }
-  };
+  // full screen toggle is now provided by useFullscreen
 
   const handleStartFocusSessie = (categorie: string, leermodusType: 'normaal' | 'leitner' = 'normaal') => {
     // Deze functie verwacht nu een "Hoofdcategorie - Subcategorie" of alleen "Hoofdcategorie"
@@ -1616,14 +1342,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setLeermodusType(leermodusType);
 
     setIsLeeranalyseOpen(false);
-    // Optioneel: toon een notificatie
+    // Optioneel: toon een notificatie (via hook)
     const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
-    setNotificatie({
-      zichtbaar: true,
-      bericht: `${leermodusNaam} gestart voor: ${categorie}`,
-      type: 'succes',
-    });
-    setTimeout(() => setNotificatie(prev => ({ ...prev, zichtbaar: false })), 4000);
+    showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 4000);
   };
 
   if (loading) {
@@ -1649,326 +1370,124 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         onOpenLeeranalyse={() => handleOpenLeeranalyse(true)}
       />
       <OrientatieMelding isMobiel={isMobieleWeergave} />
-      {/* De instellingen modal staat buiten de hoofdlayout voor een correcte weergave */}
-      {isInstellingenOpen && (
-        <Instellingen
-          isOpen={isInstellingenOpen}
-          onClose={() => setIsInstellingenOpen(false)}
+      <AppModals
+        isInstellingenOpen={isInstellingenOpen}
+        onCloseInstellingen={() => setIsInstellingenOpen(false)}
           onVerwijderGebruikerOpdrachten={verwijderGebruikerOpdrachten}
-          // Geavanceerd
           bonusOpdrachten={bonusOpdrachten}
           setBonusOpdrachten={setBonusOpdrachten}
           basisBonusOpdrachten={BONUS_OPDRACHTEN}
           isSpelGestart={isSpelGestart}
           onSpelReset={resetSpelState}
-          // Categorie beheer
           onOpenCategorieBeheer={handleOpenLeitnerCategorieBeheer}
           onOpenCategorieSelectie={() => setIsCategorieSelectieOpen(true)}
-          // Huidige modus voor automatische tab selectie
           currentGameMode={getCurrentGameMode()}
-        >
-          {/* Opdrachtenbeheer Content */}
-          <BestandsUploader
             onFileSelected={handleFileSelected}
-            onAnnuleer={handleAnnuleerUpload}
-            onVerwerk={handleVerwerkBestand}
+        onAnnuleerUpload={handleAnnuleerUpload}
+        onVerwerkBestand={handleVerwerkBestand}
             geselecteerdBestand={geselecteerdBestand}
-          />
-          <p className="setting-description" style={{ marginLeft: 0, marginTop: '20px', marginBottom: '15px' }}>
-              <strong>Categorieën selectie:</strong> Categorieën kunnen nu worden aangepast via de knoppen in het linker menu. 
-              Elke spelmodus heeft zijn eigen categorie selectie.
-          </p>
-        </Instellingen>
-      )}
-      
-      <Uitleg isOpen={isUitlegOpen} onClose={() => setIsUitlegOpen(false)} />
-      
-      {/* Sessie samenvatting modal */}
-      <SessieSamenvatting
-        isOpen={isSessieSamenvattingOpen}
-        onClose={() => setIsSessieSamenvattingOpen(false)}
-        sessieData={eindigdeSessieData}
+        isUitlegOpen={isUitlegOpen}
+        onCloseUitleg={() => setIsUitlegOpen(false)}
+        isSessieSamenvattingOpen={isSessieSamenvattingOpen}
+        onCloseSessieSamenvatting={() => setIsSessieSamenvattingOpen(false)}
+        eindigdeSessieData={eindigdeSessieData}
         onOpenLeeranalyse={handleOpenLeeranalyse}
-      />
-      
-      {/* Leeranalyse modal */}
-      <Leeranalyse
-        isOpen={isLeeranalyseOpen}
-        onClose={() => {
-          setIsLeeranalyseOpen(false);
-          setOpenLeeranalyseToAchievements(false);
-        }}
-        key={isLeeranalyseOpen ? 'open' : 'closed'}
+        isLeeranalyseOpen={isLeeranalyseOpen}
+        onCloseLeeranalyse={() => { setIsLeeranalyseOpen(false); setOpenLeeranalyseToAchievements(false); }}
         onStartFocusSessie={handleStartFocusSessie}
-        openToAchievements={openLeeranalyseToAchievements}
-      />
-
-              <CategorieSelectieModal
-          isOpen={isCategorieSelectieOpen}
-          onClose={() => {
-            setIsCategorieSelectieOpen(false);
-            setIsCategorieBeheerOpen(false); // Reset Leitner modal state
-          }}
+        openLeeranalyseToAchievements={openLeeranalyseToAchievements}
+        isCategorieSelectieOpen={isCategorieSelectieOpen}
+        onCloseCategorieSelectie={() => { setIsCategorieSelectieOpen(false); setIsCategorieBeheerOpen(false); }}
         opdrachten={opdrachten}
         geselecteerdeCategorieen={geselecteerdeCategorieen}
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
         onOpenLeitnerBeheer={handleOpenLeitnerCategorieBeheer}
         highScoreLibrary={getHighScoreLibrary()}
-        onHighScoreSelect={setGeselecteerdeHighscoreCategorieen}
+        setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
         setGeselecteerdeLeitnerCategorieen={setGeselecteerdeLeitnerCategorieen}
         geselecteerdeMultiplayerCategorieen={geselecteerdeMultiplayerCategorieen}
         setGeselecteerdeMultiplayerCategorieen={setGeselecteerdeMultiplayerCategorieen}
         geselecteerdeHighscoreCategorieen={geselecteerdeHighscoreCategorieen}
-        setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         initialActiveTab={categorieSelectieActiveTab}
         filters={filters}
         setFilters={setFilters}
-      />
-
-      {isCategorieBeheerOpen && (
-        <LeitnerCategorieBeheer
-          isOpen={isCategorieBeheerOpen}
-          onClose={() => {
-            setIsCategorieBeheerOpen(false);
-            setIsCategorieSelectieOpen(false); // Reset categorie modal state
-          }}
-          geselecteerdeCategorieen={geselecteerdeLeitnerCategorieen}
-          setGeselecteerdeCategorieen={setGeselecteerdeLeitnerCategorieen}
-          alleCategorieen={alleUniekeCategorieen}
-          alleOpdrachten={opdrachten}
-          filters={filters}
-          setFilters={setFilters}
-        />
-      )}
-
-      <LimietBereiktModal
-        isOpen={isLimietModalOpen}
-        onClose={() => setIsLimietModalOpen(false)}
-        onConfirm={() => {
-          setLimietWaarschuwingGenegeerd(true);
-          setIsLimietModalOpen(false);
-        }}
+        isCategorieBeheerOpen={isCategorieBeheerOpen}
+        onCloseCategorieBeheer={() => { setIsCategorieBeheerOpen(false); setIsCategorieSelectieOpen(false); }}
+        alleUniekeCategorieen={alleUniekeCategorieen}
+        isLimietModalOpen={isLimietModalOpen}
+        onCloseLimietModal={() => setIsLimietModalOpen(false)}
+        onConfirmLimiet={() => { setLimietWaarschuwingGenegeerd(true); setIsLimietModalOpen(false); }}
         maxVragen={maxNewLeitnerQuestionsPerDay}
-        onOpenInstellingen={() => {
-          setIsLimietModalOpen(false);
-          setIsInstellingenOpen(true);
-        }}
-      />
-
-      <OpdrachtenVoltooidModal
-        isOpen={isOpdrachtenVoltooidModalOpen}
-        onClose={() => setIsOpdrachtenVoltooidModalOpen(false)}
-        onOpenCategorieSelectie={() => {
-          setIsOpdrachtenVoltooidModalOpen(false);
-          setIsCategorieBeheerOpen(true);
-        }}
+        onOpenInstellingenFromLimiet={() => { setIsLimietModalOpen(false); setIsInstellingenOpen(true); }}
+        isOpdrachtenVoltooidModalOpen={isOpdrachtenVoltooidModalOpen}
+        onCloseOpdrachtenVoltooid={() => setIsOpdrachtenVoltooidModalOpen(false)}
+        onOpenCategorieSelectieFromVoltooid={() => { setIsOpdrachtenVoltooidModalOpen(false); setIsCategorieBeheerOpen(true); }}
       />
 
 
 
       {isMobieleWeergave && (
-        <>
-          <button className="score-lade-knop" onClick={() => setIsScoreLadeOpen(prev => !prev)}>
-            <div className="hamburger-menu">
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
-            </div>
-          </button>
-          <button className="fullscreen-knop" onClick={toggleFullscreen}>
-            {isFullscreen ? '⛶' : '⛶'} {/* Fullscreen iconen */}
-          </button>
-          <div 
-            className={`score-lade-overlay ${isScoreLadeOpen ? 'open' : ''}`} 
-            onClick={() => setIsScoreLadeOpen(false)}
-          ></div>
-        </>
+        <MobileControls
+          isMobieleWeergave={isMobieleWeergave}
+          isScoreLadeOpen={isScoreLadeOpen}
+          setIsScoreLadeOpen={setIsScoreLadeOpen}
+          onToggleFullscreen={toggleFullscreen}
+        />
       )}
 
       <div className="main-layout" {...swipeHandlers}>
-        <aside className={`left-panel ${isScoreLadeOpen ? 'open' : ''}`}>
-          {/* Setup knoppen - alleen zichtbaar als spel niet gestart is */}
-          {!isSpelGestart && (
-            <>
-              <SpelerInput 
-                onSpelerToevoegen={handleSpelerToevoegen}
-                gameMode={gameMode}
-                setGameMode={setGameMode}
-                isSpelerInputDisabled={isSpelerInputDisabled}
+        <LeftPanel
+          isScoreLadeOpen={isScoreLadeOpen}
                 isSpelGestart={isSpelGestart}
-                isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
-                setIsSerieuzeLeerModusActief={setIsSerieuzeLeerModusActief}
-                leermodusType={leermodusType}
-                setLeermodusType={setLeermodusType}
-                onSpelReset={resetSpelState}
-              />
-            </>
-          )}
-
-          {/* Scorebord - altijd zichtbaar */}
-          <Scorebord
+          gameMode={gameMode}
             spelers={spelers}
             huidigeSpeler={huidigeSpeler}
             huidigeRonde={huidigeRonde}
-            maxRondes={effectieveMaxRondes}
-            gameMode={gameMode}
-            highScore={currentHighScore}
-            personalBest={currentPersonalBest}
+          effectieveMaxRondes={effectieveMaxRondes}
             isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+          leermodusType={leermodusType}
             aantalBeurtenGespeeld={aantalBeurtenGespeeld}
-          />
-
-          {/* Highscore informatie - alleen zichtbaar in highscore modus */}
-          {gameMode === 'single' && !isSerieuzeLeerModusActief && (
-            <div className="highscore-sectie">
-              <div className="highscore-header">
-                <h5>🏆 Highscore Modus</h5>
-              </div>
-              <div className="highscore-info">
-                <button 
-                  onClick={handleOpenHighscoreCategorieSelectie}
-                  className="categorie-beheer-knop"
-                  disabled={isSpelGestart}
-                >
-                  <span className="knop-titel">Categorieën Aanpassen</span>
-                                        <span className="knop-details">{gefilterdeGeselecteerdeHighscoreCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenHighscore} Opdr.</span>
-                  {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
-                </button>
-                <div className="highscore-info-text">
-                  <p>Probeer je beste score te behalen met de geselecteerde categorieën!</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Multiplayer informatie - alleen zichtbaar in multiplayer modus */}
-          {gameMode === 'multi' && (
-            <div className="multiplayer-sectie">
-              <div className="multiplayer-header">
-                <h5>🎮 Multiplayer Modus</h5>
-              </div>
-              <div className="multiplayer-info">
-                <button 
-                  onClick={handleOpenMultiplayerCategorieSelectie}
-                  className="categorie-beheer-knop"
-                  disabled={isSpelGestart}
-                >
-                  <span className="knop-titel">Categorieën Aanpassen</span>
-                                        <span className="knop-details">{gefilterdeGeselecteerdeMultiplayerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenMultiplayer} Opdr.</span>
-                  {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
-                </button>
-                <div className="multiplayer-info-text">
-                  <p>Speel samen met vrienden en familie!</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Leermodus informatie - alleen zichtbaar in leermodus */}
-          {gameMode === 'single' && isSerieuzeLeerModusActief && (
-            <div className="serieuze-leermodus-uitleg">
-              {leermodusType === 'leitner' && (
-                <div className="leitner-sectie">
-                  <div className="leitner-header">
-                    <h5>🔄 Leitner</h5>
-                  </div>
-                  <div className="leitner-stats">
-                    <button 
-                      onClick={handleOpenLeitnerCategorieBeheer}
-                      className="categorie-beheer-knop"
-                    >
-                      <span className="knop-titel">Categorieën Aanpassen</span>
-                      <span className="knop-details">{gefilterdeGeselecteerdeLeitnerCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenLeitner} Opdr.</span>
-                    </button>
-                    <div className="leitner-stats-info">
-                      <p>Nieuwe opdrachten: <strong>{aantalNieuweLeitnerOpdrachten}</strong></p>
-                      <p>
-                        {isBox0OverrideActief ? 'Box 0 (wachttijd genegeerd):' : 'Klaar voor herhaling:'}
-                        <strong> {leitnerStats.vandaagBeschikbaar}</strong> opdrachten
-                      </p>
-                    </div>
-                    {leitnerStats.vandaagBeschikbaar > 0 && (
-                      <p className="leitner-priority">
-                        ⭐ Herhalingen komen eerst, nieuwe opdrachten daarna.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {leermodusType === 'normaal' && (
-                <div className="vrije-leermodus-sectie">
-                  <div className="vrije-leermodus-header">
-                    <h5>📚 Vrije Leermodus</h5>
-                  </div>
-                  <div className="vrije-leermodus-info">
-                    <button 
-                      onClick={handleOpenNormaleLeermodusCategorieSelectie}
-                      className="categorie-beheer-knop"
-                    >
-                      <span className="knop-titel">Categorieën Aanpassen</span>
-                      <span className="knop-details">{gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.</span>
-                    </button>
-                    <div className="vrije-leermodus-info-text">
-                      <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <FilterDashboard 
+          currentHighScore={currentHighScore}
+          currentPersonalBest={currentPersonalBest}
+          alleUniekeCategorieen={alleUniekeCategorieen}
+          gefilterdeGeselecteerdeHighscoreCategorieen={gefilterdeGeselecteerdeHighscoreCategorieen}
+          gefilterdeGeselecteerdeMultiplayerCategorieen={gefilterdeGeselecteerdeMultiplayerCategorieen}
+          gefilterdeGeselecteerdeLeitnerCategorieen={gefilterdeGeselecteerdeLeitnerCategorieen}
+          gefilterdeGeselecteerdeCategorieen={gefilterdeGeselecteerdeCategorieen}
+          aantalOpdrachtenHighscore={aantalOpdrachtenHighscore}
+          aantalOpdrachtenMultiplayer={aantalOpdrachtenMultiplayer}
+          aantalOpdrachtenLeitner={aantalOpdrachtenLeitner}
+          aantalOpdrachtenNormaal={aantalOpdrachtenNormaal}
+          aantalNieuweLeitnerOpdrachten={aantalNieuweLeitnerOpdrachten}
+          isBox0OverrideActief={isBox0OverrideActief}
+          vandaagBeschikbaar={leitnerStats.vandaagBeschikbaar}
+          onSpelerToevoegen={handleSpelerToevoegen}
+          setGameMode={setGameMode}
+          isSpelerInputDisabled={isSpelerInputDisabled}
+          setIsSerieuzeLeerModusActief={setIsSerieuzeLeerModusActief}
+          setLeermodusType={setLeermodusType}
+          onSpelReset={resetSpelState}
+          onOpenHighscoreCategorieSelectie={handleOpenHighscoreCategorieSelectie}
+          onOpenMultiplayerCategorieSelectie={handleOpenMultiplayerCategorieSelectie}
+          onOpenNormaleLeermodusCategorieSelectie={handleOpenNormaleLeermodusCategorieSelectie}
+          onOpenLeitnerCategorieBeheer={handleOpenLeitnerCategorieBeheer}
+          onEindigSessie={handleEindigSessie}
+          onEindigSpel={handleEindigSpel}
+          onOpenInstellingen={handleOpenInstellingen}
+          onOpenUitleg={handleOpenUitleg}
             filters={filters}
             setFilters={setFilters}
             opdrachten={opdrachten}
-    
             actieveCategorieSelectie={actieveCategorieSelectie}
           />
 
-          {/* Sessie beëindigen knop - alleen in leermodus tijdens actief spel */}
-          {isSpelGestart && gameMode === 'single' && isSerieuzeLeerModusActief && (
-            <div className="spel-controle-knoppen">
-              <button className="eindig-knop" onClick={handleEindigSessie}>
-                🏁 Sessie Beëindigen
-              </button>
-              <p className="sessie-controle-tekst">
-                Sluit je leersessie af voor een samenvatting.
-              </p>
-            </div>
-          )}
-
-          {/* Spel beëindigen knop - voor highscore en multiplayer tijdens actief spel */}
-          {isSpelGestart && !isSerieuzeLeerModusActief && (
-            <div className="spel-controle-knoppen">
-              <button className="eindig-knop" onClick={handleEindigSpel}>
-                🛑 Spel Beëindigen
-              </button>
-              <p className="sessie-controle-tekst">
-                Hiermee reset je het spel en de scores.
-              </p>
-            </div>
-          )}
-
-          {/* Instellingen knoppen - altijd zichtbaar */}
-          <div className="instellingen-knoppen">
-            <button className="instellingen-knop" onClick={handleOpenInstellingen}>⚙️ Instellingen</button>
-            <button className="instellingen-knop" onClick={handleOpenUitleg}>📖 Uitleg</button>
-          </div>
-
-          {/* HAN Logo - altijd zichtbaar */}
-          <div className="han-logo-container">
-            <img src="/images/Logo-HAN.webp" alt="Logo Hogeschool van Arnhem en Nijmegen" className="han-logo" />
-            <p>Ontwikkeld door de opleiding Fysiotherapie van de Hogeschool van Arnhem en Nijmegen.</p>
-          </div>
-        </aside>
-
-        <main className="right-panel" ref={mainContentRef}>
-          <div className={`notificatie-popup ${notificatie.zichtbaar ? 'zichtbaar' : ''} ${notificatie.type}`}>
-            {notificatie.bericht}
-          </div>
-          {isDevMode && import.meta.env.DEV && <DevPanel
+        <RightPanel
+          notificatie={notificatie}
+          warning={warning}
+          DevPanelSlot={isDevMode && import.meta.env.DEV ? (
+            <DevPanel
             forceResult={forceResult}
             setForceResult={setForceResult}
             simuleerVoltooiing={handleSimuleerVoltooiing}
@@ -1977,12 +1496,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             forceHerhalingen={handleForceHerhalingen}
             toggleBox0Interval={handleToggleBox0Interval}
             isBox0IntervalVerkort={isBox0IntervalVerkort}
-          />}
-          {warning && <div className="app-warning">{warning}</div>}
-          
-          <Fruitautomaat
+            />
+          ) : null}
             titel="Return2Performance"
-            key={opdrachtenVoorSelectie.length}
             opdrachten={opdrachtenVoorSelectie}
             spelers={spelers}
             isSpinning={isAanHetSpinnen}
@@ -2000,14 +1516,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             onPauseOpdracht={handlePauseOpdracht}
             isBeoordelingDirect={isBeoordelingDirect}
             isKaleModusActief={isKaleModusActiefGlobal}
-            welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && (
+          welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() ? (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>
                 {isSerieuzeLeerModusActief && gameMode === 'single' ? (
                   <>
-                    <p>
-                      <strong>📚 Leer Modus</strong>
-                    </p>
+                  <p><strong>📚 Leer Modus</strong></p>
                     <p>Je leerdata wordt automatisch opgeslagen op dit device.</p>
                     <p>Geen naam vereist - focus op leren!</p>
                     <p><strong>Stap 1:</strong> Kies een spelmodus <span className="mobile-hint">(open menu via knop linksboven)</span></p>
@@ -2025,35 +1539,74 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                   </>
                 )}
               </div>
-            )}
-          >
-            {gamePhase !== 'idle' && gamePhase !== 'spinning' && huidigeOpdracht && huidigeSpinAnalyse && (
-              <ActieDashboard
-                ref={actieDashboardRef}
-                huidigeOpdracht={huidigeOpdracht}
-                spinAnalyse={huidigeSpinAnalyse}
+          ) : undefined}
+          actieDashboardRef={actieDashboardRef}
                 handleBeoordeling={handleBeoordeling}
-                isTimerActief={gamePhase === 'assessment' && isTimerActief}
-                gamePhase={gamePhase}
-                spelers={spelers}
+          isTimerActief={isTimerActief}
                 huidigeSpeler={huidigeSpeler}
-                onPartnerKies={handlePartnerKies}
+          onPartnerKies={(partnerNaam) => {
+            const partner = spelers.find(p => p.naam === partnerNaam);
+            if (partner) {
+              playPartnerChosen();
+              setGekozenPartner(partner);
+              setGamePhase('assessment');
+            }
+          }}
                 onGebruikExtraSpin={handleGebruikExtraSpin}
                 isJokerSpinActief={isJokerSpinActief}
                 puntenVoorVerdubbeling={puntenVoorVerdubbeling}
-                onKopOfMunt={handleKopOfMunt}
+          onKopOfMunt={(keuze) => {
+            const uitkomst = Math.random() < 0.5 ? 'kop' : 'munt';
+            const gewonnen = keuze === uitkomst;
+            if (huidigeSpeler) {
+              if (gewonnen) {
+                const gewonnenPunten = puntenVoorVerdubbeling * 2;
+                showNotificatie(`Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`, 'succes', 3000);
+                setSpelers(spelers.map(speler => speler.naam === huidigeSpeler.naam ? { ...speler, score: speler.score + gewonnenPunten } : speler));
+              } else {
+                showNotificatie(`Het is ${uitkomst}! Helaas, geen extra punten.`, 'fout', 3000);
+              }
+              setTimeout(() => {
+                mainContentRef.current?.scrollTo(0, 0);
+                window.scrollTo(0, 0);
+              }, 100);
+            }
+            return { uitkomst, gewonnen };
+          }}
                 huidigeBonusOpdracht={huidigeBonusOpdracht}
                 opgespaardeBonusPunten={opgespaardeBonusPunten}
-                onBonusRondeVoltooid={handleBonusRondeVoltooid}
-                onKopOfMuntVoltooid={handleKopOfMuntVoltooid}
-                isGeluidActief={isGeluidActief}
-                isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
-                aantalBeurtenGespeeld={aantalBeurtenGespeeld}
-
-              />
-            )}
-          </Fruitautomaat>
-        </main>
+          onBonusRondeVoltooid={(geslaagd) => {
+            if (!huidigeSpeler || !huidigeBonusOpdracht) return;
+            if (geslaagd) {
+              const { punten } = huidigeBonusOpdracht;
+              const gewonnenPunten = punten[Math.floor(Math.random() * punten.length)];
+              showNotificatie(`Goed gedaan! Je kunt ${gewonnenPunten} extra punt(en) verdienen met de hoofdopdracht.`, 'succes', 3000);
+              setOpgespaardeBonusPunten(gewonnenPunten);
+            } else {
+              showNotificatie('Helaas, geen extra punten deze keer.', 'fout', 3000);
+            }
+            setTimeout(() => {
+              hideNotificatie();
+              setHuidigeBonusOpdracht(null);
+              setGamePhase('assessment');
+              mainContentRef.current?.scrollTo(0, 0);
+              window.scrollTo(0, 0);
+            }, 3000);
+          }}
+          onKopOfMuntVoltooid={() => {
+            setTimeout(() => {
+              hideNotificatie();
+              setPuntenVoorVerdubbeling(0);
+              setGamePhase('idle');
+              setIsAntwoordVergrendeld(false);
+              if (gamePhase !== 'ended') {
+                autoShowScoreLade(3000);
+              }
+              mainContentRef.current?.scrollTo(0, 0);
+              window.scrollTo(0, 0);
+            }, 2500);
+          }}
+        />
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { getLeerFeedback } from '../data/leerFeedback';
 import { useSettings } from '../context/SettingsContext';
 
 // Helper functie voor het shufflen van arrays
-const shuffle = <T,>(array: T[]): T[] => {
+export const shuffle = <T,>(array: T[]): T[] => {
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,7 +21,7 @@ export const useGameEngine = () => {
   const [spelers, setSpelers] = useState<Speler[]>([]);
   const [huidigeSpeler, setHuidigeSpeler] = useState<Speler | null>(null);
   const [gamePhase, setGamePhase] = useState<GamePhase>('idle');
-  const [huidigeOpdracht, setHuidigeOpdracht] = useState<{ opdracht: Opdracht; type: string; box?: number } | null>(null);
+  const [huidigeOpdracht, setHuidigeOpdracht] = useState<{ opdracht: Opdracht; type: 'herhaling' | 'nieuw' | 'geen'; box?: number } | null>(null);
   const [spinResultaat, setSpinResultaat] = useState({
     jackpot: [0, 0, 0], // Start met 3 kersen (index 0)
     categorie: -1,
