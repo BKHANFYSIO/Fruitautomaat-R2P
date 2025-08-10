@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { LeerData, Achievement } from '../data/types';
 import { getAppConfig } from '../data/appConfig';
 
@@ -27,6 +28,11 @@ export const generateCertificaat = async (data: CertificaatData): Promise<void> 
   // Voeg nieuwe pagina toe voor achievements
   pdf.addPage();
   generateAchievementsPagina(pdf, data, appConfig);
+
+  // Bijlagen: Leeranalyse tabs als afbeeldingen met automatische paginering
+  try {
+    await appendLeeranalyseBijlagen(pdf);
+  } catch {}
 
   // Download het PDF bestand
   const filename = `certificaat_${data.studentName.replace(/\s+/g, '_')}_${data.datum}.pdf`;
@@ -108,6 +114,98 @@ const generateVoorblad = async (pdf: jsPDF, data: CertificaatData, appConfig: an
       } catch (error) {
       // Logo niet geladen, doorgaan zonder logo
     }
+};
+
+// Helper: voeg leeranalyse-tabbladen als bijlagen toe
+const appendLeeranalyseBijlagen = async (pdf: jsPDF) => {
+  // Maak een verborgen container waar we de leeranalyse in renderen
+  const host = document.createElement('div');
+  host.style.position = 'fixed';
+  host.style.left = '-10000px';
+  host.style.top = '0';
+  host.style.width = '1200px'; // brede layout om horizontale shrink te voorkomen
+  host.style.zIndex = '-1';
+  document.body.appendChild(host);
+
+  // Dynamisch importeren om afhankelijkheden pas in runtime te laden
+  const { createRoot } = await import('react-dom/client');
+  const React = await import('react');
+  const { Leeranalyse } = await import('../components/Leeranalyse');
+  const { getLeerDataManager } = await import('../data/leerDataManager');
+
+  const leerDataManager = getLeerDataManager();
+  const hasData = !!leerDataManager.loadLeerData();
+  if (!hasData) {
+    document.body.removeChild(host);
+    return; // Geen leerdata, sla bijlagen over
+  }
+
+  const tabs: Array<{ key: any; title: string }> = [
+    { key: 'overzicht', title: 'Bijlage – Overzicht' },
+    { key: 'categorieen', title: 'Bijlage – Categorieën' },
+    { key: 'achievements', title: 'Bijlage – Achievements' },
+    { key: 'leitner', title: 'Bijlage – Leitner' },
+    { key: 'tijdlijn', title: 'Bijlage – Tijdlijn' },
+  ];
+
+  const root = createRoot(host);
+
+  // Render per tab, capture, pagineer en voeg toe
+  for (const tab of tabs) {
+    root.render(React.createElement(Leeranalyse as any, { isOpen: true, onClose: () => {}, forceActiveTab: tab.key, captureMode: true }));
+    // Wacht op render tick
+    await new Promise(r => requestAnimationFrame(() => r(null)));
+    await new Promise(r => setTimeout(r, 50)); // kleine delay voor charts/fonts
+
+    // Zoek de content-container
+    const modal = host.querySelector('.leeranalyse-modal') as HTMLElement | null;
+    const content = modal?.querySelector('.leeranalyse-content') as HTMLElement | null;
+    if (!content) continue;
+
+    // Titelpagina voor de bijlage
+    pdf.addPage();
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(tab.title, 20, 20);
+
+    // Capture de gehele content hoogte
+    const canvas = await html2canvas(content, {
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scale: 2,
+      logging: false,
+      windowWidth: content.scrollWidth,
+      windowHeight: content.scrollHeight,
+    });
+
+    // Paginering: knip in A4-segmenten
+    const imgWidthMm = 180; // A4 210mm - 2*15mm marge
+    const pageWidthPx = canvas.width;
+    // Bereken mm per px
+    const mmPerPx = imgWidthMm / pageWidthPx;
+
+    let offsetY = 0;
+    const pageHeightPxTarget = Math.floor((297 - 40) / mmPerPx); // 297mm hoogte, 20mm top+bottom marges
+
+    while (offsetY < canvas.height) {
+      const sliceHeight = Math.min(pageHeightPxTarget, canvas.height - offsetY);
+      const slice = document.createElement('canvas');
+      slice.width = pageWidthPx;
+      slice.height = sliceHeight;
+      const sctx = slice.getContext('2d')!;
+      sctx.drawImage(canvas, 0, offsetY, pageWidthPx, sliceHeight, 0, 0, pageWidthPx, sliceHeight);
+
+      const imgData = slice.toDataURL('image/png');
+      if (offsetY > 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 15, 20, imgWidthMm, sliceHeight * mmPerPx);
+
+      offsetY += sliceHeight;
+    }
+  }
+
+  // Opruimen
+  root.unmount();
+  document.body.removeChild(host);
 };
 
 const generateOverzichtPagina = (pdf: jsPDF, data: CertificaatData, _appConfig: any) => {

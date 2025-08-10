@@ -14,14 +14,24 @@ interface LeeranalyseProps {
   onClose: () => void;
   onStartFocusSessie?: (categorie: string, leermodusType?: 'normaal' | 'leitner') => void;
   openToAchievements?: boolean;
+  // Capture-ondersteuning: forceer een actieve tab en demp overlay-gedrag
+  forceActiveTab?: 'overzicht' | 'categorieen' | 'achievements' | 'leitner' | 'tijdlijn';
+  captureMode?: boolean;
 }
 
-export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, openToAchievements = false }: LeeranalyseProps) => {
+export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, openToAchievements = false, forceActiveTab, captureMode = false }: LeeranalyseProps) => {
   const [leerData, setLeerData] = useState<LeerData | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [leitnerData, setLeitnerData] = useState<LeitnerData | null>(null);
   const [achievementDefs, setAchievementDefs] = useState<{ algemeen: Omit<Achievement, 'behaaldOp'>[], leitner: Omit<LeitnerAchievement, 'behaaldOp'>[] }>({ algemeen: [], leitner: [] });
   const [activeTab, setActiveTab] = useState<'overzicht' | 'categorieen' | 'achievements' | 'leitner' | 'tijdlijn'>(openToAchievements ? 'achievements' : 'overzicht');
+
+  // Forceer actieve tab indien opgegeven (voor screenshots)
+  useEffect(() => {
+    if (forceActiveTab) {
+      setActiveTab(forceActiveTab);
+    }
+  }, [forceActiveTab]);
   const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({ isOpen: false, title: '', content: '' });
 
   const leerDataManager = useMemo(() => getLeerDataManager(), [isOpen]);
@@ -460,7 +470,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   }
 
   return (
-    <div className="leeranalyse-overlay" onClick={onClose}>
+    <div className="leeranalyse-overlay" onClick={captureMode ? undefined : onClose} data-capture-mode={captureMode ? '1' : undefined}>
       <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()}>
         <div className="leeranalyse-header">
           <h2>📊 Leeranalyse (Leer Modus)</h2>
