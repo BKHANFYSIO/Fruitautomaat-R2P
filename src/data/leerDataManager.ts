@@ -724,27 +724,12 @@ class LeerDataManager {
     const leerData = this.loadLeerData();
     if (!leerData) return [];
 
-    const eindDatum = new Date();
-    const startDatum = new Date(eindDatum.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+    const activiteiten = Object.values(leerData.statistieken.dagelijkseActiviteit);
+    const gesorteerdeActiviteiten = activiteiten.sort((a, b) => 
+      new Date(a.datum).getTime() - new Date(b.datum).getTime()
+    );
 
-    // Maak snelle lookup per datum
-    const byDate: { [datum: string]: DagelijkseActiviteit } = {};
-    Object.values(leerData.statistieken.dagelijkseActiviteit).forEach((d) => {
-      byDate[d.datum] = d;
-    });
-
-    const resultaat: DagelijkseActiviteit[] = [];
-    for (let d = new Date(startDatum); d <= eindDatum; d.setDate(d.getDate() + 1)) {
-      const datumString = d.toISOString().split('T')[0];
-      const found = byDate[datumString];
-      if (found) {
-        resultaat.push(found);
-      } else {
-        resultaat.push({ datum: datumString, opdrachten: 0, speeltijd: 0, gemiddeldeScore: 0, sessies: 0 });
-      }
-    }
-
-    return resultaat;
+    return gesorteerdeActiviteiten.slice(-aantalDagen);
   }
 
   public getWeekelijkseData(aantalWeken: number = 12): {
@@ -1263,16 +1248,9 @@ class LeerDataManager {
       return tijdlijnData[datumStr];
     };
 
-    const eind = new Date();
-    const start = new Date(eind.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
-
-    // Voor-af: initialiseer alle dagen in venster met nulwaarden
-    for (let d = new Date(start); d <= eind; d.setDate(d.getDate() + 1)) {
-      ensure(toLocalDateString(d.toISOString()));
-    }
-
     const opdrachten = Object.values(leerData.opdrachten);
-    // Per opdracht, tel per score/modus entry op de juiste dag (alleen leitner)
+
+    // Tel per entry uit score/modus geschiedenis zodat elke dag juist wordt opgebouwd
     opdrachten.forEach(op => {
       const scores = op.scoreGeschiedenis || [];
       const modi = op.modusGeschiedenis || [];
@@ -1280,10 +1258,8 @@ class LeerDataManager {
         const entry = scores[i];
         if (!entry || !entry.datum) continue;
         const datumStr = toLocalDateString(entry.datum);
-        // Sla entries buiten het venster over
-        const datum = new Date(datumStr);
-        if (datum < start || datum > eind) continue;
         const modus = modi[i]?.modus;
+        // Alleen Leitner entries tellen in deze tijdlijn
         if (modus !== 'leitner') continue;
         const ent = ensure(datumStr);
         if (i === 0) ent.nieuweOpdrachten++;
@@ -1292,13 +1268,9 @@ class LeerDataManager {
       }
     });
 
-    // Retourneer in kalendervolgorde exacte vensterlengte
-    const resultaat: { datum: string; nieuweOpdrachten: number; herhalingen: number; totaal: number }[] = [];
-    for (let d = new Date(start); d <= eind; d.setDate(d.getDate() + 1)) {
-      const datumStr = toLocalDateString(d.toISOString());
-      resultaat.push(tijdlijnData[datumStr]);
-    }
-    return resultaat;
+    return Object.values(tijdlijnData)
+      .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime())
+      .slice(-aantalDagen);
   }
 
   public getLeitnerWeekelijkseData(aantalWeken: number = 12): {

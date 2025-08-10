@@ -293,7 +293,6 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
     // Loop elke dag
     const globalUsedIds = new Set<string>();
     // Pool van nog niet geïntroduceerde opdrachten (index-gebaseerd om id-collisies te vermijden)
-    const getId = (_op: any) => '';
     const remainingIdx = new Set<number>(allOps.map((_, idx) => idx));
     for (let d = 0; d < days; d++) {
       const day = new Date(start.getTime() + d * 24 * 60 * 60 * 1000);
@@ -355,8 +354,8 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
           }
         }
 
-        // 2) Nieuwe opdrachten daarna (bij 'free' of 'both')
-        if (genMode !== 'leitner') {
+        // 2) Nieuwe opdrachten daarna (ook bij Leitner: om de dag te vullen met nieuwe kaarten indien nodig)
+        {
           const dailyNewTarget = randInt(Math.min(dailyNewMin, dailyNewMax), Math.max(dailyNewMin, dailyNewMax));
           const targetThisSession = Math.ceil(dailyNewTarget / 3);
           const idsArray = Array.from(remainingIdx);
@@ -544,6 +543,14 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
           <DevCard title="Synthetic data (config)" subtitle="Genereer realistische leerdata">
             <div className="col" style={{ gap: 8 }}>
               <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Modus
+                  <select value={genMode} onChange={() => { /* alleen view; standaard 'leitner' */ }} style={{ height: 28 }}>
+                    <option value="leitner">Leitner</option>
+                    <option value="free">Vrije leermodus</option>
+                    <option value="both">Beide</option>
+                  </select>
+                </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   Nieuwe/dag min
                   <input type="number" min={1} max={50} value={dailyNewMin} onChange={(e) => setDailyNewMin(Number(e.target.value))} style={{ width: 70 }} />
