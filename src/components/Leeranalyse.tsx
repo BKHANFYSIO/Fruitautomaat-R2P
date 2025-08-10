@@ -117,14 +117,14 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     ];
     
     const colors = [
-      '#805ad5', // Paars voor box 0
-      '#ff6b6b', // Rood voor box 1
-      '#feca57', // Oranje voor box 2
-      '#48dbfb', // Blauw voor box 3
-      '#0abde3', // Donkerblauw voor box 4
-      '#54a0ff', // Lichtblauw voor box 5
-      '#2c3e50', // Grijs voor box 6
-      '#ffd700'  // Goud voor beheerst
+      '#bbf7d0', // Box 0 - groen 200
+      '#86efac', // Box 1 - groen 300
+      '#4ade80', // Box 2 - groen 400
+      '#22c55e', // Box 3 - groen 500
+      '#16a34a', // Box 4 - groen 600
+      '#15803d', // Box 5 - groen 700
+      '#166534', // Box 6 - groen 800 (donker)
+      '#fbbf24'  // Beheerst - goud/amber
     ];
 
     const datasets = boxLabels.map((label, index) => {

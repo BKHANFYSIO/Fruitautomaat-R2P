@@ -911,8 +911,8 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
         <p className="grafiek-uitleg">
           Deze grafiek toont je focus patronen over tijd. 
           {focusGrafiekType === 'lijn' ? 
-            'De groene lijn toont serieuze modus sessies, terwijl de oranje lijn normale modus sessies toont.' :
-            'De groene staven tonen serieuze modus sessies, terwijl de oranje staven normale modus sessies tonen.'
+            'De groene lijn toont Leitner leermodus sessies, terwijl de oranje lijn Vrije leermodus sessies toont.' :
+            'De groene staven tonen Leitner leermodus sessies, terwijl de oranje staven Vrije leermodus sessies tonen.'
           }
           Dit helpt je om je focus strategieën te optimaliseren.
         </p>
@@ -924,14 +924,14 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                    labels: generateChartLabels(focusDataView),
                   datasets: [
                     {
-                      label: 'Serieuze Modus',
+                      label: 'Leitner Leermodus',
                        data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
                       borderColor: '#4ade80',
                       backgroundColor: '#4ade8020',
                       yAxisID: 'y'
                     },
                     {
-                      label: 'Normale Modus',
+                      label: 'Vrije Leermodus',
                        data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
                       borderColor: '#f59e0b',
                       backgroundColor: '#f59e0b20',
@@ -962,7 +962,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                       position: 'left',
                       title: {
                         display: true,
-                        text: focusMetric === 'tijd' ? 'Serieuze Modus (minuten)' : 'Serieuze Modus (aantal)',
+                        text: focusMetric === 'tijd' ? 'Leitner Leermodus (minuten)' : 'Leitner Leermodus (aantal)',
                         color: '#4ade80'
                       },
                       min: 0,
@@ -979,7 +979,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                       position: 'right',
                       title: {
                         display: true,
-                        text: focusMetric === 'tijd' ? 'Normale Modus (minuten)' : 'Normale Modus (aantal)',
+                        text: focusMetric === 'tijd' ? 'Vrije Leermodus (minuten)' : 'Vrije Leermodus (aantal)',
                         color: '#f59e0b'
                       },
                       min: 0,
@@ -1000,14 +1000,14 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                    labels: generateChartLabels(focusDataView),
                   datasets: [
                     {
-                      label: 'Serieuze Modus',
+                      label: 'Leitner Leermodus',
                        data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.serieuzeModus : d.serieuzeModus),
                       backgroundColor: '#4ade80',
                       borderColor: '#4ade80',
                       yAxisID: 'y'
                     },
                     {
-                      label: 'Normale Modus',
+                      label: 'Vrije Leermodus',
                        data: focusDataView.map((d: any) => focusMetric === 'tijd' ? d.normaleModus : d.normaleModus),
                       backgroundColor: '#f59e0b',
                       borderColor: '#f59e0b',
@@ -1038,7 +1038,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                       position: 'left',
                       title: {
                         display: true,
-                        text: focusMetric === 'tijd' ? 'Serieuze Modus (minuten)' : 'Serieuze Modus (aantal)',
+                         text: focusMetric === 'tijd' ? 'Leitner Leermodus (minuten)' : 'Leitner Leermodus (aantal)',
                         color: '#4ade80'
                       },
                       min: 0,
@@ -1055,7 +1055,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
                       position: 'right',
                       title: {
                         display: true,
-                        text: focusMetric === 'tijd' ? 'Normale Modus (minuten)' : 'Normale Modus (aantal)',
+                         text: focusMetric === 'tijd' ? 'Vrije Leermodus (minuten)' : 'Vrije Leermodus (aantal)',
                         color: '#f59e0b'
                       },
                       min: 0,

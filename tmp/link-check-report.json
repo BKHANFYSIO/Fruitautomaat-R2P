@@ -1,0 +1,74 @@
+[
+  {
+    "url": "http://www.w3.org/2000/svg",
+    "ok": true,
+    "status": 301,
+    "headers": {
+      "date": "Fri, 08 Aug 2025 21:12:34 GMT",
+      "content-type": "text/html",
+      "content-length": "167",
+      "connection": "keep-alive",
+      "cache-control": "max-age=3600",
+      "expires": "Fri, 08 Aug 2025 22:12:34 GMT",
+      "location": "https://www.w3.org/2000/svg",
+      "set-cookie": [
+        "__cf_bm=0G4zz4e6mJEigwXBFY8UfYXeQW3X6mxOLgRN70Ut3OY-1754687554-1.0.1.1-JmKTrOh.Vzs.3NBo_aVUpnmB2gJeo8K9xhOGxnp5Be4G_UvFGrIXnbzQFEBviSfQg6g.vfkTCl67UYYQRgyIdiI5rzbYl7FbWY7rlOB9Zj8; path=/; expires=Fri, 08-Aug-25 21:42:34 GMT; domain=.w3.org; HttpOnly"
+      ],
+      "server": "cloudflare",
+      "cf-ray": "96c203405f8b0b54-AMS",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    }
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=G6eDhgTmNIA",
+    "ok": true,
+    "status": 200,
+    "headers": {
+      "content-type": "text/html; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+      "date": "Fri, 08 Aug 2025 21:12:34 GMT",
+      "content-length": "0",
+      "x-frame-options": "SAMEORIGIN",
+      "strict-transport-security": "max-age=31536000",
+      "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+      "origin-trial": "AmhMBR6zCLzDDxpW+HfpP67BqwIknWnyMOXOQGfzYswFmJe+fgaI6XZgAzcxOrzNtP7hEDsOo1jdjFnVr2IdxQ4AAAB4eyJvcmlnaW4iOiJodHRwczovL3lvdXR1YmUuY29tOjQ0MyIsImZlYXR1cmUiOiJXZWJWaWV3WFJlcXVlc3RlZFdpdGhEZXByZWNhdGlvbiIsImV4cGlyeSI6MTc1ODA2NzE5OSwiaXNTdWJkb21haW4iOnRydWV9",
+      "content-security-policy": "require-trusted-types-for 'script'",
+      "report-to": "{\"group\":\"youtube_main\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/youtube_main\"}]}",
+      "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"youtube_main\"",
+      "reporting-endpoints": "default=\"/web-reports?context=eJwNzmtIk2EUB3Af_1Hrfef7vuf4IbJAEyMqJ8u1FdoFikwky25kzdjSNpPU2dqmll0IMwSJSstLN4NIuyghFIhZVIIRdEGTyJRuH0IYWlAmWdnz4Qfn_A-cc5Tr0wbi9gvfVJFISC8Wd48cEDkL_KK0yi_WvTooatICYvxGQLR1BUQ4LiSc8SHRMBAShR_KxOSXMnHFyI70xmRHlklduxR4vQp-Nir4PqSgfEyBc7EKNUlFf4aK8EYV91tUdHWoGP6qIug045vbjKVBM3zjZoxkRaG7MQp9_VFI3KZhRY2G1k4NWb0azkr5fzSM_tXgWKmjfb2OkEeHGtLRVK1jSb0O0zUdg706Zj3X0Z1gwOQ2oEj28wb6LhoY-mUg9beB3dGE4CKC205wpBAqVxMubScMuwiZ-YSKCplJ7pOElzWENacJY7WE5DrCqguER7cIsbcJ79sIc9oJUw8Jpmeyf0GIfkOYO0KoCxOWjRE-TxD2TUr_CGciGNpMRtFsxuMYRkMsY_5Chs3GSEhhtKxl3EtjDEqJ6YypDMblTYyIzXK2hRHewch0MialTzmMEpes8xn2w4wNRxnNxxgTJxjzKhmjVYwZ1Yyt5xg7axm59YzxJrnvKuNUq7wtxd1k-DrkD52MQ1LJA4b5CaOuh6H3MlL7GKVvGcc_Mthsevr6Xc90o_nOjx4Rbyn3BQPBXE9SqSfX4vX7igMWT_FeS56_IFCQt6fQlWxNtluXWx1JVpurxPoflsKzXg\"",
+      "document-policy": "include-js-call-stacks-in-crash-reports",
+      "p3p": "CP=\"This is not a P3P policy! See http://support.google.com/accounts/answer/151657?hl=nl for more info.\"",
+      "server": "ESF",
+      "x-xss-protection": "0",
+      "set-cookie": [
+        "YSC=7Xi9cK3xtm8; Domain=.youtube.com; Path=/; Secure; HttpOnly; SameSite=none",
+        "__Secure-YEC=CgtWcmFwX2J0OEJkRSjC0NnEBjInCgJOTBIhEh0SGwsMDg8QERITFBUWFxgZGhscHR4fICEiIyQlJiBf; Domain=.youtube.com; Expires=Mon, 07-Sep-2026 21:12:33 GMT; Path=/; Secure; HttpOnly; SameSite=lax",
+        "VISITOR_PRIVACY_METADATA=CgJOTBIhEh0SGwsMDg8QERITFBUWFxgZGhscHR4fICEiIyQlJiBf; Domain=.youtube.com; Expires=Mon, 07-Sep-2026 21:12:35 GMT; Path=/; Secure; HttpOnly; SameSite=none",
+        "VISITOR_INFO1_LIVE=; Domain=.youtube.com; Expires=Sat, 12-Nov-2022 21:12:35 GMT; Path=/; Secure; HttpOnly; SameSite=none"
+      ],
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    }
+  },
+  {
+    "url": "https://www.startwondverzorging.nl/CONTENT/images/Wondgenezing-fases.jpg",
+    "ok": true,
+    "status": 200,
+    "headers": {
+      "connection": "Keep-Alive",
+      "keep-alive": "timeout=5, max=100",
+      "cache-control": "public, max-age=604800",
+      "expires": "Fri, 15 Aug 2025 21:12:35 GMT",
+      "content-type": "image/jpeg",
+      "last-modified": "Thu, 20 Sep 2018 13:47:48 GMT",
+      "etag": "\"ebeb-5ba3a504-9c61fb73a0961138;;;\"",
+      "accept-ranges": "bytes",
+      "content-length": "60395",
+      "date": "Fri, 08 Aug 2025 21:12:35 GMT",
+      "server": "LiteSpeed",
+      "x-powered-by": "PleskLin"
+    }
+  }
+]

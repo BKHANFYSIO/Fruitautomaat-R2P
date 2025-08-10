@@ -61,14 +61,14 @@ export const LeitnerVerdelingBar = ({ verdeling }: { verdeling: LeitnerVerdeling
   }
 
   const boxKleuren = [
-    '#805ad5', // Box 0
-    '#ff6b6b', // Box 1
-    '#feca57', // Box 2
-    '#48dbfb', // Box 3
-    '#0abde3', // Box 4
-    '#54a0ff', // Box 5
-    '#2c3e50', // Box 6
-    '#ffd700'  // Box 7 (Beheerst)
+    '#bbf7d0', // Box 0
+    '#86efac', // Box 1
+    '#4ade80', // Box 2
+    '#22c55e', // Box 3
+    '#16a34a', // Box 4
+    '#15803d', // Box 5
+    '#166534', // Box 6
+    '#fbbf24'  // Box 7 (Beheerst)
   ];
 
   return (

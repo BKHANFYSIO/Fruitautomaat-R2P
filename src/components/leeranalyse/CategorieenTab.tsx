@@ -142,16 +142,15 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                 const verdeling = leerDataManager.getLeitnerBoxVerdelingVoorCategorie(hoofdCat.categorie);
                 const totaal = totaalOpdrachtenInHoofd;
                 const volgorde = [7, 6, 5, 4, 3, 2, 1, 0];
-                const kleuren: Record<number, string> = {
-                  0: '#805ad5',
-                  1: '#ff6b6b',
-                  2: '#feca57',
-                  3: '#48dbfb',
-                  4: '#0abde3',
-                  5: '#54a0ff',
-                  6: '#2c3e50',
-                  7: '#ffd700',
+                const n = volgorde.length;
+                const kleurVoorIndex = (i: number) => {
+                  // Groen tintverloop: licht → donker (80% → 35%) voor sterk contrast
+                  const lightness = 80 - Math.round((i / Math.max(1, n - 1)) * 45);
+                  const saturation = 70 - Math.round((i / Math.max(1, n - 1)) * 15); // iets minder saturatie rechts
+                  return `hsl(140, ${Math.max(40, saturation)}%, ${Math.max(30, lightness)}%)`;
                 };
+                const inLeitner = Object.values(verdeling || {}).reduce((s: number, c: number) => s + c, 0);
+                const ontbrekend = Math.max(0, totaal - inLeitner);
                 return (
                   <div className="bar-row">
                     <small className="bar-label">Leitner verdeling</small>
@@ -159,20 +158,31 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                       {totaal === 0 ? (
                         <div className="compact-bar-empty">Geen data</div>
                       ) : (
-                        volgorde.map(boxId => {
-                          const count = verdeling[boxId] || 0;
-                          if (count === 0) return null;
-                          const perc = (count / totaal) * 100;
-                          const label = boxId === 7 ? 'Beheerst' : `Box ${boxId}`;
-                          return (
+                        <>
+                          {volgorde.map((boxId, i) => {
+                            const count = verdeling[boxId] || 0;
+                            if (count === 0) return null;
+                            const perc = (count / totaal) * 100;
+                            const label = boxId === 7 ? 'Beheerst' : `Box ${boxId}`;
+                            return (
+                              <div
+                                key={`leitner-${boxId}`}
+                                className="compact-segment"
+                                style={{ width: `${perc}%`, backgroundColor: kleurVoorIndex(i) }}
+                                title={`${label}: ${count} (${perc.toFixed(1)}%)`}
+                              />
+                            );
+                          })}
+                          {/* Niet in Leitner (grijs) aan de rechterkant */}
+                          {ontbrekend > 0 && (
                             <div
-                              key={`leitner-${boxId}`}
+                              key={`leitner-none`}
                               className="compact-segment"
-                              style={{ width: `${perc}%`, backgroundColor: kleuren[boxId] }}
-                              title={`${label}: ${count} (${perc.toFixed(1)}%)`}
+                              style={{ width: `${(ontbrekend / totaal) * 100}%`, backgroundColor: '#6b7280' }}
+                              title={`Nog niet gestart: ${ontbrekend} (${((ontbrekend / totaal) * 100).toFixed(1)}%)`}
                             />
-                          );
-                        })
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -184,15 +194,16 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                 const subcats: string[] = (hoofdCat.subCategorieen || []).map((sc: any) => sc.categorie);
                 const totaalInHoofd: number = totaalOpdrachtenInHoofd;
                 const leer = leerDataManager.loadLeerData();
-                const buckets: Record<string, { label: string; kleur: string; count: number }>
+                // Buckets met 6+ bundeling en grijs voor 0x
+                const buckets: Record<string, { label: string; count: number }>
                   = {
-                    '6+': { label: '≥6x', kleur: '#8b5cf6', count: 0 },
-                    '5': { label: '5x', kleur: '#22c55e', count: 0 },
-                    '4': { label: '4x', kleur: '#f59e0b', count: 0 },
-                    '3': { label: '3x', kleur: '#3b82f6', count: 0 },
-                    '2': { label: '2x', kleur: '#06b6d4', count: 0 },
-                    '1': { label: '1x', kleur: '#eab308', count: 0 },
-                    '0': { label: '0x (nooit in vrije modus)', kleur: '#6b7280', count: 0 },
+                    '6+': { label: '≥6x', count: 0 },
+                    '5': { label: '5x', count: 0 },
+                    '4': { label: '4x', count: 0 },
+                    '3': { label: '3x', count: 0 },
+                    '2': { label: '2x', count: 0 },
+                    '1': { label: '1x', count: 0 },
+                    '0': { label: '0x (nooit in vrije modus)', count: 0 },
                   };
                 const relevante = leer?.opdrachten ? Object.values(leer.opdrachten).filter((op: any) => subcats.includes(op.categorie)) : [];
                 const uniekeAssignments = new Set<string>();
@@ -212,6 +223,13 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                 buckets['0'].count += missing; // nooit gedaan (ontbreekt in leerdata)
 
                 const order = ['6+', '5', '4', '3', '2', '1', '0'];
+                const nHerh = order.length - 1; // zonder 0
+                const kleurHerhalingIndex = (i: number) => {
+                  // Groen tintverloop voor herhalingen: licht → donker (80% → 35%)
+                  const lightness = 80 - Math.round((i / Math.max(1, nHerh - 1)) * 45);
+                  const saturation = 70 - Math.round((i / Math.max(1, nHerh - 1)) * 15);
+                  return `hsl(140, ${Math.max(40, saturation)}%, ${Math.max(30, lightness)}%)`;
+                };
                 const totaal = Object.values(buckets).reduce((s, b) => s + b.count, 0);
                 return (
                   <div className="bar-row">
@@ -220,15 +238,17 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                       {totaal === 0 ? (
                         <div className="compact-bar-empty">Geen data</div>
                       ) : (
-                        order.map(key => {
+                        order.map((key, idx) => {
                           const b = buckets[key];
                           if (!b.count) return null;
                           const perc = (b.count / totaal) * 100;
+                          const isZero = key === '0';
+                          const kleur = isZero ? '#6b7280' : kleurHerhalingIndex(idx);
                           return (
                             <div
                               key={`vrij-${key}`}
                               className="compact-segment"
-                              style={{ width: `${perc}%`, backgroundColor: b.kleur }}
+                              style={{ width: `${perc}%`, backgroundColor: kleur }}
                               title={`${b.label}: ${b.count} (${perc.toFixed(1)}%)`}
                             />
                           );
@@ -321,9 +341,12 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                           <div className="tooltip-container">
                             <div className="categorie-info-item">
                               <span className="label">📈 Score trend:</span>
-                              <span className={`waarde blauw ${beheersing.scoreTrend}`}>
-                                {beheersing.scoreTrend === 'stijgend' ? '↗️ Stijgend' : 
-                                 beheersing.scoreTrend === 'dalend' ? '↘️ Dalend' : '➡️ Stabiel'}
+                              <span className={`trend-waarde ${beheersing.scoreTrend}`}>
+                                <span className={`trend-icon ${beheersing.scoreTrend}`}>
+                                  {beheersing.scoreTrend === 'stijgend' ? '▲' : beheersing.scoreTrend === 'dalend' ? '▼' : '■'}
+                                </span>
+                                {beheersing.scoreTrend === 'stijgend' ? 'Stijgend' : 
+                                 beheersing.scoreTrend === 'dalend' ? 'Dalend' : 'Stabiel'}
                               </span>
                             </div>
                             <span className="tooltip-text">
@@ -506,9 +529,12 @@ const CategorieenTab: React.FC<CategorieenTabProps> = ({
                                   <div className="tooltip-container">
                                     <div className="categorie-info-item">
                                       <span className="label">📈 Score trend:</span>
-                                      <span className={`waarde blauw ${subBeheersing.scoreTrend}`}>
-                                        {subBeheersing.scoreTrend === 'stijgend' ? '↗️ Stijgend' :
-                                         subBeheersing.scoreTrend === 'dalend' ? '↘️ Dalend' : '➡️ Stabiel'}
+                                      <span className={`trend-waarde ${subBeheersing.scoreTrend}`}>
+                                        <span className={`trend-icon ${subBeheersing.scoreTrend}`}>
+                                          {subBeheersing.scoreTrend === 'stijgend' ? '▲' : subBeheersing.scoreTrend === 'dalend' ? '▼' : '■'}
+                                        </span>
+                                        {subBeheersing.scoreTrend === 'stijgend' ? 'Stijgend' :
+                                         subBeheersing.scoreTrend === 'dalend' ? 'Dalend' : 'Stabiel'}
                                       </span>
                                     </div>
                                     <span className="tooltip-text">

@@ -6,9 +6,11 @@ interface ModalProps {
   onClose: () => void;
   title: React.ReactNode;
   children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'success' | 'info' | 'warning' | 'danger';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md', variant = 'default' }) => {
   if (!isOpen) {
     return null;
   }
@@ -86,7 +88,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-content"
+        className={`modal-content modal-${size}`}
         role="dialog"
         aria-modal="true"
         aria-label={typeof title === 'string' ? title : undefined}
@@ -94,7 +96,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
         ref={contentRef}
         tabIndex={-1}
       >
-        <div className="modal-header">
+        <div className={`modal-header modal-header-${variant}`}>
           <h2>{title}</h2>
           <button onClick={onClose} className="modal-close-button" aria-label="Sluiten">&times;</button>
         </div>

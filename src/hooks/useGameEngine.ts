@@ -15,7 +15,7 @@ export const shuffle = <T,>(array: T[]): T[] => {
 };
 
 export const useGameEngine = () => {
-  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd } = useSettings();
+  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay } = useSettings();
 
   // Game state
   const [spelers, setSpelers] = useState<Speler[]>([]);
@@ -145,19 +145,40 @@ export const useGameEngine = () => {
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number, limietBereikt?: boolean } => {
     if (isSerieuzeLeerModusActief && gameMode === 'single') {
       const leerDataManager = getLeerDataManager();
-      
-      const herhalingenVoorVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
-      
-      const moetNegeren = negeerBox0Wachttijd && herhalingenVoorVandaag.length === 0 && leerDataManager.getNieuweOpdrachten(opdrachten, geselecteerdeCategorieen).length === 0;
-      
-      const effectieveHerhalingen = moetNegeren 
-        ? leerDataManager.getLeitnerOpdrachtenVoorVandaag(true)
-        : herhalingenVoorVandaag;
 
-      const gefilterdeHerhalingen = effectieveHerhalingen.filter(item => {
+      // Bepaal herhalingen en nieuwe opdrachten specifiek voor de GESELECTEERDE categorieën
+      const alleHerhalingenVandaag = leerDataManager.getLeitnerOpdrachtenVoorVandaag();
+      const herhalingenVoorVandaagGeselecteerd = alleHerhalingenVandaag.filter(item => {
         const hoofdcategorie = item.opdrachtId.split('_')[0];
-        const isIncluded = geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
-        return isIncluded;
+        return geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
+      });
+
+      const aantalNieuweGeselecteerd = leerDataManager.getNieuweOpdrachten(opdrachten, geselecteerdeCategorieen).length;
+
+      // Dev-only: Forceer eerst nieuwe totdat devMaxOnlyNewPerDay is bereikt
+      if (devForceOnlyNew && aantalNieuweGeselecteerd > 0) {
+        const newToday = leerDataManager.getNewQuestionsTodayCount();
+        if (newToday < devMaxOnlyNewPerDay) {
+          // Negeer herhalingen, zodat selectLeitnerOpdracht de 'nieuw'-tak pakt
+          const resultOnlyNew = leerDataManager.selectLeitnerOpdracht(opdrachten, [], geselecteerdeCategorieen);
+          if (resultOnlyNew.type === 'nieuw') {
+            return { ...resultOnlyNew, limietBereikt: false };
+          }
+          // Als om wat voor reden dan ook geen nieuw gekozen kon worden, val terug op normale flow
+        }
+      }
+
+      // Override: alleen negeren als er voor de GESELECTEERDE categorieën geen reguliere herhalingen zijn
+      // en er ook geen nieuwe opdrachten beschikbaar zijn in die selectie
+      const moetNegeren = negeerBox0Wachttijd && herhalingenVoorVandaagGeselecteerd.length === 0 && aantalNieuweGeselecteerd === 0;
+
+      const effectieveHerhalingenOngefilterd = moetNegeren
+        ? leerDataManager.getLeitnerOpdrachtenVoorVandaag(true)
+        : alleHerhalingenVandaag;
+
+      const gefilterdeHerhalingen = effectieveHerhalingenOngefilterd.filter(item => {
+        const hoofdcategorie = item.opdrachtId.split('_')[0];
+        return geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
       });
       
       const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
@@ -187,7 +208,7 @@ export const useGameEngine = () => {
       const gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
-  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd]);
+  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay]);
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,

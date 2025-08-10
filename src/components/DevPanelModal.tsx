@@ -5,6 +5,14 @@ import { CodeChip } from './ui/CodeChip';
 import { InfoTooltip } from './ui/InfoTooltip';
 import { extractUrlsFromText, detectMediaKind, getYouTubeId } from '../utils/linkUtils';
 import { SYMBOLEN } from '../data/constants';
+import { SessieSamenvatting } from './SessieSamenvatting';
+import { OpdrachtenVoltooidModal } from './OpdrachtenVoltooidModal';
+import { LimietBereiktModal } from './LimietBereiktModal';
+import { Eindscherm } from './Eindscherm';
+import type { Speler } from '../data/types';
+import type { HighScore } from '../data/highScoreManager';
+import { getLeerDataManager } from '../data/leerDataManager';
+import { useSettings } from '../context/SettingsContext';
 import './DevPanel.css';
 
 interface DevPanelModalProps {
@@ -37,6 +45,14 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
   toggleBox0Interval,
   isBox0IntervalVerkort,
 }) => {
+  // Luister naar global toggle event (toets 'd' in App)
+  useEffect(() => {
+    const handler = () => {
+      (isOpen ? onClose : () => {})();
+    };
+    window.addEventListener('toggleDevPanelModal', handler as EventListener);
+    return () => window.removeEventListener('toggleDevPanelModal', handler as EventListener);
+  }, [isOpen, onClose]);
   const alleUrls = useMemo(() => {
     if (!opdrachtenVoorSelectie) return [] as string[];
     const urls = new Set<string>();
@@ -123,6 +139,284 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
       .catch(() => setManifestInfo(null));
   }, [isOpen]);
 
+  // Demo-modals (sneller testen)
+  const [isTestSessieOpen, setIsTestSessieOpen] = useState(false);
+  const [isTestVoltooidOpen, setIsTestVoltooidOpen] = useState(false);
+  const [isTestLimietOpen, setIsTestLimietOpen] = useState(false);
+  const [isTestEindschermSingleOpen, setIsTestEindschermSingleOpen] = useState(false);
+  const [isTestEindschermMultiOpen, setIsTestEindschermMultiOpen] = useState(false);
+
+  const demoSessie = {
+    sessieId: 'demo',
+    startTijd: new Date(Date.now() - 7 * 60 * 1000).toISOString(),
+    eindTijd: new Date().toISOString(),
+    duur: 7,
+    opdrachtenGedaan: 5,
+    gemiddeldeScore: 3.6,
+    serieuzeModus: true,
+    leermodusType: 'normaal' as const,
+    categorieen: ['Video']
+  };
+
+  const demoSpelers: Speler[] = [
+    { naam: 'Jij', score: 12.3, extraSpins: 0, beurten: 3 },
+    { naam: 'Sam', score: 10.0, extraSpins: 0, beurten: 3 },
+  ];
+
+  const demoHighScore: HighScore = { score: 15.5, timestamp: Date.now(), spelerNaam: 'Alex' };
+
+  // Generic synthetic data generator (progressieve categorie-opbouw en focusdagen)
+  const [dailyNewMin, setDailyNewMin] = useState(8);
+  const [dailyNewMax, setDailyNewMax] = useState(12);
+  const [dailyRepMin, setDailyRepMin] = useState(15);
+  const [dailyRepMax, setDailyRepMax] = useState(40);
+  const [focusEveryNDays, setFocusEveryNDays] = useState(5);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [freeDayPercent, setFreeDayPercent] = useState(10); // % dagen zonder sessies
+  // Scoreverdeling (nieuw/herhaling)
+  const [newP1, setNewP1] = useState(25); // % score=1
+  const [newP3, setNewP3] = useState(25); // % score=3
+  const [newP5, setNewP5] = useState(50); // % score=5
+  const [repP1, setRepP1] = useState(15);
+  const [repP3, setRepP3] = useState(35);
+  const [repP5, setRepP5] = useState(50);
+  // Dev-only: Alleen nieuwe opdrachten
+  const { devForceOnlyNew, setDevForceOnlyNew, devMaxOnlyNewPerDay, setDevMaxOnlyNewPerDay } = useSettings();
+
+  const generateSynthetic = async (days: number) => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    setGenProgress(0);
+    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Start met genereren van ${days} dagen…`, type: 'succes', timeoutMs: 2000 } }));
+    const mgr = getLeerDataManager();
+    // Probeer opdrachten te laden (fallback no-op als al geladen via app)
+    if ((mgr as any)._alleOpdrachten?.length === 0) {
+      try {
+        await fetch('/opdrachten.xlsx');
+      } catch {}
+    }
+    // Reset leerdata (alleen data)
+    try {
+      localStorage.removeItem('fruitautomaat_user_leerdata');
+      const empty = (mgr as any).createEmptyLeerData?.();
+      if (empty) (mgr as any).saveLeerData?.(empty);
+    } catch {}
+
+    const today = new Date();
+    const start = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+
+    // Gebruik uitsluitend bestaande Excel-opdrachten
+    const allOps = (mgr as any)._alleOpdrachten as Array<{ Hoofdcategorie?: string; Categorie: string; Opdracht: string; Antwoordsleutel: string; Tijdslimiet: number; Extra_Punten: number }> || [];
+    const categoriePool = Array.from(new Set(allOps.map(o => o.Categorie)));
+
+    const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // Loop elke dag
+    const globalUsedIds = new Set<string>();
+    // Pool van nog niet geïntroduceerde opdrachten (index-gebaseerd om id-collisies te vermijden)
+    const getId = (op: any) => `${op.Hoofdcategorie || 'Overig'}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+    const remainingIdx = new Set<number>(allOps.map((_, idx) => idx));
+    for (let d = 0; d < days; d++) {
+      const day = new Date(start.getTime() + d * 24 * 60 * 60 * 1000);
+      const dateAt = (h: number, m: number = 0) => new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m).toISOString();
+
+      // Progressieve categorie-opbouw: begin met 1-2; elke ~14 dagen groeit set met 1 categorie
+      const weeksSinceStart = Math.floor(d / 7);
+      const baseCount = Math.min(2 + Math.floor(weeksSinceStart / 2), categoriePool.length);
+      const actieveSet = categoriePool.slice(0, baseCount);
+
+      // Focusdag: eens per 5 dagen focus op 1-2 categorieën
+      const isFocusDag = d % focusEveryNDays === 0 && d > 0;
+      const focusCount = randInt(1, Math.min(2, actieveSet.length));
+      const focusCats = [...actieveSet].sort(() => 0.5 - Math.random()).slice(0, focusCount);
+      const catsVandaag = isFocusDag ? focusCats : [...actieveSet].sort(() => 0.5 - Math.random()).slice(0, randInt(1, Math.min(3, actieveSet.length)));
+
+      // Willekeurige vrije dagen: sla dag over (geen sessies) op ~10% van de dagen
+      const isFreeDay = Math.random() < (freeDayPercent / 100);
+      if (!isFreeDay) {
+      const runSession = async (serieuze: boolean, modus: 'normaal' | 'leitner', baseHour: number) => {
+        const sessieId = mgr.startSessie(serieuze, modus);
+        // Override startTijd naar deze dag (ochtend 09:00)
+        const data = (mgr as any).loadLeerData?.();
+        if (data) {
+          data.sessies[sessieId].startTijd = dateAt(baseHour, 0);
+          (mgr as any).saveLeerData?.(data);
+        }
+
+        // Nieuwe opdrachten (0–20), herhalingen 5–30; op focusdagen minder nieuw en meer herhaling
+        const newCount = isFocusDag ? randInt(0, 8) : randInt(2, 20);
+        const repCount = isFocusDag ? randInt(15, 40) : randInt(5, 30);
+        // Bepaal categorie-focus voor deze sessie (opbouwend in de tijd)
+        const catsPool = catsVandaag;
+        const groeiMax = Math.min(2 + Math.floor(weeksSinceStart / 2), catsPool.length);
+        const allesKans = weeksSinceStart >= 6 && Math.random() < 0.25;
+        const focusSize = allesKans ? catsPool.length : randInt(1, Math.max(1, Math.min(3, groeiMax)));
+        const cats = [...catsPool].sort(() => 0.5 - Math.random()).slice(0, focusSize);
+
+        // Nieuwe opdrachten loggen: kies onafhankelijk van categorieën een vaste dagdoelstelling
+        const dailyNewTarget = randInt(Math.min(dailyNewMin, dailyNewMax), Math.max(dailyNewMin, dailyNewMax));
+        const newOpsForDay: any[] = [];
+        const idsArray = Array.from(remainingIdx);
+        // shuffle idsArray
+        idsArray.sort(() => 0.5 - Math.random());
+        const reviewUpdates: Array<{ id: string; minute: number }> = [];
+        for (let n = 0; n < idsArray.length && newOpsForDay.length < dailyNewTarget; n++) {
+          const idx = idsArray[n];
+          const op = allOps[idx];
+          if (op && (cats.length === 0 || cats.includes(op.Categorie))) {
+            newOpsForDay.push({ ...op, Opdracht: `[${d+1}.${newOpsForDay.length+1}] ${op.Opdracht}` });
+            remainingIdx.delete(idx);
+          }
+        }
+        // fallback als te weinig binnen gekozen categorieën gevonden
+        if (newOpsForDay.length < Math.min(dailyNewTarget, idsArray.length)) {
+          for (let n = 0; n < idsArray.length && newOpsForDay.length < dailyNewTarget; n++) {
+            const idx = idsArray[n];
+            if (!remainingIdx.has(idx)) continue;
+            const op = allOps[idx];
+            if (op) {
+              newOpsForDay.push({ ...op, Opdracht: `[${d+1}.${newOpsForDay.length+1}] ${op.Opdracht}` });
+              remainingIdx.delete(idx);
+            }
+          }
+        }
+        for (let i = 0; i < newOpsForDay.length; i++) {
+          const op = newOpsForDay[i];
+          mgr.recordOpdrachtStart(op as any);
+          const r = Math.random() * 100;
+          const score = r < newP1 ? 1 : r < (newP1 + newP3) ? 3 : 5;
+          (mgr as any).recordOpdrachtVoltooid(op as any, score, 'auto', sessieId, randInt(20, 90), modus);
+          // Corrigeer datum/tijd van historie naar de synthetische dag
+          try {
+            const ld = (mgr as any).loadLeerData?.();
+            if (ld) {
+              const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+              const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+              const item = ld.opdrachten?.[opdrachtId];
+              if (item) {
+                const when = dateAt(baseHour, 10 + i);
+                if (Array.isArray(item.scoreGeschiedenis) && item.scoreGeschiedenis.length > 0) {
+                  item.scoreGeschiedenis[item.scoreGeschiedenis.length - 1].datum = when;
+                }
+                if (Array.isArray(item.modusGeschiedenis) && item.modusGeschiedenis.length > 0) {
+                  item.modusGeschiedenis[item.modusGeschiedenis.length - 1].datum = when;
+                }
+                item.laatsteDatum = when.split('T')[0];
+                (mgr as any).saveLeerData?.(ld);
+              }
+            }
+          } catch {}
+          const id = getId(op);
+          reviewUpdates.push({ id, minute: 5 + i });
+          globalUsedIds.add(id);
+        }
+
+        // Herhalingen simuleren door bestaande opdrachten te pakken uit leerdata (bestaande Excel-opdrachten)
+        const data2 = (mgr as any).loadLeerData?.();
+        let alleLrOps = Object.values(data2?.opdrachten || {});
+        if (cats.length > 0) {
+          alleLrOps = alleLrOps.filter((o: any) => cats.includes(o.categorie));
+        }
+        // Sample zonder vervanging om te voorkomen dat 1-2 opdrachten duizenden pogingen krijgen
+        const repLow = Math.min(dailyRepMin, dailyRepMax);
+        const repHigh = Math.max(dailyRepMin, dailyRepMax);
+        const repCountTarget = randInt(repLow, repHigh);
+        const sampleCount = Math.min(repCountTarget, Math.max(0, alleLrOps.length));
+        const shuffledReps = [...alleLrOps].sort(() => 0.5 - Math.random()).slice(0, sampleCount);
+        for (let j = 0; j < shuffledReps.length; j++) {
+          const pickOp = shuffledReps[j] as any;
+          // Bouw een Opdracht object dat overeenkomt met bestaand opdrachtId (zodat recordOpdrachtVoltooid het vindt)
+          const hoofdcategorie = pickOp.hoofdcategorie || 'Overig';
+          const opText = pickOp.opdrachtId?.includes('_') ? pickOp.opdrachtId.split('_')[2] : pickOp.categorie;
+          const bestaandLike = {
+            Hoofdcategorie: hoofdcategorie,
+            Categorie: pickOp.categorie,
+            Opdracht: opText,
+            Antwoordsleutel: '—',
+            Tijdslimiet: 45,
+            Extra_Punten: 0,
+          } as any;
+          const r2 = Math.random() * 100;
+          const scoreRep = r2 < repP1 ? 1 : r2 < (repP1 + repP3) ? 3 : 5; // trager stijgen
+          (mgr as any).recordOpdrachtVoltooid(bestaandLike, scoreRep, 'auto', sessieId, randInt(15, 60), modus);
+          // Corrigeer datum/tijd van historie naar de synthetische dag
+          try {
+            const ld2 = (mgr as any).loadLeerData?.();
+            if (ld2) {
+              const hoofdcategorie2 = bestaandLike.Hoofdcategorie || 'Overig';
+              const opdrachtId2 = `${hoofdcategorie2}_${bestaandLike.Categorie}_${bestaandLike.Opdracht.substring(0, 20)}`;
+              const item2 = ld2.opdrachten?.[opdrachtId2];
+              if (item2) {
+                const when2 = dateAt(baseHour, 30 + (j % 20));
+                if (Array.isArray(item2.scoreGeschiedenis) && item2.scoreGeschiedenis.length > 0) {
+                  item2.scoreGeschiedenis[item2.scoreGeschiedenis.length - 1].datum = when2;
+                }
+                if (Array.isArray(item2.modusGeschiedenis) && item2.modusGeschiedenis.length > 0) {
+                  item2.modusGeschiedenis[item2.modusGeschiedenis.length - 1].datum = when2;
+                }
+                item2.laatsteDatum = when2.split('T')[0];
+                (mgr as any).saveLeerData?.(ld2);
+              }
+            }
+          } catch {}
+          const id = pickOp.opdrachtId;
+          if (id) reviewUpdates.push({ id, minute: 30 + (j % 20) });
+        }
+
+        // Sessie afronden en duur zetten 10–45m
+        const achievements = mgr.endSessie(sessieId);
+        const data3 = (mgr as any).loadLeerData?.();
+        if (data3) {
+          data3.sessies[sessieId].eindTijd = dateAt(baseHour, randInt(35, 55));
+          data3.sessies[sessieId].duur = Math.round(((new Date(data3.sessies[sessieId].eindTijd).getTime() - new Date(data3.sessies[sessieId].startTijd).getTime()) / 60000));
+          (mgr as any).saveLeerData?.(data3);
+        }
+
+        // Pas alle reviewUpdates in één keer toe (minder localStorage writes)
+        const ldataFinal = (mgr as any).loadLeitnerData?.();
+        if (ldataFinal) {
+          if (!ldataFinal.opdrachtReviewTimes) ldataFinal.opdrachtReviewTimes = {};
+          reviewUpdates.forEach(({ id, minute }) => {
+            ldataFinal.opdrachtReviewTimes[id] = dateAt(9, minute);
+          });
+          (mgr as any).saveLeitnerData?.(ldataFinal);
+        }
+        return achievements;
+      };
+
+      // Maak 1-4 sessies per dag; mix van modes en categorie-focussen
+      const sessiesVandaag = randInt(1, 4);
+      const sessieHours = [9, 12, 15, 19];
+      for (let s = 0; s < sessiesVandaag; s++) {
+        const isLeitner = Math.random() < 0.55; // lichte voorkeur voor leitner in leeranalyse
+        const mode: 'normaal' | 'leitner' = isLeitner ? 'leitner' : 'normaal';
+        await runSession(isLeitner, mode, sessieHours[s] || 9);
+      }
+      }
+
+      // Yield naar de event loop om "pagina reageert niet" te voorkomen bij lange generaties
+      setGenProgress(Math.round(((d + 1) / days) * 100));
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    setIsGenerating(false);
+    // Reset dagteller nieuwe vragen naar vandaag=0, zodat "Nieuwe opdrachten vandaag" klopt
+    try {
+      const ldataEnd = (mgr as any).loadLeitnerData?.();
+      if (ldataEnd) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        ldataEnd.newQuestionsToday = { date: todayStr, count: 0 };
+        (mgr as any).saveLeitnerData?.(ldataEnd);
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Synthetic data (${days} dagen) gegenereerd.`, type: 'succes', timeoutMs: 3000 } }));
+  };
+
+  // Convenience wrappers
+  const generateSyntheticThreeWeeks = () => generateSynthetic(21);
+  const generateSyntheticFourMonths = () => generateSynthetic(120);
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Developer Panel">
@@ -160,6 +454,34 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
             </details>
           </DevCard>
 
+          <DevCard title="Alleen nieuwe (test)" subtitle="Negeer herhalingen tot N nieuwe per dag">
+            <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={devForceOnlyNew}
+                  onChange={(e) => setDevForceOnlyNew(e.target.checked)}
+                />
+                Alleen nieuwe opdrachten forceren
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                Max nieuwe per dag
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={devMaxOnlyNewPerDay}
+                  onChange={(e) => setDevMaxOnlyNewPerDay(Number(e.target.value))}
+                  style={{ width: 70 }}
+                  disabled={!devForceOnlyNew}
+                />
+              </label>
+              <InfoTooltip>
+                Als dit aan staat, probeert de selectie eerst nieuwe opdrachten te kiezen tot het ingestelde maximum per dag. Daarna schakelt het terug naar herhalingen.
+              </InfoTooltip>
+            </div>
+          </DevCard>
+
           <DevCard title="Leitner hulpmiddelen" subtitle="Snel testen en beheren">
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               <button onClick={simuleerVoltooiing}>Markeer dag als voltooid</button>
@@ -189,6 +511,70 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
                 <li>“Versnel Box 0”: maak wachten kort (15 sec) om sneller te kunnen oefenen. Met de andere knop zet je dit terug.</li>
               </ul>
             </details>
+          </DevCard>
+
+          <DevCard title="Modals testen" subtitle="Open popups zonder spel te doorlopen">
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setIsTestVoltooidOpen(true)}>🎯 Alle opdrachten voltooid</button>
+              <button onClick={() => setIsTestSessieOpen(true)}>🏁 Sessie samenvatting</button>
+              <button onClick={() => setIsTestLimietOpen(true)}>⚠️ Limiet bereikt</button>
+              <button onClick={() => setIsTestEindschermSingleOpen(true)}>🏆 Eindscherm (Highscore)</button>
+              <button onClick={() => setIsTestEindschermMultiOpen(true)}>🏆 Eindscherm (Multiplayer)</button>
+            </div>
+          </DevCard>
+
+          <DevCard title="Synthetic data (config)" subtitle="Genereer realistische leerdata">
+            <div className="col" style={{ gap: 8 }}>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Nieuwe/dag min
+                  <input type="number" min={1} max={50} value={dailyNewMin} onChange={(e) => setDailyNewMin(Number(e.target.value))} style={{ width: 70 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  max
+                  <input type="number" min={1} max={50} value={dailyNewMax} onChange={(e) => setDailyNewMax(Number(e.target.value))} style={{ width: 70 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Herh./dag min
+                  <input type="number" min={0} max={200} value={dailyRepMin} onChange={(e) => setDailyRepMin(Number(e.target.value))} style={{ width: 70 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  max
+                  <input type="number" min={0} max={200} value={dailyRepMax} onChange={(e) => setDailyRepMax(Number(e.target.value))} style={{ width: 70 }} />
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Focusdag elke
+                  <input type="number" min={2} max={14} value={focusEveryNDays} onChange={(e) => setFocusEveryNDays(Number(e.target.value))} style={{ width: 70 }} />
+                  dagen
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Vrije dagen
+                  <input type="number" min={0} max={50} value={freeDayPercent} onChange={(e) => setFreeDayPercent(Number(e.target.value))} style={{ width: 70 }} />%
+                </label>
+              </div>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <span className="muted">Scoreverdeling nieuw (1/3/5)</span>
+                <input type="number" min={0} max={100} value={newP1} onChange={(e) => setNewP1(Number(e.target.value))} style={{ width: 60 }} />
+                <input type="number" min={0} max={100} value={newP3} onChange={(e) => setNewP3(Number(e.target.value))} style={{ width: 60 }} />
+                <input type="number" min={0} max={100} value={newP5} onChange={(e) => setNewP5(Number(e.target.value))} style={{ width: 60 }} />
+                <span className="muted">Herhaling (1/3/5)</span>
+                <input type="number" min={0} max={100} value={repP1} onChange={(e) => setRepP1(Number(e.target.value))} style={{ width: 60 }} />
+                <input type="number" min={0} max={100} value={repP3} onChange={(e) => setRepP3(Number(e.target.value))} style={{ width: 60 }} />
+                <input type="number" min={0} max={100} value={repP5} onChange={(e) => setRepP5(Number(e.target.value))} style={{ width: 60 }} />
+              </div>
+              <div className="row" style={{ gap: 8 }}>
+                <button onClick={() => generateSynthetic(21)} disabled={isGenerating}>Genereer 3 weken</button>
+                <button onClick={() => generateSynthetic(120)} disabled={isGenerating}>Genereer 4 maanden</button>
+                {isGenerating && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 160, height: 8, background: '#333', borderRadius: 6, overflow: 'hidden' }}>
+                      <div style={{ width: `${genProgress}%`, height: '100%', background: '#48bb78' }} />
+                    </div>
+                    <span style={{ fontSize: '0.9rem' }}>{genProgress}%</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </DevCard>
 
           <DevCard title="Links & Media (snel)" subtitle="Snelle controle in je browser">
@@ -346,6 +732,48 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
           </ul>
         </div>
       </Modal>
+
+      {/* Test-modals */}
+      <SessieSamenvatting
+        isOpen={isTestSessieOpen}
+        onClose={() => setIsTestSessieOpen(false)}
+        sessieData={demoSessie}
+        onOpenLeeranalyse={() => setIsTestSessieOpen(false)}
+      />
+      <OpdrachtenVoltooidModal
+        isOpen={isTestVoltooidOpen}
+        onClose={() => setIsTestVoltooidOpen(false)}
+        onOpenCategorieSelectie={() => setIsTestVoltooidOpen(false)}
+      />
+      <LimietBereiktModal
+        isOpen={isTestLimietOpen}
+        onClose={() => setIsTestLimietOpen(false)}
+        onConfirm={() => setIsTestLimietOpen(false)}
+        maxVragen={10}
+        onOpenInstellingen={() => setIsTestLimietOpen(false)}
+      />
+      {isTestEindschermSingleOpen && (
+        <Eindscherm
+          spelers={[demoSpelers[0]]}
+          onHerstart={() => setIsTestEindschermSingleOpen(false)}
+          gameMode={'single'}
+          isNieuwRecord={false}
+          highScore={demoHighScore}
+          personalBest={null}
+          isNieuwPersoonlijkRecord={false}
+        />
+      )}
+      {isTestEindschermMultiOpen && (
+        <Eindscherm
+          spelers={demoSpelers}
+          onHerstart={() => setIsTestEindschermMultiOpen(false)}
+          gameMode={'multi'}
+          isNieuwRecord={false}
+          highScore={null}
+          personalBest={null}
+          isNieuwPersoonlijkRecord={false}
+        />
+      )}
     </>
   );
 };

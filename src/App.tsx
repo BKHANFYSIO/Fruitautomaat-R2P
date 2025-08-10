@@ -15,12 +15,13 @@ import { Eindscherm } from './components/Eindscherm';
 // SessieSamenvatting zit in AppModals
 import { AchievementNotificatie } from './components/AchievementNotificatie';
 // Leeranalyse en overige modals zitten in AppModals
-import { DevPanel } from './components/DevPanel';
+// import { DevPanel } from './components/DevPanel';
 // FilterDashboard zit in LeftPanel
 import { LeftPanel } from './components/LeftPanel';
 import { MobileControls } from './components/MobileControls';
 import { AppModals } from './components/AppModals';
 import { RightPanel } from './components/RightPanel';
+import { DevPanelModal } from './components/DevPanelModal';
 
 
 // Hooks
@@ -204,8 +205,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [isNieuwPersoonlijkRecord, setIsNieuwPersoonlijkRecord] = useState(false);
 
   // Dev mode state
-  const [isDevMode, setIsDevMode] = useState(false);
-  const [forceResult, setForceResult] = useState<(string | null)[]>([null, null, null]);
+  // const [isDevMode, setIsDevMode] = useState(false);
+  const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
+  const [forceResult] = useState<(string | null)[]>([null, null, null]);
   const [isBeoordelingDirect] = useState(false);
 
   const { width } = useWindowSize();
@@ -498,12 +500,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     }
   }, [spelers.length]); // <-- DE WIJZIGING: reageer alleen op het AANTAL spelers
 
-  // Effect om de 'd' toets te detecteren voor dev mode
+  // Effect om de 'd' toets te gebruiken voor DevPanelModal (geen in-page devpanel meer)
   useEffect(() => {
     if (import.meta.env.DEV) {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'd') {
-          setIsDevMode(prev => !prev);
+          setIsDevPanelOpen(prev => !prev);
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -1369,6 +1371,21 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         onClose={() => setNieuweAchievement(null)}
         onOpenLeeranalyse={() => handleOpenLeeranalyse(true)}
       />
+      {import.meta.env.DEV && (
+        <DevPanelModal
+          isOpen={isDevPanelOpen}
+          onClose={() => setIsDevPanelOpen(false)}
+          forceResult={forceResult}
+          setForceResult={() => {}}
+          simuleerVoltooiing={handleSimuleerVoltooiing}
+          forcePromotie={handleForcePromotie}
+          resetLeitner={handleResetLeitner}
+          forceHerhalingen={handleForceHerhalingen}
+          toggleBox0Interval={handleToggleBox0Interval}
+          isBox0IntervalVerkort={isBox0IntervalVerkort}
+          opdrachtenVoorSelectie={opdrachtenVoorSelectie.map(o => ({ Antwoordsleutel: o.Antwoordsleutel, Opdracht: o.Opdracht }))}
+        />
+      )}
       <OrientatieMelding isMobiel={isMobieleWeergave} />
       <AppModals
         isInstellingenOpen={isInstellingenOpen}
@@ -1486,18 +1503,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         <RightPanel
           notificatie={notificatie}
           warning={warning}
-          DevPanelSlot={isDevMode && import.meta.env.DEV ? (
-            <DevPanel
-            forceResult={forceResult}
-            setForceResult={setForceResult}
-            simuleerVoltooiing={handleSimuleerVoltooiing}
-            forcePromotie={handleForcePromotie}
-            resetLeitner={handleResetLeitner}
-            forceHerhalingen={handleForceHerhalingen}
-            toggleBox0Interval={handleToggleBox0Interval}
-            isBox0IntervalVerkort={isBox0IntervalVerkort}
-            />
-          ) : null}
+          DevPanelSlot={null}
             titel="Return2Performance"
             opdrachten={opdrachtenVoorSelectie}
             spelers={spelers}

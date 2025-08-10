@@ -652,44 +652,71 @@ class LeerDataManager {
     leerData.statistieken.laatsteActiviteit = getDatumString();
   }
 
-  // Dagelijkse activiteit tracking
+  // Dagelijkse activiteit tracking (recompute over alle dagen)
   private updateDagelijkseActiviteit(leerData: LeerData): void {
-    const vandaag = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const opdrachten = Object.values(leerData.opdrachten);
-    const sessies = Object.values(leerData.sessies).filter(s => s.eindTijd);
+    const opdrachten = Object.values(leerData.opdrachten || {});
+    const sessies = Object.values(leerData.sessies || {}).filter(s => s.eindTijd);
 
-    // Tel opdrachten van vandaag
-    const opdrachtenVandaag = opdrachten.filter(op => 
-      op.laatsteDatum && op.laatsteDatum.startsWith(vandaag)
-    ).length;
-
-    // Bereken speeltijd van vandaag
-    const speeltijdVandaag = sessies
-      .filter(s => s.eindTijd && s.eindTijd.startsWith(vandaag))
-      .reduce((sum, s) => sum + (s.duur || 0), 0);
-
-    // Bereken gemiddelde score van vandaag
-    const scoresVandaag = opdrachten
-      .filter(op => op.laatsteDatum && op.laatsteDatum.startsWith(vandaag))
-      .map(op => op.gemiddeldeScore);
-
-    const gemiddeldeScoreVandaag = scoresVandaag.length > 0 
-      ? berekenGemiddeldeScore(scoresVandaag)
-      : 0;
-
-    // Tel sessies van vandaag
-    const sessiesVandaag = sessies.filter(s => 
-      s.eindTijd && s.eindTijd.startsWith(vandaag)
-    ).length;
-
-    // Update of maak nieuwe dagelijkse activiteit
-    leerData.statistieken.dagelijkseActiviteit[vandaag] = {
-      datum: vandaag,
-      opdrachten: opdrachtenVandaag,
-      speeltijd: speeltijdVandaag,
-      gemiddeldeScore: gemiddeldeScoreVandaag,
-      sessies: sessiesVandaag
+    const toLocalDateString = (iso: string): string => {
+      const d = new Date(iso);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     };
+
+    const activiteiten: Record<string, {
+      datum: string;
+      opdrachten: number;
+      speeltijd: number;
+      gemiddeldeScore: number;
+      sessies: number;
+    }> = {};
+
+    // Helper om entry te krijgen
+    const ensure = (datumStr: string) => {
+      if (!activiteiten[datumStr]) {
+        activiteiten[datumStr] = { datum: datumStr, opdrachten: 0, speeltijd: 0, gemiddeldeScore: 0, sessies: 0 };
+      }
+      return activiteiten[datumStr];
+    };
+
+    // Verzamel score totalen per dag voor gemiddelde
+    const scoreTotalen: Record<string, { som: number; n: number }> = {};
+    const addScore = (datumStr: string, score: number) => {
+      if (!scoreTotalen[datumStr]) scoreTotalen[datumStr] = { som: 0, n: 0 };
+      scoreTotalen[datumStr].som += score;
+      scoreTotalen[datumStr].n += 1;
+    };
+
+    // Verwerk sessies per dag
+    sessies.forEach(s => {
+      const datumStr = s.eindTijd ? toLocalDateString(s.eindTijd) : toLocalDateString(s.startTijd);
+      const ent = ensure(datumStr);
+      ent.sessies += 1;
+      ent.speeltijd += s.duur || 0;
+    });
+
+    // Verwerk opdrachten op basis van scoreGeschiedenis (accurate per-dag telling)
+    opdrachten.forEach(op => {
+      const history = op.scoreGeschiedenis || [];
+      history.forEach(entry => {
+        if (!entry || !entry.datum) return;
+        const datumStr = toLocalDateString(entry.datum);
+        const ent = ensure(datumStr);
+        ent.opdrachten += 1;
+        addScore(datumStr, entry.score || 0);
+      });
+    });
+
+    // Bereken gemiddelde score per dag
+    Object.entries(scoreTotalen).forEach(([datum, { som, n }]) => {
+      const ent = ensure(datum);
+      ent.gemiddeldeScore = n > 0 ? Math.round((som / n) * 10) / 10 : 0;
+    });
+
+    // Toewijzen aan statistieken
+    leerData.statistieken.dagelijkseActiviteit = activiteiten;
   }
 
   // Tijd-gebaseerde data methodes
@@ -1205,36 +1232,39 @@ class LeerDataManager {
     const leitnerData = this.loadLeitnerData();
     if (!leerData || !leitnerData.isLeitnerActief) return [];
 
-    const tijdlijnData: { [datum: string]: any } = {};
+    const toLocalDateString = (iso: string): string => {
+      const d = new Date(iso);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const tijdlijnData: { [datum: string]: { datum: string; nieuweOpdrachten: number; herhalingen: number; totaal: number } } = {};
+    const ensure = (datumStr: string) => {
+      if (!tijdlijnData[datumStr]) {
+        tijdlijnData[datumStr] = { datum: datumStr, nieuweOpdrachten: 0, herhalingen: 0, totaal: 0 };
+      }
+      return tijdlijnData[datumStr];
+    };
+
     const opdrachten = Object.values(leerData.opdrachten);
 
-    // Groepeer opdrachten per datum
+    // Tel per entry uit score/modus geschiedenis zodat elke dag juist wordt opgebouwd
     opdrachten.forEach(op => {
-      if (op.laatsteDatum) {
-        const datum = op.laatsteDatum.split('T')[0];
-        if (!tijdlijnData[datum]) {
-          tijdlijnData[datum] = {
-            datum,
-            nieuweOpdrachten: 0,
-            herhalingen: 0,
-            totaal: 0
-          };
-        }
-
-        // Check of dit een Leitner opdracht is
-        const isLeitnerOpdracht = leitnerData.boxes.some(box => 
-          box.opdrachten.includes(op.opdrachtId)
-        );
-
-        if (isLeitnerOpdracht) {
-          if (op.aantalKeerGedaan === 1) {
-            tijdlijnData[datum].nieuweOpdrachten++;
-          } else {
-            tijdlijnData[datum].herhalingen++;
-          }
-        }
-        
-        tijdlijnData[datum].totaal++;
+      const scores = op.scoreGeschiedenis || [];
+      const modi = op.modusGeschiedenis || [];
+      for (let i = 0; i < scores.length; i++) {
+        const entry = scores[i];
+        if (!entry || !entry.datum) continue;
+        const datumStr = toLocalDateString(entry.datum);
+        const modus = modi[i]?.modus;
+        // Alleen Leitner entries tellen in deze tijdlijn
+        if (modus !== 'leitner') continue;
+        const ent = ensure(datumStr);
+        if (i === 0) ent.nieuweOpdrachten++;
+        else ent.herhalingen++;
+        ent.totaal++;
       }
     });
 
@@ -2433,7 +2463,7 @@ class LeerDataManager {
   getPrestatieHighlights(): {
     besteSessie: { score: number; datum: string; modus: string };
     vooruitgang: { verbetering: number; periode: string };
-    streak: { dagen: number; laatsteDatum: string };
+    streak: { dagen: number; laatsteDatum: string; langste?: number };
     snelsteSessie: { tijd: number; datum: string };
   } {
     const leerData = this.loadLeerData();
@@ -2467,20 +2497,26 @@ class LeerDataManager {
       : 0;
     const vooruitgang = recenteGemiddelde - oudereGemiddelde;
 
-    // Streak berekening
+    // Streak berekening – huidige streak t/m vandaag en langste streak (6 maanden)
+    const sessieDagen = new Set<string>(gesorteerdeSessies.map(s => new Date(s.startTijd).toISOString().split('T')[0]));
     const vandaag = new Date();
-    const laatsteSessie = gesorteerdeSessies[gesorteerdeSessies.length - 1];
+    // Huidige streak
     let streak = 0;
-    let laatsteDatum = '';
-    
-    if (laatsteSessie) {
-      const laatsteDatumSessie = new Date(laatsteSessie.startTijd);
-      const dagenVerschil = Math.floor((vandaag.getTime() - laatsteDatumSessie.getTime()) / (1000 * 60 * 60 * 24));
-      if (dagenVerschil <= 1) {
-        streak = 1;
-        laatsteDatum = laatsteSessie.startTijd;
-      }
+    for (let d = new Date(vandaag); ; d.setDate(d.getDate() - 1)) {
+      const key = d.toISOString().split('T')[0];
+      if (sessieDagen.has(key)) streak++;
+      else break;
     }
+    // Langste streak laatste 6 maanden
+    const start = new Date(vandaag.getTime() - 180 * 24 * 60 * 60 * 1000);
+    let langste = 0;
+    let huidige = 0;
+    for (let d = new Date(start); d <= vandaag; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split('T')[0];
+      if (sessieDagen.has(key)) { huidige++; langste = Math.max(langste, huidige); }
+      else huidige = 0;
+    }
+    const laatsteDatum = gesorteerdeSessies.length > 0 ? gesorteerdeSessies[gesorteerdeSessies.length - 1].startTijd : '';
 
     // Snelste sessie
     const snelsteSessie = sessies.reduce((snelst, current) => {
@@ -2499,10 +2535,7 @@ class LeerDataManager {
         verbetering: Math.round(vooruitgang * 10) / 10,
         periode: 'laatste week'
       },
-      streak: {
-        dagen: streak,
-        laatsteDatum: laatsteDatum
-      },
+      streak: { dagen: streak, laatsteDatum, langste },
       snelsteSessie: {
         tijd: snelsteSessie.duur || 0,
         datum: snelsteSessie.startTijd
@@ -2610,9 +2643,14 @@ class LeerDataManager {
       });
     } else {
       // Subcategorie of op zichzelf staande categorie
+      // Leid op basis van echte Leitner-opdrachtId structuur: `${Hoofdcategorie}_${Categorie}_...`
+      const hoofdcategorieNaam = this._alleOpdrachten.find(op => op.Categorie === categorie)?.Hoofdcategorie || 'Overig';
+      const expectedPrefix = `${hoofdcategorieNaam}_${categorie}_`;
       leitnerData.boxes.forEach(box => {
         const count = box.opdrachten.filter(opdrachtId => 
-          opdrachtId.startsWith(categorie + '_') && !pausedOpdrachten.has(opdrachtId)
+          typeof opdrachtId === 'string' &&
+          opdrachtId.startsWith(expectedPrefix) &&
+          !pausedOpdrachten.has(opdrachtId)
         ).length;
         verdeling[box.boxId] = (verdeling[box.boxId] || 0) + count;
       });
@@ -2772,8 +2810,12 @@ class LeerDataManager {
 
     const alleVandaagBeschikbaar = this.getLeitnerOpdrachtenVoorVandaag();
     const vandaagBeschikbaar = alleVandaagBeschikbaar.filter(item => {
-      const opdrachtCategorie = this._alleOpdrachten.find(op => op.id === item.opdrachtId)?.Categorie;
-      return opdrachtCategorie && categorieenLijst.includes(opdrachtCategorie);
+      // Haal categorie afgeleid uit Leitner-opdrachtId `${Hoofdcategorie}_${Categorie}_...`
+      if (typeof item.opdrachtId !== 'string') return false;
+      const parts = item.opdrachtId.split('_');
+      if (parts.length < 2) return false;
+      const itemCategorie = parts[1];
+      return categorieenLijst.includes(itemCategorie);
     }).length;
 
     const scoreGeschiedenis = this.getScoreGeschiedenisVoorCategorie(categorie);
@@ -2867,7 +2909,8 @@ class LeerDataManager {
 
     const allLeitnerIds = this.getAllLeitnerOpdrachtIds();
     const nieuweOpdrachten = alleOpdrachten.filter(op => {
-      const opdrachtId = `${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+      const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+      const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
       return !allLeitnerIds.has(opdrachtId);
     });
 
@@ -2892,7 +2935,8 @@ class LeerDataManager {
 
     const toegevoegdeCategorieen: string[] = [];
     tePlaatsenOpdrachten.forEach(op => {
-      const opdrachtId = `${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+      const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+      const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
       if (!targetBox.opdrachten.includes(opdrachtId)) {
         targetBox.opdrachten.push(opdrachtId);
         toegevoegdeCategorieen.push(op.Categorie);
@@ -3001,69 +3045,73 @@ class LeerDataManager {
     const leitnerData = this.loadLeitnerData();
     if (!leerData || !leitnerData.isLeitnerActief) return [];
 
-    const tijdlijnData: { [datum: string]: any } = {};
+    const toLocalDateString = (iso: string): string => {
+      const d = new Date(iso);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    type Dag = { datum: string; box0: number; box1: number; box2: number; box3: number; box4: number; box5: number; box6: number; box7: number; totaalHerhalingen: number };
+    const perDag: Record<string, Dag> = {};
+    const deltaBox7: Record<string, number> = {};
+    const ensure = (datumStr: string): Dag => {
+      if (!perDag[datumStr]) {
+        perDag[datumStr] = { datum: datumStr, box0: 0, box1: 0, box2: 0, box3: 0, box4: 0, box5: 0, box6: 0, box7: 0, totaalHerhalingen: 0 };
+      }
+      return perDag[datumStr];
+    };
+
     const opdrachten = Object.values(leerData.opdrachten);
-
-    // Initialiseer alle datums
-    const nu = new Date();
-    for (let i = aantalDagen - 1; i >= 0; i--) {
-      const datum = new Date(nu);
-      datum.setDate(datum.getDate() - i);
-      const datumString = datum.toISOString().split('T')[0];
-      tijdlijnData[datumString] = {
-        datum: datumString,
-        box0: 0,
-        box1: 0,
-        box2: 0,
-        box3: 0,
-        box4: 0,
-        box5: 0,
-        box6: 0,
-        box7: 0,
-        totaalHerhalingen: 0
-      };
-    }
-
-    // Groepeer opdrachten per datum en box
     opdrachten.forEach(op => {
-      if (op.laatsteDatum) {
-        const datum = op.laatsteDatum.split('T')[0];
-        if (tijdlijnData[datum]) {
-          // Check of dit een Leitner opdracht is
-          const isLeitnerOpdracht = leitnerData.boxes.some(box => 
-            box.opdrachten.includes(op.opdrachtId)
-          );
+      const scores: Array<{ score: number; datum: string }> = op.scoreGeschiedenis || [];
+      const modi: Array<{ modus: 'normaal' | 'leitner'; datum: string }> = op.modusGeschiedenis || [];
+      if (scores.length === 0) return;
 
-          if (isLeitnerOpdracht) {
-            // Tel herhalingen (niet eerste keer)
-            if (op.aantalKeerGedaan > 1) {
-              // Vind in welke box deze opdracht zat op deze datum
-              // Dit is een vereenvoudigde benadering - we kijken naar de huidige box
-              leitnerData.boxes.forEach(box => {
-                if (box.opdrachten.includes(op.opdrachtId)) {
-                  const boxKey = `box${box.boxId}` as keyof typeof tijdlijnData[typeof datum];
-                  if (boxKey in tijdlijnData[datum]) {
-                    tijdlijnData[datum][boxKey]++;
-                  }
-                }
-              });
-            }
-          }
+      // Simuleer box-verloop vanaf 0
+      let box = 0;
+      for (let i = 0; i < scores.length; i++) {
+        const sc = scores[i];
+        const md = modi[i]?.modus;
+        if (!sc || !sc.datum) continue;
+        const datumStr = toLocalDateString(sc.datum);
+        if (md !== 'leitner') {
+          // Vrije modus telt niet mee voor deze grafiek
+          continue;
+        }
+        if (i > 0) {
+          const dag = ensure(datumStr);
+          const key = `box${box}` as keyof Dag;
+          // tel herhaling in actuele box vóór promotie/demotie
+          (dag[key] as unknown as number)++;
+          dag.totaalHerhalingen++;
+        }
+        // Update box op basis van score
+        const prevBox = box;
+        if (sc.score >= 4) box = Math.min(box + 1, 7);
+        else if (sc.score <= 2) box = box === 0 ? 0 : 1;
+        // score==3 -> blijft in zelfde box
+        if (box === 7 && prevBox !== 7) {
+          deltaBox7[datumStr] = (deltaBox7[datumStr] || 0) + 1;
         }
       }
     });
 
-    // Voor box 7, tel het aantal vragen dat er op elke datum in zat
-    // Dit is een vereenvoudigde benadering - we gebruiken de huidige box 7 data
-    const box7Count = leitnerData.boxes.find(box => box.boxId === 7)?.opdrachten.length || 0;
-    Object.values(tijdlijnData).forEach(dag => {
-      dag.box7 = box7Count; // Voor nu gebruiken we de huidige count voor alle dagen
-      // Bereken totaal herhalingen (som van box0-box6)
-      dag.totaalHerhalingen = dag.box0 + dag.box1 + dag.box2 + dag.box3 + dag.box4 + dag.box5 + dag.box6;
-    });
+    // Maak een continue reeks over de laatste N dagen
+    const nu = new Date();
+    const start = new Date(nu.getTime() - (aantalDagen - 1) * 24 * 60 * 60 * 1000);
+    let cumulBox7 = 0;
+    const resultaat: Dag[] = [];
+    for (let d = new Date(start); d <= nu; d.setDate(d.getDate() + 1)) {
+      const datumStr = toLocalDateString(d.toISOString());
+      const dag = ensure(datumStr);
+      cumulBox7 += deltaBox7[datumStr] || 0;
+      dag.box7 = cumulBox7; // cumulatief aantal in box 7
+      resultaat.push(dag);
+    }
 
-    return Object.values(tijdlijnData)
-      .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime());
+    return resultaat;
   }
 
   public getLeitnerBoxHerhalingenWeekelijkseData(aantalWeken: number = 12): {

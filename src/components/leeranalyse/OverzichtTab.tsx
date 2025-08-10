@@ -41,6 +41,13 @@ const OverzichtTab: React.FC<OverzichtTabProps> = ({
   const geprobeerdeSubcategorieen = alleSubcategorieen.filter((sc: any) => sc.aantalOpdrachten > 0).length;
   const totaalSubcategorieen = alleSubcategorieen.length;
 
+  // Unieke opdrachten gedaan en totaal pogingen
+  const uniekeOpdrachtenGedaan = Object.values(leerData.opdrachten || {}).filter((o: any) => (o.aantalKeerGedaan || 0) > 0).length;
+  const totaalPogingen = Object.values(leerData.opdrachten || {}).reduce((sum: number, o: any) => sum + (o.aantalKeerGedaan || 0), 0);
+  const leitnerData = leerDataManager.loadLeitnerData();
+  const totaalBox7 = (leitnerData?.boxes || []).find((b: any) => b.boxId === 7)?.opdrachten.length || 0;
+  const totaalBeschikbareOpdrachten = leerDataManager.getTotaalBeschikbareOpdrachten();
+
   return (
     <div className="overzicht-tab">
       {/* Info Box */}
@@ -92,7 +99,7 @@ const OverzichtTab: React.FC<OverzichtTabProps> = ({
       <div className="statistieken-grid">
         <div className="statistiek-card">
           <div className="statistiek-card-header">
-            <h3>🔥 Streak</h3>
+            <h3>🔥 Huidige Streak</h3>
             <button 
               className="info-knop" 
               title="Aantal opeenvolgende dagen actief"
@@ -108,7 +115,7 @@ const OverzichtTab: React.FC<OverzichtTabProps> = ({
             {highlights.streak.dagen} dag{highlights.streak.dagen !== 1 ? 'en' : ''}
           </p>
           <p className="statistiek-context">
-            {highlights.streak.dagen > 0 ? 'Actief' : 'Niet actief'}
+            Huidige streak • Langste (6 mnd): {highlights.streak.langste ?? 0} dagen
           </p>
         </div>
 
@@ -158,24 +165,58 @@ const OverzichtTab: React.FC<OverzichtTabProps> = ({
 
         <div className="statistiek-card">
           <div className="statistiek-card-header">
-            <h3>📚 Totaal Opdrachten</h3>
+            <h3>🧩 Unieke Opdrachten</h3>
             <button 
               className="info-knop" 
-              title="Totaal aantal voltooide opdrachten"
+              title="Aantal unieke opdrachten die minimaal één keer zijn gedaan"
               onClick={() => showInfoModal(
-                '📚 Totaal Opdrachten',
-                'Het totale aantal opdrachten dat je hebt voltooid. Dit getal is gebaseerd op alle opdrachten die je hebt afgerond, ongeacht in welke modus.'
+                '🧩 Unieke Opdrachten',
+                'Het aantal unieke opdrachten dat je minimaal één keer hebt gedaan, gedeeld door het totale aantal beschikbare opdrachten (uit Excel).'
               )}
             >
               ℹ️
             </button>
           </div>
           <p className="statistiek-waarde">
-            {leerData.statistieken.totaalOpdrachten}/{leerDataManager.getTotaalBeschikbareOpdrachten()}
+            {uniekeOpdrachtenGedaan}/{leerDataManager.getTotaalBeschikbareOpdrachten()}
           </p>
-          <p className="statistiek-context">
-            Vrije Leermodus: {normaalOpdrachten} opdrachten, Leitner: {leitnerOpdrachten} opdrachten
-          </p>
+          <p className="statistiek-context">Unieke opdrachten gedaan</p>
+        </div>
+
+        <div className="statistiek-card">
+          <div className="statistiek-card-header">
+            <h3>🔁 Totaal Pogingen</h3>
+            <button 
+              className="info-knop" 
+              title="Som van alle keren dat opdrachten zijn gedaan"
+              onClick={() => showInfoModal(
+                '🔁 Totaal Pogingen',
+                'Het totaal aantal keer dat je opdrachten hebt gedaan (herhalingen meegerekend).'
+              )}
+            >
+              ℹ️
+            </button>
+          </div>
+          <p className="statistiek-waarde">{totaalPogingen}</p>
+          <p className="statistiek-context">Vrije Leermodus: {normaalOpdrachten}, Leitner: {leitnerOpdrachten} • Inclusief herhalingen</p>
+        </div>
+
+        <div className="statistiek-card">
+          <div className="statistiek-card-header">
+            <h3>🏁 Totaal Geleerd (Box 7)</h3>
+            <button 
+              className="info-knop" 
+              title="Aantal kaarten in hoogste Leitner-box"
+              onClick={() => showInfoModal(
+                '🏁 Totaal Geleerd (Box 7)',
+                'Aantal opdrachten dat de hoogste Leitner-box (7) heeft bereikt. Dit is een indicatie voor langdurige beheersing.'
+              )}
+            >
+              ℹ️
+            </button>
+          </div>
+          <p className="statistiek-waarde">{totaalBox7}/{totaalBeschikbareOpdrachten}</p>
+          <p className="statistiek-context">Leitner Box 7</p>
         </div>
 
         <div className="statistiek-card">

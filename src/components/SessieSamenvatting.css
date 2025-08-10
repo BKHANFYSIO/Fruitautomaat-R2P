@@ -15,11 +15,11 @@
 .sessie-samenvatting-modal {
   background-color: #2c2c2c;
   color: #e0e0e0;
-  padding: 25px;
-  border-radius: 15px;
+  padding: 20px;
+  border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   width: 90%;
-  max-width: 500px;
+  max-width: 520px;
   border: 1px solid #444;
   max-height: 80vh;
   display: flex;
@@ -38,8 +38,8 @@
 
 .sessie-samenvatting-header h3 {
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 300;
+  font-size: 1.4rem;
+  font-weight: 500;
   color: #48bb78;
 }
 
@@ -59,28 +59,28 @@
 }
 
 .sessie-samenvatting-body {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  margin-bottom: 20px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin-bottom: 16px;
   overflow-y: auto;
   flex: 1;
-  padding-right: 10px;
+  padding-right: 8px;
 }
 
 .sessie-statistieken {
   background: #3a3a3a;
   border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
 .statistiek-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #555;
+  margin-bottom: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #4a4a4a;
 }
 
 .statistiek-item:last-child {
@@ -91,19 +91,63 @@
 .statistiek-label {
   font-weight: 600;
   color: #ccc;
+  font-size: 0.9rem;
 }
 
 .statistiek-waarde {
-  font-weight: 500;
+  font-weight: 600;
   color: #48bb78;
+  font-size: 0.95rem !important;
+  line-height: 1.2;
 }
 
 .sessie-melding {
   background: #2d5a2d;
   border: 1px solid #48bb78;
   border-radius: 8px;
-  padding: 16px;
-  margin-top: 15px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+/* Extra inzichten grid */
+.sessie-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 10px 0 6px 0;
+}
+
+.mini-stat {
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.mini-title {
+  font-size: 0.9rem;
+  color: #b9b9b9;
+  margin-bottom: 6px;
+}
+
+.mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px dashed #444;
+}
+
+.mini-row:first-of-type { border-top: none; }
+
+.delta.up { color: #48bb78; }
+.delta.down { color: #f56565; }
+.delta.muted { color: #9a9a9a; }
+
+@media (max-width: 640px) {
+  .sessie-extra-grid { grid-template-columns: 1fr; }
+  .statistiek-waarde { font-size: 0.9rem !important; }
+  .statistiek-label { font-size: 0.85rem; }
 }
 
 .sessie-melding p {
@@ -118,19 +162,19 @@
 .sessie-samenvatting-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   border-top: 1px solid #555;
-  padding-top: 20px;
+  padding-top: 14px;
   flex-shrink: 0;
 }
 
 .sessie-samenvatting-button {
-  padding: 12px 24px;
+  padding: 10px 18px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   transition: all 0.2s;
 }
 

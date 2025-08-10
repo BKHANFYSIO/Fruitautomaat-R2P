@@ -26,6 +26,11 @@
   flex-direction: column;
 }
 
+/* Breedtevarianten */
+.modal-sm { max-width: 420px; }
+.modal-md { max-width: 640px; }
+.modal-lg { max-width: 900px; }
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -42,6 +47,14 @@
   width: 100%;
   text-align: center;
 }
+
+/* Kleurvarianten header */
+/* Verhoogde specificiteit om globale styles elders te overrulen */
+.modal-content .modal-header.modal-header-success h2 { color: #48bb78 !important; }
+.modal-content .modal-header.modal-header-info h2 { color: #63b3ed !important; }
+.modal-content .modal-header.modal-header-warning h2 { color: #f6ad55 !important; }
+.modal-content .modal-header.modal-header-danger h2 { color: #f56565 !important; }
+.modal-content .modal-header.modal-header-default h2 { color: #e0e0e0 !important; }
 
 .modal-close-button {
   background: none;
@@ -87,7 +100,8 @@
 }
 
 @media (min-width: 1024px) {
-  .modal-content {
+  /* Vergroot alleen generieke modals zonder expliciete size-variant */
+  .modal-content:not(.modal-sm):not(.modal-md):not(.modal-lg) {
     max-width: 1200px;
   }
-} 
+}

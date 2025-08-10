@@ -84,6 +84,11 @@ interface SettingsContextType {
   setIsKaleModusActiefVrijeLeermodus: (actief: boolean) => void;
   isKaleModusActiefLeitnerLeermodus: boolean;
   setIsKaleModusActiefLeitnerLeermodus: (actief: boolean) => void;
+  // Alleen-nieuw testoptie (Dev)
+  devForceOnlyNew: boolean;
+  setDevForceOnlyNew: (actief: boolean) => void;
+  devMaxOnlyNewPerDay: number;
+  setDevMaxOnlyNewPerDay: (n: number) => void;
   
   // Bonus settings
   isLokaleBonusOpslagActief: boolean;
@@ -215,6 +220,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [isRolTijdVerkort, setIsRolTijdVerkort] = useState(() => loadFromStorage('isRolTijdVerkort', false));
   const [isKaleModusActiefVrijeLeermodus, setIsKaleModusActiefVrijeLeermodus] = useState(() => loadFromStorage('isKaleModusActiefVrijeLeermodus', false));
   const [isKaleModusActiefLeitnerLeermodus, setIsKaleModusActiefLeitnerLeermodus] = useState(() => loadFromStorage('isKaleModusActiefLeitnerLeermodus', false));
+  const [devForceOnlyNew, setDevForceOnlyNew] = useState(() => loadFromStorage('devForceOnlyNew', false));
+  const [devMaxOnlyNewPerDay, setDevMaxOnlyNewPerDay] = useState(() => loadFromStorage('devMaxOnlyNewPerDay', 5));
 
   // Bonus settings
   const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(() => loadFromStorage('isLokaleBonusOpslagActief', false));
@@ -321,6 +328,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [isRolTijdVerkort]);
 
   useEffect(() => {
+    saveToStorage('devForceOnlyNew', devForceOnlyNew);
+  }, [devForceOnlyNew]);
+
+  useEffect(() => {
+    saveToStorage('devMaxOnlyNewPerDay', devMaxOnlyNewPerDay);
+  }, [devMaxOnlyNewPerDay]);
+
+  useEffect(() => {
     saveToStorage('isKaleModusActiefVrijeLeermodus', isKaleModusActiefVrijeLeermodus);
   }, [isKaleModusActiefVrijeLeermodus]);
 
@@ -398,6 +413,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsKaleModusActiefVrijeLeermodus,
     isKaleModusActiefLeitnerLeermodus,
     setIsKaleModusActiefLeitnerLeermodus,
+    devForceOnlyNew,
+    setDevForceOnlyNew,
+    devMaxOnlyNewPerDay,
+    setDevMaxOnlyNewPerDay,
     
     // Bonus settings
     isLokaleBonusOpslagActief,
