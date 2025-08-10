@@ -2147,18 +2147,31 @@ class LeerDataManager {
     geselecteerdeCategorieen: string[]
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number } {
     // 1. Geef altijd voorrang aan de aangeleverde herhalingItems.
+    //    Sorteer op "oudst eerst" (meest overdue bovenaan).
     if (herhalingItems.length > 0) {
-      const shuffledHerhalingen = herhalingItems.sort(() => 0.5 - Math.random());
+      const leitnerData = this.loadLeitnerData();
+      const nu = Date.now();
+      const itemsMetOverdue = herhalingItems
+        .map((item) => {
+          const lastReviewStr = leitnerData.opdrachtReviewTimes[item.opdrachtId];
+          const lastReviewMs = lastReviewStr ? new Date(lastReviewStr).getTime() : 0;
+          const intervalMinuten = leitnerData.boxIntervallen[item.boxId] || 1440; // default 1 dag
+          const dueMs = lastReviewMs + intervalMinuten * 60 * 1000;
+          const overdueMs = nu - dueMs; // positief = overdue, negatief = nog niet due
+          return { ...item, overdueMs };
+        })
+        // Oudst (hoogste overdue) eerst
+        .sort((a, b) => b.overdueMs - a.overdueMs);
 
-      for (const item of shuffledHerhalingen) {
+      for (const item of itemsMetOverdue) {
         const idToMatch = item.opdrachtId;
-        
+
         const gekozenOpdracht = alleOpdrachten.find(op => {
           const hoofdcategorie = op.Hoofdcategorie || 'Overig';
           const generatedId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
           return generatedId === idToMatch;
         });
-        
+
         if (gekozenOpdracht) {
           return { opdracht: gekozenOpdracht, type: 'herhaling', box: item.boxId };
         }
