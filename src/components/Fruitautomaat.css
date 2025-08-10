@@ -79,7 +79,7 @@
   background-color: transparent; /* Geen extra achtergrond nodig */
   border-radius: 10px;
   padding: 0;
-  min-height: 200px; /* Reserveer ruimte voor de acties */
+  min-height: auto; /* Geen onnodige verticale ruimte reserveren */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,6 +224,34 @@
   font-style: italic;
   line-height: 1.3;
   text-align: center;
+}
+
+/* Compacte, horizontale layout voor Leitner-acties */
+.leitner-footer-blok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.leitner-footer-meta {
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.leitner-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .pause-opdracht-footer-knop {
+    padding: 10px 14px;
+    font-size: 0.95rem;
+  }
 }
 
 .opdracht-info-footer {

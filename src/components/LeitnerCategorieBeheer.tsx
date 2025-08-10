@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css';
@@ -194,6 +194,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       filters = { bronnen: ['systeem'], opdrachtTypes: [] },
   setFilters,
 }) => {
+    // Subtabs binnen deze modal
+    const [innerTab, setInnerTab] = useState<'categories' | 'filters' | 'saved' | 'paused'>('categories');
+    const categorieRef = useRef<HTMLDivElement | null>(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [geselecteerdeCategorieVoorDetail, setGeselecteerdeCategorieVoorDetail] = useState<string | null>(null);
     const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
@@ -223,6 +226,16 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       
       return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron };
     }, [alleOpdrachten]);
+
+    useEffect(() => {
+      if (isOpen) {
+        setInnerTab('categories');
+        requestAnimationFrame(() => {
+          categorieRef.current?.scrollIntoView({ block: 'start' });
+          categorieRef.current?.focus?.();
+        });
+      }
+    }, [isOpen]);
 
     const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
       if (!setFilters) return;
@@ -793,25 +806,28 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         <div className="modal-header">
           <div className="modal-title-container">
             <h2>CATEGORIE SELECTIE</h2>
-            <h3 className="modal-subtitle">(Leitner)</h3>
           </div>
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
         <div className="modal-body">
-          {/* Navigatie sectie */}
-          <div className="navigatie-sectie">
-            <p className="navigatie-tekst">
-              Voor het selecteren van categorieën van andere spelmodi ga je naar de algemene categorie selectie.
-            </p>
-            <button 
-              onClick={() => window.dispatchEvent(new CustomEvent('openCategorieSelectie'))} 
-              className="navigatie-knop"
-            >
-              🔄 Ga naar Algemene Categorie Selectie
-            </button>
+          {/* Bovenste tabbalk (zelfde als algemene modal) */}
+          <div className="tab-navigatie" style={{ marginBottom: 10 }}>
+            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>🎮 Multiplayer</button>
+            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>🏆 Highscore</button>
+            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>📖 Vrije Leermodus</button>
+            <button className="tab-knop actief">📚 Leitner</button>
+          </div>
+
+          {/* Subtabbalk */}
+          <div className="tab-navigatie" style={{ marginBottom: 8 }}>
+            <button className={`tab-knop ${innerTab === 'categories' ? 'actief' : ''}`} onClick={() => setInnerTab('categories')}>📂 Categorieën</button>
+            <button className={`tab-knop ${innerTab === 'filters' ? 'actief' : ''}`} onClick={() => setInnerTab('filters')}>🔍 Filters</button>
+            <button className={`tab-knop ${innerTab === 'saved' ? 'actief' : ''}`} onClick={() => setInnerTab('saved')}>💾 Opgeslagen</button>
+            <button className={`tab-knop ${innerTab === 'paused' ? 'actief' : ''}`} onClick={() => setInnerTab('paused')}>⏸️ Gepauzeerd</button>
           </div>
 
           {/* Opgeslagen selecties sectie */}
+          {innerTab === 'saved' && (
           <div className="opgeslagen-selecties-sectie">
             <h4>📚 Opgeslagen Leitner Selecties</h4>
             {opgeslagenSelecties.length > 0 ? (
@@ -868,8 +884,10 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               )}
             </div>
           </div>
+          )}
 
           {/* Pauze beheer sectie */}
+          {innerTab === 'paused' && (
           <div className="pauze-beheer-sectie">
             <div className="pauze-beheer-header">
               <h4>⏸️ Gepauzeerde Opdrachten Beheer</h4>
@@ -1067,9 +1085,10 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
               </div>
             )}
           </div>
+          )}
 
           {/* Filter sectie */}
-          {setFilters && (
+          {innerTab === 'filters' && setFilters && (
             <div className="filter-sectie">
               <div className="filter-header">
                 <h4 className="filter-titel">🔍 Filters Aanpassen</h4>
@@ -1119,7 +1138,9 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             </div>
           )}
 
-          <div className="categorie-lijst-header">
+          {innerTab === 'categories' && (
+          <>
+          <div className="categorie-lijst-header" ref={categorieRef} tabIndex={-1}>
             <h4>Categorieën</h4>
             <div className="snelle-selectie-knoppen">
               <button onClick={handleSelectAll} className="snelle-selectie-knop">
@@ -1162,6 +1183,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                 ))}
               </tbody>
             </table>
+          )}
+          </>
           )}
         </div>
         <div className="modal-footer">

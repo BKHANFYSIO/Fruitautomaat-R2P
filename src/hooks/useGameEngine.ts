@@ -176,6 +176,24 @@ export const useGameEngine = () => {
         ? leerDataManager.getLeitnerOpdrachtenVoorVandaag(true)
         : alleHerhalingenVandaag;
 
+      // Focus-now: indien actief, serveer eerst gepinde opdrachten
+      if (leerDataManager.isFocusNowActive()) {
+        const nextPinned = leerDataManager.shiftNextPinned();
+        if (nextPinned) {
+          const gekozenOpdracht = opdrachten.find(op => {
+            const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+            const generatedId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+            return generatedId === nextPinned;
+          });
+          if (gekozenOpdracht) {
+            return { opdracht: gekozenOpdracht, type: 'herhaling', box: leerDataManager.getOpdrachtBoxId(nextPinned) ?? undefined, limietBereikt: false };
+          }
+        } else {
+          // Lijst leeg: focus-modus uitzetten
+          leerDataManager.stopFocusNow();
+        }
+      }
+
       const gefilterdeHerhalingen = effectieveHerhalingenOngefilterd.filter(item => {
         const hoofdcategorie = item.opdrachtId.split('_')[0];
         return geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));

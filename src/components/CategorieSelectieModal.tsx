@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
@@ -101,6 +101,9 @@ export const CategorieSelectieModal = ({
   setFilters,
 }: CategorieSelectieModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialActiveTab || 'normaal');
+  const [innerTab, setInnerTab] = useState<'categories' | 'filters' | 'saved'>('categories');
+  const categorieLijstRef = useRef<HTMLDivElement | null>(null);
+  const modalTopRef = useRef<HTMLDivElement | null>(null);
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
   const [opgeslagenVrijeLeermodusSelecties, setOpgeslagenVrijeLeermodusSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
   const [toonOpslaanModal, setToonOpslaanModal] = useState(false);
@@ -140,6 +143,23 @@ export const CategorieSelectieModal = ({
       setOpgeslagenVrijeLeermodusSelecties(JSON.parse(opgeslagenVrijeLeermodus));
     }
   }, []);
+
+  // Reset subtabs en scroll-gedrag bij openen of tabwissel
+  useEffect(() => {
+    if (!isOpen) return;
+    setInnerTab('categories');
+    requestAnimationFrame(() => {
+      if (activeTab !== 'leitner') {
+        // Bij Vrije Leermodus, Multiplayer en Highscore: naar top zodat subtabbladen zichtbaar zijn
+        modalTopRef.current?.scrollIntoView({ block: 'start' });
+        modalTopRef.current?.focus?.();
+      } else {
+        // Overige tabs: direct focussen op categorieën
+        categorieLijstRef.current?.scrollIntoView({ block: 'start' });
+        categorieLijstRef.current?.focus?.();
+      }
+    });
+  }, [isOpen, activeTab]);
 
   // Bepaal welke categorie selectie actief is voor de huidige tab
   const getActieveCategorieSelectie = () => {
@@ -427,19 +447,12 @@ export const CategorieSelectieModal = ({
     switch (tab) {
       case 'multiplayer': return '🎮 Multiplayer';
       case 'highscore': return '🏆 Highscore';
-      case 'normaal': return '📖 Vrije Leer';
+      case 'normaal': return '📖 Vrije Leermodus';
       case 'leitner': return '📚 Leitner';
     }
   };
 
-  const getTabDescription = (tab: TabType) => {
-    switch (tab) {
-      case 'multiplayer': return 'Kies categorieën voor multiplayer spelsessies en beheer je opgeslagen selecties.';
-      case 'highscore': return 'Selecteer categorieën voor highscore pogingen en bekijk eerdere recordpogingen.';
-      case 'normaal': return 'Selecteer categorieën voor vrije leersessies en beheer je opgeslagen selecties.';
-      case 'leitner': return 'Selecteer categorieën voor de Leitner leermodus. Gebruik de knop hieronder voor gedetailleerd beheer.';
-    }
-  };
+  // Verwijderd: contextuele beschrijving onder de hoofdtabbalk voor uniformiteit met Leitner modal
   
 
 
@@ -527,7 +540,16 @@ export const CategorieSelectieModal = ({
 
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
-      {(activeTab === 'multiplayer' || activeTab === 'normaal') && (
+      {/* Subtabs: Categorieën / Filters / Opgeslagen */}
+      <div className="tab-navigatie" style={{ marginBottom: 8 }}>
+        {(['categories','filters','saved'] as const).map(t => (
+          <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t)}>
+            {t === 'categories' ? '📂 Categorieën' : t === 'filters' ? '🔍 Filters' : '💾 Opgeslagen'}
+          </button>
+        ))}
+      </div>
+
+      {(innerTab === 'saved') && (activeTab === 'multiplayer' || activeTab === 'normaal') && (
         <div className="opgeslagen-selecties-sectie">
           <h4>📚 Opgeslagen Selecties</h4>
           {((activeTab === 'multiplayer' && opgeslagenSelecties.length > 0) || (activeTab === 'normaal' && opgeslagenVrijeLeermodusSelecties.length > 0)) ? (
@@ -567,7 +589,7 @@ export const CategorieSelectieModal = ({
         </div>
       )}
 
-      {activeTab === 'highscore' && (
+      {(innerTab === 'saved') && activeTab === 'highscore' && (
         <div className="recordpogingen">
           <h4>🏆 Eerdere Recordpogingen</h4>
           <select onChange={handleHighScoreSelect} className="recordpoging-select">
@@ -589,7 +611,7 @@ export const CategorieSelectieModal = ({
       )}
 
       {/* Filter sectie */}
-      {setFilters && (
+      {(innerTab === 'filters') && setFilters && (
         <div className="filter-sectie">
           <div className="filter-header">
             <h4 className="filter-titel">🔍 Filters Aanpassen</h4>
@@ -639,7 +661,8 @@ export const CategorieSelectieModal = ({
         </div>
       )}
 
-      <div className="categorie-lijst">
+      {innerTab === 'categories' && (
+      <div className="categorie-lijst" ref={categorieLijstRef} tabIndex={-1}>
         <div className="categorie-lijst-header">
           <h4>Categorieën</h4>
           <div className="snelle-selectie-knoppen">
@@ -739,6 +762,7 @@ export const CategorieSelectieModal = ({
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 
@@ -776,28 +800,30 @@ export const CategorieSelectieModal = ({
         <div className="modal-header">
           <div className="modal-title-container">
             <h3>CATEGORIE SELECTIE</h3>
-            <h4 className="modal-subtitle">Voor Spel & Vrije Leermodus</h4>
           </div>
           <button onClick={onClose} className="modal-close">&times;</button>
         </div>
 
         {/* Tab navigatie */}
-        <div className="tab-navigatie">
+        <div className="tab-navigatie" ref={modalTopRef} tabIndex={-1}>
           {(['multiplayer', 'highscore', 'normaal', 'leitner'] as TabType[]).map(tab => (
             <button
               key={tab}
               className={`tab-knop ${activeTab === tab ? 'actief' : ''}`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                if (tab === 'leitner') {
+                  onOpenLeitnerBeheer();
+                } else {
+                  setActiveTab(tab);
+                }
+              }}
             >
               {getTabTitle(tab)}
             </button>
           ))}
         </div>
 
-        {/* Tab beschrijving */}
-        <div className="tab-beschrijving">
-          <p>{getTabDescription(activeTab)}</p>
-        </div>
+        {/* Geen beschrijving voor visuele consistentie met Leitner modal */}
 
         {/* Tab content */}
         <div className="tab-content">

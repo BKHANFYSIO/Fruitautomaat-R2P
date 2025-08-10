@@ -2129,6 +2129,7 @@ class LeerDataManager {
 
   // Pinnen voor focus-sessie: eenvoudige lijst in localStorage
   private getPinnedKey(): string { return `${LEER_DATA_KEYS.LEITNER_DATA}_PINNED_${this.spelerId}`; }
+  private getFocusKey(): string { return `${LEER_DATA_KEYS.LEITNER_DATA}_FOCUS_${this.spelerId}`; }
   addPinnedOpdracht(opdrachtId: string): void {
     try {
       const key = this.getPinnedKey();
@@ -2151,6 +2152,32 @@ class LeerDataManager {
       const lijst = JSON.parse(localStorage.getItem(key) || '[]');
       return lijst.includes(opdrachtId);
     } catch { return false; }
+  }
+  getPinnedList(): string[] {
+    try {
+      const key = this.getPinnedKey();
+      return JSON.parse(localStorage.getItem(key) || '[]');
+    } catch { return []; }
+  }
+  getPinnedCount(): number { return this.getPinnedList().length; }
+  startFocusNow(): void {
+    try { localStorage.setItem(this.getFocusKey(), '1'); } catch {}
+  }
+  stopFocusNow(): void {
+    try { localStorage.removeItem(this.getFocusKey()); } catch {}
+  }
+  isFocusNowActive(): boolean {
+    try { return localStorage.getItem(this.getFocusKey()) === '1'; } catch { return false; }
+  }
+  shiftNextPinned(): string | null {
+    try {
+      const key = this.getPinnedKey();
+      const lijst: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      if (lijst.length === 0) return null;
+      const next = lijst.shift() as string;
+      localStorage.setItem(key, JSON.stringify(lijst));
+      return next;
+    } catch { return null; }
   }
   
   checkPromotieAchievement(bereikteBox: number, leitnerData: LeitnerData): LeitnerAchievement | null {

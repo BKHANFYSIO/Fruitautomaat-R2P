@@ -6,6 +6,7 @@ import { Hendel } from './Hendel'; // Importeer Hendel
 import { useAudio } from '../hooks/useAudio';
 import { useSettings } from '../context/SettingsContext';
 import { opdrachtTypeIconen } from '../data/constants';
+import { InfoTooltip } from './ui/InfoTooltip';
 import './Fruitautomaat.css';
 
 type RolItem = { symbool?: string; img?: string };
@@ -156,12 +157,16 @@ export const Fruitautomaat = ({
 
         {huidigeOpdracht && gamePhase !== 'spinning' && (
           <div className="opdracht-info-footer">
-            <span className="info-item" title={`Bron: ${huidigeOpdracht.opdracht.bron || 'Onbekend'}`}>
-              {huidigeOpdracht.opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}
-            </span>
-            <span className="info-item" title={`Type: ${huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}`}>
-              {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}
-            </span>
+            <InfoTooltip asChild content={`Bron: ${huidigeOpdracht.opdracht.bron || 'Onbekend'}`}>
+              <span className="info-item">
+                {huidigeOpdracht.opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}
+              </span>
+            </InfoTooltip>
+            <InfoTooltip asChild content={`Type: ${huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}`}>
+              <span className="info-item">
+                {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}
+              </span>
+            </InfoTooltip>
           </div>
         )}
         
@@ -193,14 +198,15 @@ export const Fruitautomaat = ({
               const kanNaarB0 = boxId >= 1;
               const kanNaarB1 = boxId >= 2;
               const intervalMin = mgr.getBoxIntervalMin(boxId);
+              const pinnedCount = mgr.getPinnedCount();
               const allowAdjust = boxId >= 2; // pas vanaf B2 zinvol
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
-                  <div style={{ color: '#e0e0e0', fontSize: 14 }}>
+                <div className="leitner-footer-blok">
+                  <div className="leitner-footer-meta">
                     Box: B{boxId} • Volgende herhaling: {volgende}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <div className="leitner-footer-actions">
                     {kanNaarB0 && (
                       <button
                         className="pause-opdracht-footer-knop"
@@ -269,6 +275,18 @@ export const Fruitautomaat = ({
                     >
                       📌 Pin voor focus
                     </button>
+                    {pinnedCount > 0 && (
+                      <button
+                        className="pause-opdracht-footer-knop"
+                        onClick={() => {
+                          mgr.startFocusNow();
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Focus nu gestart (${pinnedCount} opdracht(en))`, type: 'succes', timeoutMs: 2500 } }));
+                        }}
+                        title="Oefen alle gepinde opdrachten nu direct achter elkaar"
+                      >
+                        🎯 Focus nu ({pinnedCount})
+                      </button>
+                    )}
                   </div>
                 </div>
               );
