@@ -245,8 +245,6 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
         }
 
         // Nieuwe opdrachten (0–20), herhalingen 5–30; op focusdagen minder nieuw en meer herhaling
-        const newCount = isFocusDag ? randInt(0, 8) : randInt(2, 20);
-        const repCount = isFocusDag ? randInt(15, 40) : randInt(5, 30);
         // Bepaal categorie-focus voor deze sessie (opbouwend in de tijd)
         const catsPool = catsVandaag;
         const groeiMax = Math.min(2 + Math.floor(weeksSinceStart / 2), catsPool.length);
@@ -413,9 +411,7 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
     window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Synthetic data (${days} dagen) gegenereerd.`, type: 'succes', timeoutMs: 3000 } }));
   };
 
-  // Convenience wrappers
-  const generateSyntheticThreeWeeks = () => generateSynthetic(21);
-  const generateSyntheticFourMonths = () => generateSynthetic(120);
+  // Convenience wrappers verwijderd (werden niet gebruikt)
 
   return (
     <>
