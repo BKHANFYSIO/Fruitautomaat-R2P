@@ -213,9 +213,7 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
     const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
     // Loop elke dag
-    const globalUsedIds = new Set<string>();
     // Pool van nog niet geïntroduceerde opdrachten (index-gebaseerd om id-collisies te vermijden)
-    const getId = (op: any) => `${op.Hoofdcategorie || 'Overig'}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
     const remainingIdx = new Set<number>(allOps.map((_, idx) => idx));
     for (let d = 0; d < days; d++) {
       const day = new Date(start.getTime() + d * 24 * 60 * 60 * 1000);
@@ -235,8 +233,48 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
       // Willekeurige vrije dagen: sla dag over (geen sessies) op ~10% van de dagen
       const isFreeDay = Math.random() < (freeDayPercent / 100);
       if (!isFreeDay) {
-      const runSession = async (serieuze: boolean, modus: 'normaal' | 'leitner', baseHour: number) => {
-        const sessieId = mgr.startSessie(serieuze, modus);
+      // Dag-quota's voor nieuw en herhaling, verdeeld over sessies
+      let dailyNewLeft = randInt(Math.min(dailyNewMin, dailyNewMax), Math.max(dailyNewMin, dailyNewMax));
+      let dailyRepLeft = randInt(Math.min(dailyRepMin, dailyRepMax), Math.max(dailyRepMin, dailyRepMax));
+      // Helpers voor Leitner-simulatie
+      const idParts = (id: string) => {
+        const parts = id.split('_');
+        return { hoofdcategorie: parts[0] || 'Overig', categorie: parts[1] || 'Overig', opShort: parts.slice(2).join('_') || '' };
+      };
+      const getAvailableRepetitionsForDate = (simNowISO: string) => {
+        const simNow = new Date(simNowISO);
+        const ldata = (mgr as any).loadLeitnerData?.();
+        if (!ldata || !ldata.isLeitnerActief) return [] as Array<{ opdrachtId: string; boxId: number }>;
+        const paused = new Set<string>(ldata.pausedOpdrachten || []);
+        const acc: Array<{ opdrachtId: string; boxId: number }> = [];
+        (ldata.boxes || []).forEach((box: any) => {
+          const intervalMin = ldata.boxIntervallen[box.boxId] || 1440;
+          (box.opdrachten || []).forEach((opdrachtId: string) => {
+            if (paused.has(opdrachtId)) return;
+            const lastStr = ldata.opdrachtReviewTimes?.[opdrachtId];
+            if (!lastStr) return;
+            const last = new Date(lastStr);
+            if (box.boxId === 0) {
+              const diffMin = Math.floor((simNow.getTime() - last.getTime()) / 60000);
+              if (diffMin >= intervalMin) acc.push({ opdrachtId, boxId: box.boxId });
+            } else {
+              const diffDays = Math.floor((simNow.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+              const intervalDays = Math.ceil((intervalMin) / 1440);
+              if (diffDays >= intervalDays) acc.push({ opdrachtId, boxId: box.boxId });
+            }
+          });
+        });
+        return acc;
+      };
+      const placeReviewTime = (opdrachtId: string, whenISO: string) => {
+        const ldata = (mgr as any).loadLeitnerData?.();
+        if (!ldata) return;
+        if (!ldata.opdrachtReviewTimes) ldata.opdrachtReviewTimes = {};
+        ldata.opdrachtReviewTimes[opdrachtId] = whenISO;
+        (mgr as any).saveLeitnerData?.(ldata);
+      };
+      const runSession = async (baseHour: number) => {
+        const sessieId = mgr.startSessie(true, 'leitner');
         // Override startTijd naar deze dag (ochtend 09:00)
         const data = (mgr as any).loadLeerData?.();
         if (data) {
@@ -244,7 +282,6 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
           (mgr as any).saveLeerData?.(data);
         }
 
-        // Nieuwe opdrachten (0–20), herhalingen 5–30; op focusdagen minder nieuw en meer herhaling
         // Bepaal categorie-focus voor deze sessie (opbouwend in de tijd)
         const catsPool = catsVandaag;
         const groeiMax = Math.min(2 + Math.floor(weeksSinceStart / 2), catsPool.length);
@@ -252,40 +289,59 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
         const focusSize = allesKans ? catsPool.length : randInt(1, Math.max(1, Math.min(3, groeiMax)));
         const cats = [...catsPool].sort(() => 0.5 - Math.random()).slice(0, focusSize);
 
-        // Nieuwe opdrachten loggen: kies onafhankelijk van categorieën een vaste dagdoelstelling
-        const dailyNewTarget = randInt(Math.min(dailyNewMin, dailyNewMax), Math.max(dailyNewMin, dailyNewMax));
-        const newOpsForDay: any[] = [];
+        // 1) Herhalingen eerst: haal beschikbare herhalingen op voor deze simulatie tijd
+        let minuteCursor = 5;
+        const sessionsRemaining = 1; // sessie-quotaverdeling is al per dag gedaan, hier kunnen we eenvoudig kiezen
+        const availableNow = getAvailableRepetitionsForDate(dateAt(baseHour, 0)).filter(({ opdrachtId }) => {
+          const { categorie } = idParts(opdrachtId);
+          return cats.length === 0 || cats.includes(categorie);
+        });
+        const sessionRepQuota = Math.min(availableNow.length, Math.max(0, Math.ceil(dailyRepLeft / sessionsRemaining)));
+        const chosenReps = [...availableNow].sort(() => 0.5 - Math.random()).slice(0, Math.max(0, sessionRepQuota));
+        for (let j = 0; j < chosenReps.length; j++) {
+          const { opdrachtId } = chosenReps[j];
+          const { hoofdcategorie, categorie, opShort } = idParts(opdrachtId);
+          const bestaandLike = { Hoofdcategorie: hoofdcategorie, Categorie: categorie, Opdracht: opShort, Antwoordsleutel: '—', Tijdslimiet: 45, Extra_Punten: 0 } as any;
+          const r2 = Math.random() * 100;
+          const scoreRep = r2 < repP1 ? 1 : r2 < (repP1 + repP3) ? 3 : 5;
+          (mgr as any).recordOpdrachtVoltooid(bestaandLike, scoreRep, 'auto', sessieId, randInt(15, 60), 'leitner');
+          try {
+            const ld2 = (mgr as any).loadLeerData?.();
+            if (ld2) {
+              const item2 = ld2.opdrachten?.[opdrachtId];
+              if (item2) {
+                const when2 = dateAt(baseHour, minuteCursor);
+                if (Array.isArray(item2.scoreGeschiedenis) && item2.scoreGeschiedenis.length > 0) item2.scoreGeschiedenis[item2.scoreGeschiedenis.length - 1].datum = when2;
+                if (Array.isArray(item2.modusGeschiedenis) && item2.modusGeschiedenis.length > 0) item2.modusGeschiedenis[item2.modusGeschiedenis.length - 1].datum = when2;
+                item2.laatsteDatum = when2.split('T')[0];
+                (mgr as any).saveLeerData?.(ld2);
+                placeReviewTime(opdrachtId, when2);
+              }
+            }
+          } catch {}
+          minuteCursor += 2;
+        }
+        dailyRepLeft = Math.max(0, dailyRepLeft - chosenReps.length);
+
+        // 2) Nieuwe opdrachten daarna
         const idsArray = Array.from(remainingIdx);
-        // shuffle idsArray
         idsArray.sort(() => 0.5 - Math.random());
-        const reviewUpdates: Array<{ id: string; minute: number }> = [];
-        for (let n = 0; n < idsArray.length && newOpsForDay.length < dailyNewTarget; n++) {
+        const sessionNewQuota = Math.max(0, dailyNewLeft); // 1 sessie-allocatie hier
+        const newOpsForSession: any[] = [];
+        for (let n = 0; n < idsArray.length && newOpsForSession.length < sessionNewQuota; n++) {
           const idx = idsArray[n];
           const op = allOps[idx];
           if (op && (cats.length === 0 || cats.includes(op.Categorie))) {
-            newOpsForDay.push({ ...op, Opdracht: `[${d+1}.${newOpsForDay.length+1}] ${op.Opdracht}` });
+            newOpsForSession.push({ ...op, Opdracht: `[${d+1}.${newOpsForSession.length+1}] ${op.Opdracht}` });
             remainingIdx.delete(idx);
           }
         }
-        // fallback als te weinig binnen gekozen categorieën gevonden
-        if (newOpsForDay.length < Math.min(dailyNewTarget, idsArray.length)) {
-          for (let n = 0; n < idsArray.length && newOpsForDay.length < dailyNewTarget; n++) {
-            const idx = idsArray[n];
-            if (!remainingIdx.has(idx)) continue;
-            const op = allOps[idx];
-            if (op) {
-              newOpsForDay.push({ ...op, Opdracht: `[${d+1}.${newOpsForDay.length+1}] ${op.Opdracht}` });
-              remainingIdx.delete(idx);
-            }
-          }
-        }
-        for (let i = 0; i < newOpsForDay.length; i++) {
-          const op = newOpsForDay[i];
-          mgr.recordOpdrachtStart(op as any);
+        for (let i = 0; i < newOpsForSession.length; i++) {
+          const op = newOpsForSession[i];
+          (mgr as any).recordOpdrachtStart(op as any);
           const r = Math.random() * 100;
           const score = r < newP1 ? 1 : r < (newP1 + newP3) ? 3 : 5;
-          (mgr as any).recordOpdrachtVoltooid(op as any, score, 'auto', sessieId, randInt(20, 90), modus);
-          // Corrigeer datum/tijd van historie naar de synthetische dag
+          (mgr as any).recordOpdrachtVoltooid(op as any, score, 'auto', sessieId, randInt(20, 90), 'leitner');
           try {
             const ld = (mgr as any).loadLeerData?.();
             if (ld) {
@@ -293,103 +349,34 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
               const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
               const item = ld.opdrachten?.[opdrachtId];
               if (item) {
-                const when = dateAt(baseHour, 10 + i);
-                if (Array.isArray(item.scoreGeschiedenis) && item.scoreGeschiedenis.length > 0) {
-                  item.scoreGeschiedenis[item.scoreGeschiedenis.length - 1].datum = when;
-                }
-                if (Array.isArray(item.modusGeschiedenis) && item.modusGeschiedenis.length > 0) {
-                  item.modusGeschiedenis[item.modusGeschiedenis.length - 1].datum = when;
-                }
+                const when = dateAt(baseHour, minuteCursor);
+                if (Array.isArray(item.scoreGeschiedenis) && item.scoreGeschiedenis.length > 0) item.scoreGeschiedenis[item.scoreGeschiedenis.length - 1].datum = when;
+                if (Array.isArray(item.modusGeschiedenis) && item.modusGeschiedenis.length > 0) item.modusGeschiedenis[item.modusGeschiedenis.length - 1].datum = when;
                 item.laatsteDatum = when.split('T')[0];
                 (mgr as any).saveLeerData?.(ld);
+                placeReviewTime(opdrachtId, when);
               }
             }
           } catch {}
-          const id = getId(op);
-          reviewUpdates.push({ id, minute: 5 + i });
-          globalUsedIds.add(id);
+          minuteCursor += 3;
         }
+        dailyNewLeft = Math.max(0, dailyNewLeft - newOpsForSession.length);
 
-        // Herhalingen simuleren door bestaande opdrachten te pakken uit leerdata (bestaande Excel-opdrachten)
-        const data2 = (mgr as any).loadLeerData?.();
-        let alleLrOps = Object.values(data2?.opdrachten || {});
-        if (cats.length > 0) {
-          alleLrOps = alleLrOps.filter((o: any) => cats.includes(o.categorie));
-        }
-        // Sample zonder vervanging om te voorkomen dat 1-2 opdrachten duizenden pogingen krijgen
-        const repLow = Math.min(dailyRepMin, dailyRepMax);
-        const repHigh = Math.max(dailyRepMin, dailyRepMax);
-        const repCountTarget = randInt(repLow, repHigh);
-        const sampleCount = Math.min(repCountTarget, Math.max(0, alleLrOps.length));
-        const shuffledReps = [...alleLrOps].sort(() => 0.5 - Math.random()).slice(0, sampleCount);
-        for (let j = 0; j < shuffledReps.length; j++) {
-          const pickOp = shuffledReps[j] as any;
-          // Bouw een Opdracht object dat overeenkomt met bestaand opdrachtId (zodat recordOpdrachtVoltooid het vindt)
-          const hoofdcategorie = pickOp.hoofdcategorie || 'Overig';
-          const opText = pickOp.opdrachtId?.includes('_') ? pickOp.opdrachtId.split('_')[2] : pickOp.categorie;
-          const bestaandLike = {
-            Hoofdcategorie: hoofdcategorie,
-            Categorie: pickOp.categorie,
-            Opdracht: opText,
-            Antwoordsleutel: '—',
-            Tijdslimiet: 45,
-            Extra_Punten: 0,
-          } as any;
-          const r2 = Math.random() * 100;
-          const scoreRep = r2 < repP1 ? 1 : r2 < (repP1 + repP3) ? 3 : 5; // trager stijgen
-          (mgr as any).recordOpdrachtVoltooid(bestaandLike, scoreRep, 'auto', sessieId, randInt(15, 60), modus);
-          // Corrigeer datum/tijd van historie naar de synthetische dag
-          try {
-            const ld2 = (mgr as any).loadLeerData?.();
-            if (ld2) {
-              const hoofdcategorie2 = bestaandLike.Hoofdcategorie || 'Overig';
-              const opdrachtId2 = `${hoofdcategorie2}_${bestaandLike.Categorie}_${bestaandLike.Opdracht.substring(0, 20)}`;
-              const item2 = ld2.opdrachten?.[opdrachtId2];
-              if (item2) {
-                const when2 = dateAt(baseHour, 30 + (j % 20));
-                if (Array.isArray(item2.scoreGeschiedenis) && item2.scoreGeschiedenis.length > 0) {
-                  item2.scoreGeschiedenis[item2.scoreGeschiedenis.length - 1].datum = when2;
-                }
-                if (Array.isArray(item2.modusGeschiedenis) && item2.modusGeschiedenis.length > 0) {
-                  item2.modusGeschiedenis[item2.modusGeschiedenis.length - 1].datum = when2;
-                }
-                item2.laatsteDatum = when2.split('T')[0];
-                (mgr as any).saveLeerData?.(ld2);
-              }
-            }
-          } catch {}
-          const id = pickOp.opdrachtId;
-          if (id) reviewUpdates.push({ id, minute: 30 + (j % 20) });
-        }
-
-        // Sessie afronden en duur zetten 10–45m
-        const achievements = mgr.endSessie(sessieId);
+        // Sessie afronden
+        mgr.endSessie(sessieId);
         const data3 = (mgr as any).loadLeerData?.();
         if (data3) {
           data3.sessies[sessieId].eindTijd = dateAt(baseHour, randInt(35, 55));
           data3.sessies[sessieId].duur = Math.round(((new Date(data3.sessies[sessieId].eindTijd).getTime() - new Date(data3.sessies[sessieId].startTijd).getTime()) / 60000));
           (mgr as any).saveLeerData?.(data3);
         }
-
-        // Pas alle reviewUpdates in één keer toe (minder localStorage writes)
-        const ldataFinal = (mgr as any).loadLeitnerData?.();
-        if (ldataFinal) {
-          if (!ldataFinal.opdrachtReviewTimes) ldataFinal.opdrachtReviewTimes = {};
-          reviewUpdates.forEach(({ id, minute }) => {
-            ldataFinal.opdrachtReviewTimes[id] = dateAt(9, minute);
-          });
-          (mgr as any).saveLeitnerData?.(ldataFinal);
-        }
-        return achievements;
       };
 
-      // Maak 1-4 sessies per dag; mix van modes en categorie-focussen
+      // Maak 1-4 sessies per dag (allemaal in leitner-modus)
       const sessiesVandaag = randInt(1, 4);
       const sessieHours = [9, 12, 15, 19];
       for (let s = 0; s < sessiesVandaag; s++) {
-        const isLeitner = Math.random() < 0.55; // lichte voorkeur voor leitner in leeranalyse
-        const mode: 'normaal' | 'leitner' = isLeitner ? 'leitner' : 'normaal';
-        await runSession(isLeitner, mode, sessieHours[s] || 9);
+        await runSession(sessieHours[s] || 9);
       }
       }
 
