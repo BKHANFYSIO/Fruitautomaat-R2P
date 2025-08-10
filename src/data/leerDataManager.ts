@@ -3045,7 +3045,7 @@ class LeerDataManager {
     const tePlaatsenOpdrachten = nieuweOpdrachten.slice(0, aantal);
     if (tePlaatsenOpdrachten.length === 0) {
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen nieuwe opdrachten gevonden om toe te voegen voor de test.', type: 'fout', timeoutMs: 3500 } }));
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen nieuwe opdrachten gevonden om toe te voegen voor de test.', type: 'fout', timeoutMs: 7000 } }));
       }
       return { toegevoegd: 0, categorieen: [] };
     }

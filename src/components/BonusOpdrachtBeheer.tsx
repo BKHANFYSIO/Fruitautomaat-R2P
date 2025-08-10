@@ -57,12 +57,12 @@ export const BonusOpdrachtBeheer = ({
   const handleToevoegen = (event: React.FormEvent) => {
     event.preventDefault();
     if (!nieuweOpdracht || !nieuwePunten) {
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Vul zowel een opdracht als de punten in.', type: 'fout', timeoutMs: 3000 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Vul zowel een opdracht als de punten in.', type: 'fout', timeoutMs: 6000 } }));
       return;
     }
     const puntenArray = nieuwePunten.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
     if (puntenArray.length === 0) {
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geef geldige, komma-gescheiden punten op (bijv. 1, 2, 3).', type: 'fout', timeoutMs: 4000 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geef geldige, komma-gescheiden punten op (bijv. 1, 2, 3).', type: 'fout', timeoutMs: 7000 } }));
       return;
     }
     
@@ -166,10 +166,10 @@ export const BonusOpdrachtBeheer = ({
           setDialogType('import');
           setToonLokaleOpslagDialog(true);
         } else {
-          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen geldige bonusopdrachten gevonden in het bestand.', type: 'fout', timeoutMs: 3500 } }));
+          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen geldige bonusopdrachten gevonden in het bestand.', type: 'fout', timeoutMs: 7000 } }));
         }
       } catch (error) {
-        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Fout bij het lezen van het Excel bestand. Controleer of het juiste formaat heeft.', type: 'fout', timeoutMs: 4000 } }));
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Fout bij het lezen van het Excel bestand. Controleer of het juiste formaat heeft.', type: 'fout', timeoutMs: 7000 } }));
       }
     };
     reader.readAsArrayBuffer(file);

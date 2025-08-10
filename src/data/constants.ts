@@ -40,8 +40,8 @@ export const BONUS_OPDRACHTEN = [
 
 // Notificatie presets
 export const NOTIFICATIE_DUUR_MS = {
-  succes: 4000,
-  fout: 5000,
+  succes: 6000,
+  fout: 7000,
 } as const;
 
 export type NotificatieType = keyof typeof NOTIFICATIE_DUUR_MS; 

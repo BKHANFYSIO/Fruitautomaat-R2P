@@ -176,13 +176,10 @@ export const Fruitautomaat = ({
             <button 
               className="pause-opdracht-footer-knop" 
               onClick={onPauseOpdracht}
-              title="Pauzeer deze opdracht - deze komt niet terug tot de pauze wordt gestopt"
             >
               ⏸️ Pauzeer deze opdracht
             </button>
-            <p className="pause-footer-uitleg">
-              Deze opdracht komt niet terug tot de pauze wordt gestopt
-            </p>
+            <InfoTooltip content="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt" />
 
             {/* Leitner context & acties */}
             {(() => {
@@ -208,84 +205,106 @@ export const Fruitautomaat = ({
                   </div>
                   <div className="leitner-footer-actions">
                     {kanNaarB0 && (
-                      <button
-                        className="pause-opdracht-footer-knop"
-                        onClick={() => { 
-                          mgr.setOpdrachtBox(opdrachtId, 0); 
-                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 0 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 3000 } }));
-                        }}
-                        title="Zet terug naar Box 0"
-                      >
-                        ↩️ Zet naar Box 0
-                      </button>
+                      <>
+                        <button
+                          className="pause-opdracht-footer-knop"
+                          onClick={() => { 
+                            mgr.setOpdrachtBox(opdrachtId, 0); 
+                            const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                           window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 0 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 5000 } }));
+                          }}
+                        >
+                          ↩️ Zet naar Box 0
+                        </button>
+                        <InfoTooltip content="Zet terug naar Box 0" />
+                      </>
                     )}
                     {kanNaarB1 && (
-                      <button
-                        className="pause-opdracht-footer-knop"
-                        onClick={() => { 
-                          mgr.setOpdrachtBox(opdrachtId, 1);
-                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 1 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 3000 } }));
-                        }}
-                        title="Zet terug naar Box 1"
-                      >
-                        ↩️ Zet naar Box 1
-                      </button>
+                      <>
+                        <button
+                          className="pause-opdracht-footer-knop"
+                          onClick={() => { 
+                            mgr.setOpdrachtBox(opdrachtId, 1);
+                            const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                           window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 1 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 5000 } }));
+                          }}
+                        >
+                          ↩️ Zet naar Box 1
+                        </button>
+                        <InfoTooltip content="Zet terug naar Box 1" />
+                      </>
                     )}
                     {allowAdjust && (
-                      <button
-                        className="pause-opdracht-footer-knop"
-                        onClick={() => { 
-                          mgr.adjustVolgendeReview(opdrachtId, -Math.round(intervalMin / 2)); 
-                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling vervroegd • ${nextTxt}`, type: 'succes', timeoutMs: 2500 } }));
-                        }}
-                        title="Versnel volgende herhaling (ongeveer halve interval eerder)"
-                      >
-                        ⏩ Herhaling sneller
-                      </button>
+                      <>
+                        <button
+                          className="pause-opdracht-footer-knop"
+                          onClick={() => { 
+                            mgr.adjustVolgendeReview(opdrachtId, -Math.round(intervalMin / 2)); 
+                            const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                           window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling vervroegd • ${nextTxt}`, type: 'succes', timeoutMs: 6000 } }));
+                          }}
+                        >
+                          ⏩ Herhaling sneller
+                        </button>
+                        <InfoTooltip content="Versnel volgende herhaling (ongeveer halve interval eerder)" />
+                      </>
                     )}
                     {allowAdjust && (
-                      <button
-                        className="pause-opdracht-footer-knop"
-                        onClick={() => { 
-                          mgr.adjustVolgendeReview(opdrachtId, Math.round(intervalMin / 2)); 
-                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling later gepland • ${nextTxt}`, type: 'succes', timeoutMs: 2500 } }));
-                        }}
-                        title="Vertraag volgende herhaling (ongeveer halve interval later)"
-                      >
-                        ⏸️ Herhaling later
-                      </button>
+                      <>
+                        <button
+                          className="pause-opdracht-footer-knop"
+                          onClick={() => { 
+                            mgr.adjustVolgendeReview(opdrachtId, Math.round(intervalMin / 2)); 
+                            const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                           window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling later gepland • ${nextTxt}`, type: 'succes', timeoutMs: 6000 } }));
+                          }}
+                        >
+                          ⏸️ Herhaling later
+                        </button>
+                        <InfoTooltip content="Vertraag volgende herhaling (ongeveer halve interval later)" />
+                      </>
                     )}
-                    <button
-                      className="pause-opdracht-footer-knop"
-                      onClick={() => {
-                        const pinned = mgr.isPinnedOpdracht(opdrachtId);
-                        if (pinned) { 
-                          mgr.removePinnedOpdracht(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht ont‑pinned voor focus.', type: 'succes', timeoutMs: 2000 } }));
-                        } else { 
-                          mgr.addPinnedOpdracht(opdrachtId);
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht pinned voor focus-sessie.', type: 'succes', timeoutMs: 2000 } }));
-                        }
-                      }}
-                      title="Pin voor focus-sessie (nogmaals oefenen)"
-                    >
-                      📌 Pin voor focus
-                    </button>
-                    {pinnedCount > 0 && (
+                    <>
                       <button
                         className="pause-opdracht-footer-knop"
                         onClick={() => {
-                          mgr.startFocusNow();
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Focus nu gestart (${pinnedCount} opdracht(en))`, type: 'succes', timeoutMs: 2500 } }));
+                          const pinned = mgr.isPinnedOpdracht(opdrachtId);
+                          if (pinned) { 
+                            mgr.removePinnedOpdracht(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht ont‑pinned voor focus.', type: 'succes', timeoutMs: 5000 } }));
+                          } else { 
+                            mgr.addPinnedOpdracht(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht pinned voor focus-sessie.', type: 'succes', timeoutMs: 5000 } }));
+                          }
                         }}
-                        title="Oefen alle gepinde opdrachten nu direct achter elkaar"
+                        disabled={mgr.isFocusNowActive()}
                       >
-                        🎯 Focus nu ({pinnedCount})
+                        📌 Pin voor focus
                       </button>
+                      <InfoTooltip content="Pin voor focus-sessie (nogmaals oefenen)" />
+                    </>
+                  {pinnedCount > 0 && (
+                      <>
+                        {mgr.isFocusNowActive() ? (
+                          <button
+                            className={`pause-opdracht-footer-knop focus-now-knop is-active`}
+                            disabled
+                          >
+                            🎯 Focusmodus actief — {pinnedCount} resterend
+                          </button>
+                        ) : (
+                          <button
+                            className={`pause-opdracht-footer-knop focus-now-knop`}
+                            onClick={() => {
+                              mgr.startFocusNow();
+                              window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Focus nu gestart (${pinnedCount} opdracht(en))`, type: 'succes', timeoutMs: 6000 } }));
+                            }}
+                          >
+                            🎯 Focus nu ({pinnedCount})
+                          </button>
+                        )}
+                        <InfoTooltip content={mgr.isFocusNowActive() ? 'Focussessie bezig. Gepinde opdrachten worden nu achter elkaar aangeboden.' : 'Oefen alle gepinde opdrachten nu direct achter elkaar'} />
+                      </>
                     )}
                   </div>
                 </div>

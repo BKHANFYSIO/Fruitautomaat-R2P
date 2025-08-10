@@ -188,7 +188,7 @@ export const Instellingen = React.memo(({
           localStorage.removeItem(key);
         }
       });
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leeranalyse gegevens zijn verwijderd.', type: 'succes', timeoutMs: 3000 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leeranalyse gegevens zijn verwijderd.', type: 'succes', timeoutMs: 6000 } }));
     }
   };
 
@@ -201,7 +201,7 @@ export const Instellingen = React.memo(({
           localStorage.removeItem(key);
         }
       });
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leitner-systeem gegevens zijn verwijderd.', type: 'succes', timeoutMs: 3000 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Leitner-systeem gegevens zijn verwijderd.', type: 'succes', timeoutMs: 6000 } }));
     }
   };
 
@@ -239,7 +239,7 @@ export const Instellingen = React.memo(({
       // Verwijder eigen opdrachten
       localStorage.removeItem('fruitautomaat_user_opdrachten');
       
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle gegevens zijn verwijderd. De pagina wordt herladen...', type: 'succes', timeoutMs: 2500 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle gegevens zijn verwijderd. De pagina wordt herladen...', type: 'succes', timeoutMs: 6000 } }));
       window.location.reload();
     }
   };
@@ -285,7 +285,7 @@ export const Instellingen = React.memo(({
       // Bonus instellingen herstellen
       setIsLokaleBonusOpslagActief(false);
       
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle instellingen zijn hersteld naar standaard.', type: 'succes', timeoutMs: 2500 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle instellingen zijn hersteld naar standaard.', type: 'succes', timeoutMs: 6000 } }));
     }
   };
 
@@ -335,7 +335,7 @@ export const Instellingen = React.memo(({
       const achievements = leerDataManager.loadAchievements();
 
       if (!leerData) {
-        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.', type: 'fout', timeoutMs: 4000 } }));
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.', type: 'fout', timeoutMs: 7000 } }));
         return;
       }
 
@@ -350,7 +350,7 @@ export const Instellingen = React.memo(({
       setIsCertificaatModalOpen(false);
     } catch (error) {
       console.error('Fout bij certificaat generatie:', error);
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.', type: 'fout', timeoutMs: 4000 } }));
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.', type: 'fout', timeoutMs: 7000 } }));
     }
   };
 
@@ -527,7 +527,7 @@ export const Instellingen = React.memo(({
                       onClick={() => {
                         if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Je kunt ze later weer uploaden via het Excel bestand als je dat nog hebt.')) {
                           onVerwijderGebruikerOpdrachten();
-                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle eigen opdrachten zijn verwijderd.', type: 'succes', timeoutMs: 2500 } }));
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle eigen opdrachten zijn verwijderd.', type: 'succes', timeoutMs: 6000 } }));
                         }
                       }}
                       className="data-beheer-knop opdrachten-knop"

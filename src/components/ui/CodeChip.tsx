@@ -10,7 +10,7 @@ export const CodeChip: React.FC<CodeChipProps> = ({ command, label }) => {
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(command).then(() => {
         try {
-          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Gekopieerd!', type: 'succes', timeoutMs: 1500 } }));
+          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Gekopieerd!', type: 'succes', timeoutMs: 6000 } }));
         } catch {}
       }).catch(() => {});
     }

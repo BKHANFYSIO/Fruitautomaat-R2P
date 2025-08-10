@@ -420,7 +420,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeCategorieen);
     setLeitnerStatsDirect(stats);
     
-    showNotificatie('Dagelijkse herhalingen voltooid en achievements gecontroleerd!', 'succes', 3000);
+    showNotificatie('Dagelijkse herhalingen voltooid en achievements gecontroleerd!', 'succes', 6000);
   };
 
   const handleForcePromotie = (boxNummer: number) => {
@@ -432,7 +432,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     
     if (nieuweAchievement) {
       setNieuweAchievement(nieuweAchievement as unknown as Achievement);
-      showNotificatie(`Achievement voor het bereiken van Box ${boxNummer} geforceerd!`, 'succes', 3000);
+      showNotificatie(`Achievement voor het bereiken van Box ${boxNummer} geforceerd!`, 'succes', 6000);
     } else {
       showNotificatie(`Kon geen achievement forceren voor Box ${boxNummer}. Mogelijk al behaald.`, 'fout', 4000);
     }
@@ -443,7 +443,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     localStorage.removeItem('fruitautomaat_leitner_' + leerDataManager.getSpelerId());
     // Forceer re-render van stats
     setLeitnerStatsDirect({ totaalOpdrachten: 0, vandaagBeschikbaar: 0, reguliereHerhalingenBeschikbaar: 0 });
-    showNotificatie('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.', 'succes', 4000);
+      showNotificatie('Leitner data en pogingen zijn gereset. Herlaad de pagina om de wijzigingen volledig te zien.', 'succes', 7000);
   };
 
   const handleForceHerhalingen = (boxId: number, aantal: number) => {
@@ -452,7 +452,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const { toegevoegd, categorieen } = leerDataManager.forceerHerhalingenInBox(opdrachten, aantal, boxId);
 
     if (toegevoegd === 0) {
-      showNotificatie('Kon geen nieuwe opdrachten forceren. Mogelijk zijn alle opdrachten al in het leersysteem.', 'fout', 4000);
+      showNotificatie('Kon geen nieuwe opdrachten forceren. Mogelijk zijn alle opdrachten al in het leersysteem.', 'fout', 7000);
       return;
     }
 
@@ -467,7 +467,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const stats = leerDataManager.getLeitnerStatistiekenVoorCategorieen(categorieen);
     setLeitnerStatsDirect(stats);
     
-    showNotificatie(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. Leermodus is actief en categorieën zijn gezet.`, 'succes', 5000);
+    showNotificatie(`${toegevoegd} opdrachten geforceerd naar Box ${boxId}. Leermodus is actief en categorieën zijn gezet.`, 'succes', 7000);
   };
 
   const handleToggleBox0Interval = () => {
@@ -479,12 +479,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       // Verander naar 15 seconden (0.25 minuten)
       leerDataManager.setTijdelijkInterval(0, 0.25);
       setIsBox0IntervalVerkort(true);
-      showNotificatie('Box 0 interval gewijzigd naar 15 seconden voor snelle herhaling.', 'succes', 4000);
+      showNotificatie('Box 0 interval gewijzigd naar 15 seconden voor snelle herhaling.', 'succes', 6000);
     } else {
       // Reset naar 10 minuten
       leerDataManager.setTijdelijkInterval(0, 10);
       setIsBox0IntervalVerkort(false);
-      showNotificatie('Box 0 interval gereset naar 10 minuten.', 'succes', 3000);
+      showNotificatie('Box 0 interval gereset naar 10 minuten.', 'succes', 6000);
     }
   };
   // --- EINDE DEV PANEL FUNCTIES ---
@@ -772,7 +772,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const handleSpelerToevoegen = (naam: string) => {
     if (spelers.find((speler) => speler.naam.toLowerCase() === naam.toLowerCase())) {
-      showNotificatie('Deze speler bestaat al.', 'fout', 3000);
+      showNotificatie('Deze speler bestaat al.', 'fout', 6000);
       return;
     }
     const nieuweSpeler: Speler = { naam, score: 0, extraSpins: 0, beurten: 0 };
@@ -811,13 +811,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         ? 'Selecteer eerst de categorieën die je wilt leren. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".'
         : 'Selecteer eerst categorieën. Dit kan via de knop "Categorieën aanpassen" in het menu of via "Instellingen".';
         
-      showNotificatie(`Geen opdrachten beschikbaar. ${melding}`, 'fout', 5000);
+      showNotificatie(`Geen opdrachten beschikbaar. ${melding}`, 'fout', 7000);
       return;
     }
 
     // Specifieke checks voor spelmodi
     if (gameMode === 'single' && !isSerieuzeLeerModusActief && gefilterdeOpdrachten.length < 10) {
-      showNotificatie(`Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`, 'fout', 6000);
+      showNotificatie(`Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`, 'fout', 8000);
       return;
     }
 
@@ -833,7 +833,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       
       // Toon sessie start melding bij eerste spin in serieuze leer-modus
       if (isSerieuzeLeerModusActief && gameMode === 'single') {
-        showNotificatie('📚 Sessie gestart! Vergeet niet je sessie te eindigen voor een samenvatting.', 'succes', 5000);
+        showNotificatie('📚 Sessie gestart! Vergeet niet je sessie te eindigen voor een samenvatting.', 'succes', 7000);
       }
     }
     
@@ -841,7 +841,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     if (isSerieuzeLeerModusActief && gameMode === 'single' && !huidigeSessieId) {
       const nieuwe = startSessie(leermodusType);
       if (nieuwe) {
-        showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 3000);
+        showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 6000);
       }
     }
     
@@ -1036,13 +1036,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
       // Toon leerfeedback in serieuze leer-modus bij combinaties (alleen als kale modus niet actief is)
       if (!isKaleModusActief && gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
-        showNotificatie(analyse.beschrijving, 'succes', 6000);
+        showNotificatie(analyse.beschrijving, 'succes', 8000);
       }
 
       if (isJokerSpinActief && analyse.verdiendeSpins > 0) {
         playJokerWin(); // Speel joker win geluid
         setVerdiendeSpinsDezeBeurt(analyse.verdiendeSpins); // Sla op in tijdelijke state
-        showNotificatie(`${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 'succes', 6000);
+        showNotificatie(`${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 'succes', 8000);
       }
 
       if (analyse.actie === 'bonus_opdracht' && isBonusOpdrachtenActief) {
@@ -1105,7 +1105,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setLaatsteBeoordeeldeOpdracht(null);
       
       // Toon notificatie
-      showNotificatie('Opdracht gepauzeerd! Deze komt niet terug tot de pauze wordt gestopt.', 'succes', 3000);
+      showNotificatie('Opdracht gepauzeerd! Deze komt niet terug tot de pauze wordt gestopt.', 'succes', 6000);
     }
   }, [huidigeOpdracht, laatsteBeoordeeldeOpdracht, isSerieuzeLeerModusActief, leermodusType]);
 
@@ -1139,6 +1139,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setLeitnerStatsDirect(leerDataManager.getLeitnerStatistiekenVoorCategorieen(geselecteerdeLeitnerCategorieen));
       
       setOpdrachtStartTijd(null);
+      // Focus-sessie afronden wanneer laatste pinned item net beoordeeld is
+      if (leermodusType === 'leitner' && leerDataManager.isFocusNowActive() && leerDataManager.getPinnedCount() === 0) {
+        leerDataManager.stopFocusNow();
+        showNotificatie('Focussessie voltooid! Je kunt weer pinnen of normaal doorgaan.', 'succes', 6000);
+      }
     }
 
     // In serieuze leer-modus worden geen punten gegeven
@@ -1346,7 +1351,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsLeeranalyseOpen(false);
     // Optioneel: toon een notificatie (via hook)
     const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
-    showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 4000);
+    showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 7000);
   };
 
   if (loading) {
@@ -1567,10 +1572,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             if (huidigeSpeler) {
               if (gewonnen) {
                 const gewonnenPunten = puntenVoorVerdubbeling * 2;
-                showNotificatie(`Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`, 'succes', 3000);
+               showNotificatie(`Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`, 'succes', 6000);
                 setSpelers(spelers.map(speler => speler.naam === huidigeSpeler.naam ? { ...speler, score: speler.score + gewonnenPunten } : speler));
               } else {
-                showNotificatie(`Het is ${uitkomst}! Helaas, geen extra punten.`, 'fout', 3000);
+               showNotificatie(`Het is ${uitkomst}! Helaas, geen extra punten.`, 'fout', 6000);
               }
               setTimeout(() => {
                 mainContentRef.current?.scrollTo(0, 0);
@@ -1586,10 +1591,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             if (geslaagd) {
               const { punten } = huidigeBonusOpdracht;
               const gewonnenPunten = punten[Math.floor(Math.random() * punten.length)];
-              showNotificatie(`Goed gedaan! Je kunt ${gewonnenPunten} extra punt(en) verdienen met de hoofdopdracht.`, 'succes', 3000);
+             showNotificatie(`Goed gedaan! Je kunt ${gewonnenPunten} extra punt(en) verdienen met de hoofdopdracht.`, 'succes', 6000);
               setOpgespaardeBonusPunten(gewonnenPunten);
             } else {
-              showNotificatie('Helaas, geen extra punten deze keer.', 'fout', 3000);
+             showNotificatie('Helaas, geen extra punten deze keer.', 'fout', 6000);
             }
             setTimeout(() => {
               hideNotificatie();

@@ -188,7 +188,7 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
     if (isGenerating) return;
     setIsGenerating(true);
     setGenProgress(0);
-    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Start met genereren van ${days} dagen…`, type: 'succes', timeoutMs: 2000 } }));
+    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Start met genereren van ${days} dagen…`, type: 'succes', timeoutMs: 6000 } }));
     const mgr = getLeerDataManager();
     // Probeer opdrachten te laden (fallback no-op als al geladen via app)
     if ((mgr as any)._alleOpdrachten?.length === 0) {
@@ -408,7 +408,7 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
       }
     } catch {}
 
-    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Synthetic data (${days} dagen) gegenereerd.`, type: 'succes', timeoutMs: 3000 } }));
+    window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Synthetic data (${days} dagen) gegenereerd.`, type: 'succes', timeoutMs: 6000 } }));
   };
 
   // Convenience wrappers verwijderd (werden niet gebruikt)
@@ -615,7 +615,7 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
                     <button onClick={() => {
                       const text = allowlist.join(',');
                       navigator.clipboard?.writeText(text);
-                      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle domeinen gekopieerd naar klembord.', type: 'succes', timeoutMs: 2500 } }));
+                      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle domeinen gekopieerd naar klembord.', type: 'succes', timeoutMs: 6000 } }));
                     }}>Kopieer alle domeinen</button>
                   </div>
                 )}
