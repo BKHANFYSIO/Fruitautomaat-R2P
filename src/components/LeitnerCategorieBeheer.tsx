@@ -4,6 +4,7 @@ import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css';
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen } from '../data/constants';
+import { InfoTooltip } from './ui/InfoTooltip';
 
 // ... (rest van de interfaces en utility functions blijven hetzelfde)
 
@@ -22,7 +23,11 @@ const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
     if (bronnen.has('systeem')) iconen += '📖';
     if (bronnen.has('gebruiker')) iconen += '👨‍💼';
     
-    return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
+  return (
+    <InfoTooltip asChild content={`Bronnen: ${Array.from(bronnen).join(', ')}`}>
+      <span className="categorie-bron-iconen">{iconen}</span>
+    </InfoTooltip>
+  );
   };
 
 // Toast melding component
@@ -139,7 +144,7 @@ const BoxUitlegPopup = ({ onClose }: { onClose: () => void }) => (
             <div className="rule-item">
               <span className="score-icon">❌</span>
               <span className="score-label">Niet Goed</span>
-              <span className="score-result">→ Box 1 (of B0)</span>
+              <span className="score-result">−1 box (min B0)</span>
             </div>
           </div>
         </div>
@@ -1074,20 +1079,22 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                 <div className="filter-groep">
                   <span className="filter-label">Bron:</span>
                   <div className="filter-iconen">
-                    <span
-                      className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
-                      title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
-                      onClick={() => handleBronToggle('systeem')}
-                    >
-                      📖
-                    </span>
-                    <span
-                      className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
-                      title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
-                      onClick={() => handleBronToggle('gebruiker')}
-                    >
-                      👨‍💼
-                    </span>
+                    <InfoTooltip asChild content={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}>
+                      <span
+                        className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                        onClick={() => handleBronToggle('systeem')}
+                      >
+                        📖
+                      </span>
+                    </InfoTooltip>
+                    <InfoTooltip asChild content={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}>
+                      <span
+                        className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                        onClick={() => handleBronToggle('gebruiker')}
+                      >
+                        👨‍💼
+                      </span>
+                    </InfoTooltip>
                   </div>
                 </div>
                 <div className="filter-groep">
@@ -1096,14 +1103,14 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                     {alleOpdrachtTypes.map(type => {
                       const count = opdrachtenPerType[type] || 0;
                       return (
-                        <span
-                          key={type}
-                          className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
-                          title={`${type}: ${count} opdr.`}
-                          onClick={() => handleTypeToggle(type)}
-                        >
-                          {opdrachtTypeIconen[type] || '❓'}
-                        </span>
+                        <InfoTooltip asChild content={`${type}: ${count} opdr.`} key={type}>
+                          <span
+                            className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                            onClick={() => handleTypeToggle(type)}
+                          >
+                            {opdrachtTypeIconen[type] || '❓'}
+                          </span>
+                        </InfoTooltip>
                       );
                     })}
                   </div>

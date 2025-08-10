@@ -43,7 +43,7 @@
 
 .info-tooltip { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #2a2a2a; color: #cfcfcf; font-size: 12px; cursor: help; position: relative; }
 .info-tooltip-content { position: absolute; top: 125%; left: 50%; transform: translateX(-50%); background: #222; color: #ddd; border: 1px solid #444; padding: 8px; width: 260px; border-radius: 6px; z-index: 10; display: none; }
-.info-tooltip:hover .info-tooltip-content { display: block; }
+.info-tooltip:hover .info-tooltip-content, .info-tooltip .info-tooltip-content[data-open='1'] { display: block; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
 .tile { background: #1f2937; border: 1px solid #4a5568; border-radius: 6px; padding: 10px; text-align: center; }

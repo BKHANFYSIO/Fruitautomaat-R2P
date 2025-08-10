@@ -2050,7 +2050,8 @@ class LeerDataManager {
     if (score >= 4) {
       nieuweBoxId = Math.min(huidigeBoxId + 1, 7);
     } else if (score <= 2) {
-      nieuweBoxId = huidigeBoxId === 0 ? 0 : 1;
+      // Bij fout antwoord: één box terug (minimaal naar box 0)
+      nieuweBoxId = Math.max(huidigeBoxId - 1, 0);
     }
 
     // Voeg toe aan nieuwe box en reset de individuele timer van de opdracht
@@ -2063,6 +2064,93 @@ class LeerDataManager {
     this.saveLeitnerData(leitnerData);
     
     return this.checkPromotieAchievement(nieuweBoxId, leitnerData);
+  }
+
+  // Hulp: haal huidige boxId van een opdracht
+  getOpdrachtBoxId(opdrachtId: string): number | null {
+    const leitnerData = this.loadLeitnerData();
+    for (const box of leitnerData.boxes) {
+      if (box.opdrachten.includes(opdrachtId)) return box.boxId;
+    }
+    return null;
+  }
+
+  // Forceer verplaatsing naar specifieke box (reset review-tijd naar nu)
+  setOpdrachtBox(opdrachtId: string, targetBoxId: number): void {
+    const leitnerData = this.loadLeitnerData();
+    const fromIndex = leitnerData.boxes.findIndex(b => b.opdrachten.includes(opdrachtId));
+    if (fromIndex !== -1) {
+      leitnerData.boxes[fromIndex].opdrachten = leitnerData.boxes[fromIndex].opdrachten.filter(id => id !== opdrachtId);
+    }
+    const clampedTarget = Math.max(0, Math.min(7, targetBoxId));
+    const target = leitnerData.boxes.find(b => b.boxId === clampedTarget);
+    if (target && !target.opdrachten.includes(opdrachtId)) {
+      target.opdrachten.push(opdrachtId);
+    }
+    // Reset review-tijd zodat interval opnieuw start
+    leitnerData.opdrachtReviewTimes[opdrachtId] = new Date().toISOString();
+    this.saveLeitnerData(leitnerData);
+  }
+
+  // Versnel/vertraag volgende herhaling met delta minuten (positief = later, negatief = eerder)
+  adjustVolgendeReview(opdrachtId: string, deltaMinuten: number): void {
+    const leitnerData = this.loadLeitnerData();
+    const now = Date.now();
+    const orig = new Date(leitnerData.opdrachtReviewTimes[opdrachtId] || new Date().toISOString()).getTime();
+    const adjustedStart = new Date(Math.max(orig + deltaMinuten * 60000, now - 5 * 60000)).toISOString();
+    leitnerData.opdrachtReviewTimes[opdrachtId] = adjustedStart;
+    this.saveLeitnerData(leitnerData);
+  }
+
+  // Bepaal informatieve tekst voor volgende herhaling t.o.v. nu
+  getVolgendeHerhalingTekst(opdrachtId: string): string {
+    const leitnerData = this.loadLeitnerData();
+    const boxId = this.getOpdrachtBoxId(opdrachtId);
+    if (boxId === null) return 'onbekend moment';
+    const last = new Date(leitnerData.opdrachtReviewTimes[opdrachtId] || new Date().toISOString()).getTime();
+    const intervalMin = leitnerData.boxIntervallen[boxId] || 10;
+    const dueMs = last + intervalMin * 60000;
+    const diffMs = dueMs - Date.now();
+    if (diffMs <= 0) return 'nu beschikbaar';
+    const mins = Math.round(diffMs / 60000);
+    if (mins < 60) return `over ${mins} min`;
+    const hours = Math.round(mins / 60);
+    if (hours < 48) return `over ${hours} uur`;
+    const days = Math.round(hours / 24);
+    return `over ${days} dagen`;
+  }
+
+  getBoxIntervalMin(boxId: number): number {
+    const leitnerData = this.loadLeitnerData();
+    const idx = Math.max(0, Math.min(7, boxId));
+    const val = leitnerData.boxIntervallen[idx];
+    return typeof val === 'number' && isFinite(val) ? val : 10;
+  }
+
+  // Pinnen voor focus-sessie: eenvoudige lijst in localStorage
+  private getPinnedKey(): string { return `${LEER_DATA_KEYS.LEITNER_DATA}_PINNED_${this.spelerId}`; }
+  addPinnedOpdracht(opdrachtId: string): void {
+    try {
+      const key = this.getPinnedKey();
+      const lijst = JSON.parse(localStorage.getItem(key) || '[]');
+      if (!lijst.includes(opdrachtId)) lijst.push(opdrachtId);
+      localStorage.setItem(key, JSON.stringify(lijst));
+    } catch {}
+  }
+  removePinnedOpdracht(opdrachtId: string): void {
+    try {
+      const key = this.getPinnedKey();
+      const lijst = JSON.parse(localStorage.getItem(key) || '[]');
+      const nieuw = lijst.filter((id: string) => id !== opdrachtId);
+      localStorage.setItem(key, JSON.stringify(nieuw));
+    } catch {}
+  }
+  isPinnedOpdracht(opdrachtId: string): boolean {
+    try {
+      const key = this.getPinnedKey();
+      const lijst = JSON.parse(localStorage.getItem(key) || '[]');
+      return lijst.includes(opdrachtId);
+    } catch { return false; }
   }
   
   checkPromotieAchievement(bereikteBox: number, leitnerData: LeitnerData): LeitnerAchievement | null {

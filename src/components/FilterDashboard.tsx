@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { Opdracht } from '../data/types';
 import { opdrachtTypeIconen } from '../data/constants';
 import './FilterDashboard.css';
+import { InfoTooltip } from './ui/InfoTooltip';
 
 interface FilterDashboardProps {
   filters: {
@@ -95,20 +96,22 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 <span className="filter-label">Bron:</span>
               </div>
               <div className="filter-icon-group">
-                <span
-                  className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
-                  title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
-                  onClick={() => handleBronToggle('systeem')}
-                >
-                  📖
-                </span>
-                <span
-                  className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
-                  title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
-                  onClick={() => handleBronToggle('gebruiker')}
-                >
-                  👨‍💼
-                </span>
+                <InfoTooltip asChild content={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}>
+                  <span
+                    className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                    onClick={() => handleBronToggle('systeem')}
+                  >
+                    📖
+                  </span>
+                </InfoTooltip>
+                <InfoTooltip asChild content={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}>
+                  <span
+                    className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                    onClick={() => handleBronToggle('gebruiker')}
+                  >
+                    👨‍💼
+                  </span>
+                </InfoTooltip>
               </div>
             </div>
 
@@ -123,14 +126,14 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                   const titleText = `${type}: ${count} opdr.`;
 
                   return (
-                    <span
-                      key={type}
-                      className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
-                      title={titleText}
-                      onClick={() => handleTypeToggle(type)}
-                    >
-                      {opdrachtTypeIconen[type] || '❓'}
-                    </span>
+                    <InfoTooltip asChild content={titleText} key={type}>
+                      <span
+                        className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                        onClick={() => handleTypeToggle(type)}
+                      >
+                        {opdrachtTypeIconen[type] || '❓'}
+                      </span>
+                    </InfoTooltip>
                   );
                 })}
               </div>

@@ -3,6 +3,7 @@ import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen } from '../data/constants';
+import { InfoTooltip } from './ui/InfoTooltip';
 
 
 // Toast melding component
@@ -36,7 +37,11 @@ const getBronIconen = (opdrachten: Opdracht[], hoofd: string, sub: string) => {
       if (bronnen.has('systeem')) iconen += '📖';
     if (bronnen.has('gebruiker')) iconen += '👨‍💼';
   
-  return <span className="categorie-bron-iconen" title={`Bronnen: ${Array.from(bronnen).join(', ')}`}>{iconen}</span>;
+  return (
+    <InfoTooltip asChild content={`Bronnen: ${Array.from(bronnen).join(', ')}`}>
+      <span className="categorie-bron-iconen">{iconen}</span>
+    </InfoTooltip>
+  );
 };
 
 interface OpgeslagenCategorieSelectie {
@@ -594,20 +599,22 @@ export const CategorieSelectieModal = ({
             <div className="filter-groep">
               <span className="filter-label">Bron:</span>
               <div className="filter-iconen">
-                <span
-                  className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
-                  title={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}
-                  onClick={() => handleBronToggle('systeem')}
-                >
-                  📖
-                </span>
-                <span
-                  className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
-                  title={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}
-                  onClick={() => handleBronToggle('gebruiker')}
-                >
-                  👨‍💼
-                </span>
+                <InfoTooltip asChild content={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}>
+                  <span
+                    className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                    onClick={() => handleBronToggle('systeem')}
+                  >
+                    📖
+                  </span>
+                </InfoTooltip>
+                <InfoTooltip asChild content={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}>
+                  <span
+                    className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                    onClick={() => handleBronToggle('gebruiker')}
+                  >
+                    👨‍💼
+                  </span>
+                </InfoTooltip>
               </div>
             </div>
             <div className="filter-groep">
@@ -616,14 +623,14 @@ export const CategorieSelectieModal = ({
                 {alleOpdrachtTypes.map(type => {
                   const count = opdrachtenPerType[type] || 0;
                   return (
-                    <span
-                      key={type}
-                      className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
-                      title={`${type}: ${count} opdr.`}
-                      onClick={() => handleTypeToggle(type)}
-                    >
-                      {opdrachtTypeIconen[type] || '❓'}
-                    </span>
+                    <InfoTooltip asChild content={`${type}: ${count} opdr.`} key={type}>
+                      <span
+                        className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                        onClick={() => handleTypeToggle(type)}
+                      >
+                        {opdrachtTypeIconen[type] || '❓'}
+                      </span>
+                    </InfoTooltip>
                   );
                 })}
               </div>

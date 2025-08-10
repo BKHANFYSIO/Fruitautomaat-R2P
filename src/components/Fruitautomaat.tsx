@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/types';
 import Rol from './Rol';
 import { Hendel } from './Hendel'; // Importeer Hendel
@@ -177,6 +178,101 @@ export const Fruitautomaat = ({
             <p className="pause-footer-uitleg">
               Deze opdracht komt niet terug tot de pauze wordt gestopt
             </p>
+
+            {/* Leitner context & acties */}
+            {(() => {
+              const mgr = getLeerDataManager();
+              const op = (huidigeOpdracht || laatsteBeoordeeldeOpdracht)?.opdracht;
+              if (!op) return null;
+              const hoofdcategorie = op.Hoofdcategorie || 'Overig';
+              const opdrachtId = `${hoofdcategorie}_${op.Categorie}_${op.Opdracht.substring(0, 20)}`;
+              const boxId = mgr.getOpdrachtBoxId(opdrachtId);
+              if (boxId === null) return null;
+              const volgende = mgr.getVolgendeHerhalingTekst(opdrachtId);
+
+              const kanNaarB0 = boxId >= 1;
+              const kanNaarB1 = boxId >= 2;
+              const intervalMin = mgr.getBoxIntervalMin(boxId);
+              const allowAdjust = boxId >= 2; // pas vanaf B2 zinvol
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+                  <div style={{ color: '#e0e0e0', fontSize: 14 }}>
+                    Box: B{boxId} • Volgende herhaling: {volgende}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {kanNaarB0 && (
+                      <button
+                        className="pause-opdracht-footer-knop"
+                        onClick={() => { 
+                          mgr.setOpdrachtBox(opdrachtId, 0); 
+                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 0 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 3000 } }));
+                        }}
+                        title="Zet terug naar Box 0"
+                      >
+                        ↩️ Zet naar Box 0
+                      </button>
+                    )}
+                    {kanNaarB1 && (
+                      <button
+                        className="pause-opdracht-footer-knop"
+                        onClick={() => { 
+                          mgr.setOpdrachtBox(opdrachtId, 1);
+                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 1 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 3000 } }));
+                        }}
+                        title="Zet terug naar Box 1"
+                      >
+                        ↩️ Zet naar Box 1
+                      </button>
+                    )}
+                    {allowAdjust && (
+                      <button
+                        className="pause-opdracht-footer-knop"
+                        onClick={() => { 
+                          mgr.adjustVolgendeReview(opdrachtId, -Math.round(intervalMin / 2)); 
+                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling vervroegd • ${nextTxt}`, type: 'succes', timeoutMs: 2500 } }));
+                        }}
+                        title="Versnel volgende herhaling (ongeveer halve interval eerder)"
+                      >
+                        ⏩ Herhaling sneller
+                      </button>
+                    )}
+                    {allowAdjust && (
+                      <button
+                        className="pause-opdracht-footer-knop"
+                        onClick={() => { 
+                          mgr.adjustVolgendeReview(opdrachtId, Math.round(intervalMin / 2)); 
+                          const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling later gepland • ${nextTxt}`, type: 'succes', timeoutMs: 2500 } }));
+                        }}
+                        title="Vertraag volgende herhaling (ongeveer halve interval later)"
+                      >
+                        ⏸️ Herhaling later
+                      </button>
+                    )}
+                    <button
+                      className="pause-opdracht-footer-knop"
+                      onClick={() => {
+                        const pinned = mgr.isPinnedOpdracht(opdrachtId);
+                        if (pinned) { 
+                          mgr.removePinnedOpdracht(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht ont‑pinned voor focus.', type: 'succes', timeoutMs: 2000 } }));
+                        } else { 
+                          mgr.addPinnedOpdracht(opdrachtId);
+                          window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Opdracht pinned voor focus-sessie.', type: 'succes', timeoutMs: 2000 } }));
+                        }
+                      }}
+                      title="Pin voor focus-sessie (nogmaals oefenen)"
+                    >
+                      📌 Pin voor focus
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
