@@ -33,9 +33,9 @@ const LeitnerTab: React.FC<LeitnerTabProps> = ({
           <p><strong>Vandaag beschikbaar:</strong> {leitnerStats.vandaagBeschikbaar}</p>
         </div>
         
-        <div className="leitner-box-overzicht">
-          <div className="leitner-box-header">
-            <h4>📦 Box Verdeling</h4>
+          <div className="leitner-box-overzicht">
+            <div className="leitner-box-header">
+              <h4>📦 Boxen Overzicht</h4>
             <button className="info-knop" onClick={() => setShowLeitnerUitleg(!showLeitnerUitleg)}>
               ℹ️ Hoe het werkt?
             </button>
@@ -72,7 +72,7 @@ const LeitnerTab: React.FC<LeitnerTabProps> = ({
 
         {leitnerBoxData && (
           <div className="chart-sectie">
-            <h4>📊 Box Verdeling</h4>
+            <h4>📊 Box Verdeling (Grafiek)</h4>
             <div className="chart-container">
               <Bar data={leitnerBoxData} options={barChartConfig} />
             </div>

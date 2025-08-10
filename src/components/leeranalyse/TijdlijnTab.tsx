@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
-import type { TabProps, TijdsRange, GrafiekType, FocusMetric, ActiviteitData, PrestatieData, FocusData, SessieKwaliteitData, TopCategorieData, LeerpatronenData, SessiePatronenData, LeitnerBoxHerhalingenData, StreakData } from './LeeranalyseTypes';
+import type { TabProps, TijdsRange, GrafiekType, FocusMetric, ActiviteitData, PrestatieData, FocusData, SessieKwaliteitData, TopCategorieData, LeerpatronenData, SessiePatronenData, LeitnerBoxHerhalingenData } from './LeeranalyseTypes';
 import { generateChartLabels } from './LeeranalyseUtils';
 import { lineChartConfig, barChartConfig } from '../../utils/chartConfigs';
 import { getLeerDataManager } from '../../data/leerDataManager';
@@ -19,7 +19,6 @@ interface TijdlijnTabProps extends TabProps {
   leerpatronenData: LeerpatronenData[] | null;
   sessiePatronenData: SessiePatronenData[] | null;
   leitnerBoxHerhalingenData: LeitnerBoxHerhalingenData[] | null;
-  streakData: StreakData | null;
 }
 
 const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
@@ -32,7 +31,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   leerpatronenData,
   sessiePatronenData,
   leitnerBoxHerhalingenData,
-  streakData
+  
 }) => {
   // State voor tijdsranges
   const [activiteitTijdsRange, setActiviteitTijdsRange] = useState<TijdsRange>('week');
@@ -854,35 +853,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
         )}
       </div>
 
-      {/* Streak en Consistentie */}
-      <div className="tijdlijn-sectie">
-        <h4>🔥 Streak & Consistentie</h4>
-        <p className="grafiek-uitleg">
-          Hier zie je je leerconsistentie. Streaks motiveren om dagelijks te oefenen 
-          en helpen bij het opbouwen van duurzame leergewoontes.
-        </p>
-        {streakData ? (
-          <div className="streak-info">
-            <div className="streak-card">
-              <h5>Huidige Streak</h5>
-              <p className="streak-waarde">{streakData.huidigeStreak} dagen</p>
-            </div>
-            <div className="streak-card">
-              <h5>Langste Streak</h5>
-              <p className="streak-waarde">{streakData.langsteStreak} dagen</p>
-            </div>
-            <div className="streak-card">
-              <h5>Actieve Dagen</h5>
-              <p className="streak-waarde">{streakData.actieveDagen.length} totaal</p>
-            </div>
-          </div>
-        ) : (
-          <div className="geen-data-melding">
-            <p>🔥 Nog geen streak data beschikbaar.</p>
-            <p>Speel dagelijks om je consistentie te tracken!</p>
-          </div>
-        )}
-      </div>
+      
 
       {/* Focus Analyse */}
       <div className="tijdlijn-sectie">
@@ -1722,7 +1693,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       </div>
 
       {/* Leitner Box Herhalingen */}
-      <div className="tijdlijn-sectie">
+      <div className="tijdlijn-sectie sectie-leitner-box">
         <div className="dagelijkse-activiteit-header">
           <h4>📚 Leitner Box Herhalingen</h4>
           {renderTijdsRangeSelector(leitnerBoxHerhalingenTijdsRange, setLeitnerBoxHerhalingenTijdsRange, 'Tijdsperiode', leitnerBoxHerhalingenDataView)}

@@ -84,10 +84,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     return leerDataManager.getLeitnerBoxHerhalingenTijdlijnData(30);
   }, [leerData, leerDataManager]);
 
-  const streakData = useMemo(() => {
-    if (!leerData) return null;
-    return leerDataManager.getStreakData();
-  }, [leerData, leerDataManager]);
+  // Streaks worden alleen nog in Overzicht getoond; geen aparte sectie meer in Tijdlijn
 
   useEffect(() => {
     if (isOpen) {
@@ -608,7 +605,6 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                   leerpatronenData={leerpatronenData}
                   sessiePatronenData={sessiePatronenData}
                   leitnerBoxHerhalingenData={leitnerBoxHerhalingenData}
-                  streakData={streakData}
                   achievements={achievements} 
                   leitnerData={leitnerData}
                   achievementDefs={achievementDefs}

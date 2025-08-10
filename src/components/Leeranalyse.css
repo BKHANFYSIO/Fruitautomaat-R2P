@@ -106,6 +106,23 @@
   padding-right: 0 !important;
 }
 
+/* Capture-mode: lichte kaartachtergrond en donkere titels voor leesbaarheid in PDF */
+[data-capture-mode='1'] .tijdlijn-sectie {
+  background: #f8f9fb !important;
+  border-color: #e5e7eb !important;
+}
+[data-capture-mode='1'] .tijdlijn-sectie h4,
+[data-capture-mode='1'] .grafiek-uitleg,
+[data-capture-mode='1'] .tijdsrange-selector label,
+[data-capture-mode='1'] .range-btn,
+[data-capture-mode='1'] .type-btn {
+  color: #111827 !important; /* bijna zwart */
+}
+[data-capture-mode='1'] .range-btn.active,
+[data-capture-mode='1'] .type-btn.active {
+  color: #ffffff !important;
+}
+
 .geen-data {
   text-align: center;
   padding: 40px;
