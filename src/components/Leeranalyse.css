@@ -95,6 +95,17 @@
   padding: 0 15px 20px 0; /* Ruimte voor scrollbar en onderkant */
 }
 
+/* Capture-mode: maak alles volledig zichtbaar zodat html2canvas volledige hoogte kan capteren */
+[data-capture-mode='1'] .leeranalyse-modal {
+  max-height: none !important;
+  height: auto !important;
+}
+
+[data-capture-mode='1'] .leeranalyse-content {
+  overflow: visible !important;
+  padding-right: 0 !important;
+}
+
 .geen-data {
   text-align: center;
   padding: 40px;
