@@ -1534,6 +1534,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             onPauseOpdracht={handlePauseOpdracht}
             isBeoordelingDirect={isBeoordelingDirect}
             isKaleModusActief={isKaleModusActiefGlobal}
+            aantalBeurtenGespeeld={aantalBeurtenGespeeld}
           welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() ? (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>

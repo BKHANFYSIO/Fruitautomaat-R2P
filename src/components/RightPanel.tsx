@@ -45,6 +45,7 @@ type Props = {
   opgespaardeBonusPunten: number;
   onBonusRondeVoltooid: (geslaagd: boolean) => void;
   onKopOfMuntVoltooid: () => void;
+  aantalBeurtenGespeeld: number;
 };
 
 export const RightPanel: React.FC<Props> = ({
@@ -83,6 +84,7 @@ export const RightPanel: React.FC<Props> = ({
   opgespaardeBonusPunten,
   onBonusRondeVoltooid,
   onKopOfMuntVoltooid,
+  aantalBeurtenGespeeld,
 }) => {
   return (
     <main className="right-panel">
@@ -136,6 +138,8 @@ export const RightPanel: React.FC<Props> = ({
             opgespaardeBonusPunten={opgespaardeBonusPunten}
             onBonusRondeVoltooid={onBonusRondeVoltooid}
             onKopOfMuntVoltooid={onKopOfMuntVoltooid}
+            isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+            aantalBeurtenGespeeld={aantalBeurtenGespeeld}
           />
         )}
       </Fruitautomaat>
