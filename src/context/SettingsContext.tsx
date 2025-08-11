@@ -64,8 +64,14 @@ interface SettingsContextType {
   // Learning mode settings
   isSerieuzeLeerModusActief: boolean;
   setIsSerieuzeLeerModusActief: (actief: boolean) => void;
+  // Historisch: globale toggle (niet meer gebruikt voor UI)
   isLeerFeedbackActief: boolean;
   setIsLeerFeedbackActief: (actief: boolean) => void;
+  // Nieuw: per-modus leerstrategietips
+  isLeerstrategietipsActiefVrijeLeermodus: boolean;
+  setIsLeerstrategietipsActiefVrijeLeermodus: (actief: boolean) => void;
+  isLeerstrategietipsActiefLeitnerLeermodus: boolean;
+  setIsLeerstrategietipsActiefLeitnerLeermodus: (actief: boolean) => void;
   leermodusType: 'normaal' | 'leitner';
   setLeermodusType: (type: 'normaal' | 'leitner') => void;
   maxNewLeitnerQuestionsPerDay: number;
@@ -210,6 +216,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Learning mode settings
   const [isSerieuzeLeerModusActief, setIsSerieuzeLeerModusActief] = useState(() => loadFromStorage('isSerieuzeLeerModusActief', false));
   const [isLeerFeedbackActief, setIsLeerFeedbackActief] = useState(() => loadFromStorage('isLeerFeedbackActief', true));
+  // Per-modus toggles (migreren vanaf oude globale waarde als default)
+  const [isLeerstrategietipsActiefVrijeLeermodus, setIsLeerstrategietipsActiefVrijeLeermodus] = useState(() =>
+    loadFromStorage('isLeerstrategietipsActiefVrijeLeermodus', loadFromStorage('isLeerFeedbackActief', true))
+  );
+  const [isLeerstrategietipsActiefLeitnerLeermodus, setIsLeerstrategietipsActiefLeitnerLeermodus] = useState(() =>
+    loadFromStorage('isLeerstrategietipsActiefLeitnerLeermodus', loadFromStorage('isLeerFeedbackActief', true))
+  );
   const [leermodusType, setLeermodusType] = useState<'normaal' | 'leitner'>(() => loadFromStorage('leermodusType', 'leitner'));
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
@@ -302,6 +315,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   useEffect(() => {
     saveToStorage('isLeerFeedbackActief', isLeerFeedbackActief);
   }, [isLeerFeedbackActief]);
+  useEffect(() => {
+    saveToStorage('isLeerstrategietipsActiefVrijeLeermodus', isLeerstrategietipsActiefVrijeLeermodus);
+  }, [isLeerstrategietipsActiefVrijeLeermodus]);
+  useEffect(() => {
+    saveToStorage('isLeerstrategietipsActiefLeitnerLeermodus', isLeerstrategietipsActiefLeitnerLeermodus);
+  }, [isLeerstrategietipsActiefLeitnerLeermodus]);
 
   useEffect(() => {
     saveToStorage('leermodusType', leermodusType);
@@ -395,6 +414,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsSerieuzeLeerModusActief,
     isLeerFeedbackActief,
     setIsLeerFeedbackActief,
+      isLeerstrategietipsActiefVrijeLeermodus,
+      setIsLeerstrategietipsActiefVrijeLeermodus,
+      isLeerstrategietipsActiefLeitnerLeermodus,
+      setIsLeerstrategietipsActiefLeitnerLeermodus,
     leermodusType,
     setLeermodusType,
     maxNewLeitnerQuestionsPerDay,

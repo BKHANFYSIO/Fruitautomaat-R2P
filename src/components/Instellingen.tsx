@@ -77,8 +77,12 @@ export const Instellingen = React.memo(({
     setForceerMobieleWeergave,
     // isSerieuzeLeerModusActief, // Niet meer gebruikt
     setIsSerieuzeLeerModusActief,
-    isLeerFeedbackActief,
-    setIsLeerFeedbackActief,
+    isLeerFeedbackActief, // legacy
+    setIsLeerFeedbackActief, // legacy
+    isLeerstrategietipsActiefVrijeLeermodus,
+    setIsLeerstrategietipsActiefVrijeLeermodus,
+    isLeerstrategietipsActiefLeitnerLeermodus,
+    setIsLeerstrategietipsActiefLeitnerLeermodus,
     leermodusType,
     setLeermodusType,
     isLokaleBonusOpslagActief,
@@ -814,8 +818,8 @@ export const Instellingen = React.memo(({
                   <label>
                     <input
                       type="checkbox"
-                      checked={isLeerFeedbackActief}
-                      onChange={(e) => setIsLeerFeedbackActief(e.target.checked)}
+                      checked={isLeerstrategietipsActiefVrijeLeermodus}
+                      onChange={(e) => setIsLeerstrategietipsActiefVrijeLeermodus(e.target.checked)}
                       disabled={isKaleModusActiefVrijeLeermodus}
                     />
                     Leerstrategietips tonen (ook in Leitner)
@@ -915,6 +919,23 @@ export const Instellingen = React.memo(({
 
                 <div className="settings-group">
                   <h4>Leitner Leermodus</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isLeerstrategietipsActiefLeitnerLeermodus}
+                      onChange={(e) => setIsLeerstrategietipsActiefLeitnerLeermodus(e.target.checked)}
+                      disabled={isKaleModusActiefLeitnerLeermodus}
+                    />
+                    Leerstrategietips tonen
+                    {isKaleModusActiefLeitnerLeermodus && (
+                      <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
+                        (uitgeschakeld in geen fruitrol animatie)
+                      </span>
+                    )}
+                  </label>
+                  <p className="setting-description">
+                    Toont korte, motiverende tips over effectieve leerstrategieën tijdens het oefenen met Leitner. Standaard aan.
+                  </p>
                   <p className="setting-description">
                     Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
                   </p>
