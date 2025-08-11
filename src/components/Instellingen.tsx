@@ -822,7 +822,7 @@ export const Instellingen = React.memo(({
                       onChange={(e) => setIsLeerstrategietipsActiefVrijeLeermodus(e.target.checked)}
                       disabled={isKaleModusActiefVrijeLeermodus}
                     />
-                    Leerstrategietips tonen (ook in Leitner)
+                    Leerstrategietips tonen
                     {isKaleModusActiefVrijeLeermodus && (
                       <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
                         (uitgeschakeld in geen fruitrol animatie)
@@ -830,7 +830,7 @@ export const Instellingen = React.memo(({
                     )}
                   </label>
                   <p className="setting-description">
-                    Toont korte, motiverende tips over effectieve leerstrategieën (zoals ophalen uit je geheugen, focus/pin, spaced repetition) tijdens het spelen in de serieuze leermodi: <strong>Vrije Leermodus</strong> en <strong>Leitner Leermodus</strong>. Standaard aan.
+                    Toont korte, motiverende tips over effectieve leerstrategieën (zoals ophalen uit je geheugen, focus/pin, spaced repetition) tijdens het spelen in de <strong>Vrije Leermodus</strong>. Standaard aan.
                     <br />
                     <em>Opmerking:</em> In <strong>Geen fruitrol animatie</strong> (alleen Vrije Leermodus) worden deze tips automatisch onderdrukt om afleiding te voorkomen.
                     {isKaleModusActiefVrijeLeermodus && (
