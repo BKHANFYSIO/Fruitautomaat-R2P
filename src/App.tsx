@@ -220,7 +220,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Dev mode state
   // const [isDevMode, setIsDevMode] = useState(false);
   const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
-  const [forceResult] = useState<(string | null)[]>([null, null, null]);
+  const [forceResult, setForceResult] = useState<(string | null)[]>([null, null, null]);
   const [isBeoordelingDirect] = useState(false);
 
   const { width } = useWindowSize();
@@ -1455,7 +1455,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           isOpen={isDevPanelOpen}
           onClose={() => setIsDevPanelOpen(false)}
           forceResult={forceResult}
-          setForceResult={() => {}}
+          setForceResult={setForceResult}
           simuleerVoltooiing={handleSimuleerVoltooiing}
           forcePromotie={handleForcePromotie}
           resetLeitner={handleResetLeitner}
