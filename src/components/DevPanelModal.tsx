@@ -452,6 +452,30 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
           </DevCard>
 
           <DevCard title="Tips-overzicht" subtitle="Snel inzicht in alle tips en drempels">
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  const w = window.open('', 'tips_overzicht_popup', 'width=700,height=800');
+                  if (w) {
+                    const style = '<style>body{font-family:system-ui,Segoe UI,Helvetica,Arial,sans-serif;background:#111;color:#ddd;padding:16px;} h3{margin-top:16px;} ul{max-height:240px;overflow:auto;} li{font-size:12px;margin:4px 0}</style>';
+                    const renderList = (title: string, items: string[]) => `<h3>${title} (${items.length})</h3><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+                    const combo = LEER_FEEDBACK_DATABASE.map(t=>`${t.combinatie}: ${t.bericht}`);
+                    const modus = MODE_TIPS.map(t=>`[${t.modes.join('/')}] ${t.tekst}`);
+                    const analyse = ANALYSE_TIPS.map(t=>`[${t.modes.join('/')}] ${t.tekst}`);
+                    const algemeen = ALGEMENE_TIPS.map(t=>t.tekst);
+                    w.document.write(`<!doctype html><html><head>${style}<title>Tips-overzicht</title></head><body>`+
+                      `<h2>Tips-overzicht</h2>`+
+                      renderList('Combinatie-tips', combo)+
+                      renderList('Modus-tips', modus)+
+                      renderList('Analyse-tips (vast)', analyse)+
+                      renderList('Algemene tips', algemeen)+
+                      `<p style="font-size:12px;opacity:.8">Dynamische analyse-tips (coverage/mastery/avgBox/tijdslijn) hangen af van data; drempels in src/data/tipsConfig.ts.</p>`+
+                      `</body></html>`);
+                    w.document.close();
+                  }
+                }}
+              >Open in popup</button>
+            </div>
             <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
               <div style={{ minWidth: 260 }}>
                 <strong>Combinatie-tips</strong>

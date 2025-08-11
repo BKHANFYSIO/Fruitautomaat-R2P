@@ -375,7 +375,7 @@ const markShown = (tipId: string, ctx: TipSelectieContext) => {
 export const getHybridTipRich = (
   combinatie: string | undefined,
   ctx: TipSelectieContext
-): { tekst: string; cta?: TipMeta['cta'] } | null => {
+): { tekst: string; cta?: TipMeta['cta']; bron: TipBron } | null => {
   // Bouw buckets
   const comboTips: TipMeta[] = [];
   if (combinatie) {
@@ -520,7 +520,7 @@ export const getHybridTipRich = (
 
   const pick = chosen.items[Math.floor(Math.random() * chosen.items.length)];
   markShown(pick.id, ctx);
-  return { tekst: pick.tekst, cta: pick.cta };
+  return { tekst: pick.tekst, cta: pick.cta, bron: pick.bron };
 };
 
 // Backwards compatible: tekst-only versie

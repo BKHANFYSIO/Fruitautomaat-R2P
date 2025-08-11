@@ -1104,6 +1104,15 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             } else {
               showNotificatie(tipText, 'succes', 8000);
             }
+            // Optioneel: toon link in footer wanneer een leerstrategie-tip 3x gezien is in deze sessie
+            if (rich?.bron === 'modus') {
+              const key = 'tips_strategie_herhaling_sessie';
+              const count = Number(sessionStorage.getItem(key) || '0') + 1;
+              sessionStorage.setItem(key, String(count));
+              if (count === 3) {
+                window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Meer weten over leerstrategieën? Klik hieronder op “Leerstrategieën”.', type: 'succes', timeoutMs: 6000 } }));
+              }
+            }
             setTipsShownThisSession(prev => prev + 1);
             setEligibleWinsSinceLastTip(0);
           } else {
