@@ -114,12 +114,15 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
                   ? `🔄 Herhaling (uit Box ${huidigeOpdracht.box})` 
                   : '✨ Nieuw (start in leersysteem)'}
               </span>
-              {spinAnalyse.beschrijving && spinAnalyse.beschrijving !== 'Geen combinatie.' && spinAnalyse.beschrijving !== 'Blijf leren en groeien!' && (
-                <>
-                  {' • '}
-                  <span className="bonus-punten-animatie">{spinAnalyse.beschrijving}</span>
-                </>
-              )}
+              {' • '}
+              <button
+                onClick={() => window.dispatchEvent(new Event('openLeerstrategien'))}
+                className="link-button"
+                style={{ padding: 0, background: 'none', border: 'none', color: '#4ea3ff', cursor: 'pointer' }}
+                title="Bekijk uitleg over leerstrategieën"
+              >
+                Leerstrategieën
+              </button>
             </>
           ) : (
             <>
