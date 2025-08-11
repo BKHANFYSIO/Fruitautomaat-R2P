@@ -5,6 +5,17 @@ export interface TipSelectieContext {
   sessionId?: string;
   spinsSoFar?: number;
   selectedCategoriesCount?: number;
+  // Analyse snapshot (optioneel). Als niet aanwezig, gelden analyse-voorwaarden niet.
+  streakDays?: number;
+  hoofdCategorieCount?: number;
+  subCategorieCount?: number;
+  uniqueOpdrachtenCount?: number;
+  sessiesCount?: number;
+  speeltijdMinToday?: number;
+  scoreTrendWeek?: 'stijging' | 'daling';
+  leitnerOverdueCount?: number;
+  leitnerPromotionsTotal?: number;
+  leitnerBox7Count?: number;
 }
 
 export interface LeerFeedback {
@@ -187,6 +198,19 @@ export interface TipMeta {
   combinaties?: string[]; // alleen voor bron: 'combinatie'
   minSpins?: number; // eenvoudige voorwaarde
   minCategories?: number; // eenvoudige voorwaarde
+  // Analyse-gekoppelde voorwaarden
+  streakIn?: number[]; // toon bij specifieke streak mijlpalen
+  minHoofdcat?: number;
+  minSubcat?: number;
+  minUniekeOpdrachten?: number;
+  minSessies?: number;
+  minSpeeltijdMin?: number; // speeltijd in minuten
+  scoreVerbetering?: 'stijging' | 'daling';
+  leitnerOverdueMin?: number;
+  leitnerPromotiesMin?: number;
+  leitnerBox7Min?: number;
+  // CTA naar leeranalyse modal
+  cta?: { label: string; event: 'openLeeranalyse'; targetTab?: 'overzicht'|'categorieen'|'achievements'|'leitner'|'tijdlijn' };
 }
 
 const MODE_TIPS: TipMeta[] = [
@@ -222,6 +246,26 @@ const ANALYSE_TIPS: TipMeta[] = [
     minCategories: 2,
     minSpins: 3
   },
+  // Streak milestones
+  { id: 'analyse_streak_2', bron: 'analyse', tekst: 'Dagelijks leren werkt. Mooi: 2 dagen achtereen! Maak je streak nog langer.', modes: ['beide'], streakIn: [2], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_streak_4', bron: 'analyse', tekst: 'Knap: 4 dagen op rij! Blijf het kort en regelmatig doen.', modes: ['beide'], streakIn: [4], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_streak_10', bron: 'analyse', tekst: 'Top: 10 dagen streak! Dit is precies wat langetermijnleren sterk maakt.', modes: ['beide'], streakIn: [10], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_streak_20', bron: 'analyse', tekst: 'Fantastisch: 20 dagen streak! Je bouwt echt duurzame kennis op.', modes: ['beide'], streakIn: [20], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  // Categorieën breedte
+  { id: 'analyse_hoofdcats_3', bron: 'analyse', tekst: 'Je oefent meerdere hoofdcategorieën. Variatie helpt om kennis flexibeler op te slaan.', modes: ['beide'], minHoofdcat: 3, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_hoofdcats_6', bron: 'analyse', tekst: 'Breed aan het leren! Je pakt nu veel hoofdcategorieën mee.', modes: ['beide'], minHoofdcat: 6, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  // Unieke opdrachten
+  { id: 'analyse_uniek_50', bron: 'analyse', tekst: 'Al 50+ unieke opdrachten gedaan. Mooie basis aan het bouwen.', modes: ['beide'], minUniekeOpdrachten: 50, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_uniek_100', bron: 'analyse', tekst: '100+ unieke opdrachten! Dat is een brede fundering.', modes: ['beide'], minUniekeOpdrachten: 100, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  // Sessies
+  { id: 'analyse_sessies_3', bron: 'analyse', tekst: 'Regelmaat wint: 3+ sessies. Korte momenten, vaak herhalen werkt.', modes: ['beide'], minSessies: 3, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  { id: 'analyse_sessies_5', bron: 'analyse', tekst: 'Mooi ritme: 5+ sessies. Hou dit vol voor duurzame kennis.', modes: ['beide'], minSessies: 5, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  // Speeltijd
+  { id: 'analyse_speeltijd_30m', bron: 'analyse', tekst: 'Vandaag veel geoefend (30m+). Neem ook pauzes: dat helpt onthouden.', modes: ['beide'], minSpeeltijdMin: 30, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'overzicht' } },
+  // Leitner specifiek
+  { id: 'analyse_overdue', bron: 'analyse', tekst: 'Je hebt herhalingen die klaarstaan. Even inhalen geeft een boost.', modes: ['leitner'], leitnerOverdueMin: 1, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' } },
+  { id: 'analyse_promoties', bron: 'analyse', tekst: 'Net promoties in Leitner? Plan je volgende herhaling en bouw verder.', modes: ['leitner'], leitnerPromotiesMin: 5, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' } },
+  { id: 'analyse_box7', bron: 'analyse', tekst: 'Box 7 bereikt: langetermijngeheugen groeit. Blijf af en toe ophalen.', modes: ['leitner'], leitnerBox7Min: 1, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' } },
 ];
 
 const ALGEMENE_TIPS: TipMeta[] = [
@@ -273,6 +317,37 @@ const isEligibleBasic = (tip: TipMeta, ctx: TipSelectieContext): boolean => {
   // Voorwaarden
   if (typeof tip.minSpins === 'number' && (ctx.spinsSoFar || 0) < tip.minSpins) return false;
   if (typeof tip.minCategories === 'number' && (ctx.selectedCategoriesCount || 0) < tip.minCategories) return false;
+  // Analyse-voorwaarden (alleen valideren als metric aanwezig is in ctx; anders niet tonen)
+  if (tip.streakIn) {
+    if (typeof ctx.streakDays !== 'number' || !tip.streakIn.includes(ctx.streakDays)) return false;
+  }
+  if (typeof tip.minHoofdcat === 'number') {
+    if (typeof ctx.hoofdCategorieCount !== 'number' || ctx.hoofdCategorieCount < tip.minHoofdcat) return false;
+  }
+  if (typeof tip.minSubcat === 'number') {
+    if (typeof ctx.subCategorieCount !== 'number' || ctx.subCategorieCount < tip.minSubcat) return false;
+  }
+  if (typeof tip.minUniekeOpdrachten === 'number') {
+    if (typeof ctx.uniqueOpdrachtenCount !== 'number' || ctx.uniqueOpdrachtenCount < tip.minUniekeOpdrachten) return false;
+  }
+  if (typeof tip.minSessies === 'number') {
+    if (typeof ctx.sessiesCount !== 'number' || ctx.sessiesCount < tip.minSessies) return false;
+  }
+  if (typeof tip.minSpeeltijdMin === 'number') {
+    if (typeof ctx.speeltijdMinToday !== 'number' || ctx.speeltijdMinToday < tip.minSpeeltijdMin) return false;
+  }
+  if (typeof tip.scoreVerbetering === 'string') {
+    if (ctx.scoreTrendWeek !== tip.scoreVerbetering) return false;
+  }
+  if (typeof tip.leitnerOverdueMin === 'number') {
+    if (typeof ctx.leitnerOverdueCount !== 'number' || ctx.leitnerOverdueCount < tip.leitnerOverdueMin) return false;
+  }
+  if (typeof tip.leitnerPromotiesMin === 'number') {
+    if (typeof ctx.leitnerPromotionsTotal !== 'number' || ctx.leitnerPromotionsTotal < tip.leitnerPromotiesMin) return false;
+  }
+  if (typeof tip.leitnerBox7Min === 'number') {
+    if (typeof ctx.leitnerBox7Count !== 'number' || ctx.leitnerBox7Count < tip.leitnerBox7Min) return false;
+  }
   return true;
 };
 
@@ -290,10 +365,10 @@ const markShown = (tipId: string, ctx: TipSelectieContext) => {
 };
 
 // Gewogen selectie uit buckets: combinatie / modus / analyse / algemeen
-export const getHybridTip = (
+export const getHybridTipRich = (
   combinatie: string | undefined,
   ctx: TipSelectieContext
-): string | null => {
+): { tekst: string; cta?: TipMeta['cta'] } | null => {
   // Bouw buckets
   const comboTips: TipMeta[] = [];
   if (combinatie) {
@@ -369,7 +444,13 @@ export const getHybridTip = (
 
   const pick = chosen.items[Math.floor(Math.random() * chosen.items.length)];
   markShown(pick.id, ctx);
-  return pick.tekst;
+  return { tekst: pick.tekst, cta: pick.cta };
+};
+
+// Backwards compatible: tekst-only versie
+export const getHybridTip = (combinatie: string | undefined, ctx: TipSelectieContext): string | null => {
+  const res = getHybridTipRich(combinatie, ctx);
+  return res?.tekst ?? null;
 };
 
 

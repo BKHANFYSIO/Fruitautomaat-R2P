@@ -5,7 +5,7 @@ import { useOpdrachten } from './data/useOpdrachten';
 import type { Opdracht, Speler, Achievement, GamePhase } from './data/types';
 import { getHighScore, saveHighScore, getPersonalBest, savePersonalBest, getHighScoreLibrary, type HighScore } from './data/highScoreManager';
 import { getLeerDataManager } from './data/leerDataManager';
-import { getHybridTip } from './data/tipsEngine';
+import { getHybridTipRich } from './data/tipsEngine';
 import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
 
 // Components
@@ -1084,14 +1084,20 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
               case '7️⃣': comboKey = 'drie_lucky_7s'; break;
               case '🔔': comboKey = 'drie_bellen'; break;
             }
-            const tip = getHybridTip(comboKey, {
+            const rich = getHybridTipRich(comboKey, {
               leermodusType,
               sessionId: huidigeSessieId ?? undefined,
               spinsSoFar: aantalBeurtenGespeeld,
               selectedCategoriesCount: actieveCategorieSelectie.length,
-            }) || analyse.beschrijving;
-
-            showNotificatie(tip, 'succes', 8000);
+              // Analyse snapshot (voor nu beperkt; later uitbreiden)
+              // N.B. we geven alleen velden mee die we snel uit context kunnen afleiden
+            });
+            const tipText = rich?.tekst || analyse.beschrijving;
+            showNotificatie(tipText, 'succes', 8000);
+            // CTA naar leeranalyse (event)
+            if (rich?.cta?.event === 'openLeeranalyse') {
+              window.dispatchEvent(new CustomEvent('openLeeranalyse'));
+            }
             setTipsShownThisSession(prev => prev + 1);
             setEligibleWinsSinceLastTip(0);
           } else {
