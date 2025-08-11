@@ -92,6 +92,7 @@ export const RightPanel: React.FC<Props> = ({
         zichtbaar={notificatie.zichtbaar}
         type={notificatie.type}
         bericht={notificatie.bericht}
+        cta={notificatie.cta}
       />
       {DevPanelSlot}
       {warning && <div className="app-warning">{warning}</div>}

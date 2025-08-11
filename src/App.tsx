@@ -1096,10 +1096,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
               ...analytics,
             });
             const tipText = rich?.tekst || analyse.beschrijving;
-            showNotificatie(tipText, 'succes', 8000);
-            // CTA naar leeranalyse (event)
             if (rich?.cta?.event === 'openLeeranalyse') {
-              window.dispatchEvent(new CustomEvent('openLeeranalyse'));
+              showNotificatie(tipText, 'succes', 8000, {
+                label: 'Bekijk leeranalyse',
+                onClick: () => window.dispatchEvent(new CustomEvent('openLeeranalyse')),
+              });
+            } else {
+              showNotificatie(tipText, 'succes', 8000);
             }
             setTipsShownThisSession(prev => prev + 1);
             setEligibleWinsSinceLastTip(0);
