@@ -515,12 +515,17 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   // Effect om categorie selectie te openen via custom event
   useEffect(() => {
-    const handleOpenCategorieSelectie = () => {
+    const handleOpenCategorieSelectie = (e: Event) => {
+      const ce = e as CustomEvent<any>;
+      const tab = ce?.detail?.tab as 'highscore' | 'multiplayer' | 'normaal' | 'leitner' | undefined;
+      // Stel eerst de gewenste tab in voordat we openen
+      if (tab) setCategorieSelectieActiveTab(tab);
+      // Sluit Leitner modal en open de categorie-selectie modal in een microtask
       setIsCategorieBeheerOpen(false);
-      setIsCategorieSelectieOpen(true);
+      queueMicrotask(() => setIsCategorieSelectieOpen(true));
     };
-    window.addEventListener('openCategorieSelectie', handleOpenCategorieSelectie);
-    return () => window.removeEventListener('openCategorieSelectie', handleOpenCategorieSelectie);
+    window.addEventListener('openCategorieSelectie', handleOpenCategorieSelectie as EventListener);
+    return () => window.removeEventListener('openCategorieSelectie', handleOpenCategorieSelectie as EventListener);
   }, []);
 
   // Effect om leeranalyse te openen via custom event
@@ -1293,7 +1298,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   };
 
   const handleOpenLeitnerCategorieBeheer = () => {
+    // Sluit andere overlays en open Leitner beheer (voorkomt dubbele overlays)
     setIsScoreLadeOpen(false);
+    setIsCategorieSelectieOpen(false);
     setIsCategorieBeheerOpen(true);
   }
 

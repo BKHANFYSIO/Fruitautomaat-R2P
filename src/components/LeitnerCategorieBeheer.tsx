@@ -809,15 +809,41 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
           </div>
           <button onClick={onClose} className="leitner-modal-close-button">&times;</button>
         </div>
-        <div className="modal-body">
-          {/* Bovenste tabbalk (zelfde als algemene modal) */}
-          <div className="tab-navigatie" style={{ marginBottom: 10 }}>
-            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>🎮 Multiplayer</button>
-            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>🏆 Highscore</button>
-            <button className="tab-knop" onClick={() => { window.dispatchEvent(new CustomEvent('openCategorieSelectie')); }}>📖 Vrije Leermodus</button>
+        {/* Bovenste tabbalk (zelfde als algemene modal) - buiten de scrollende body */}
+        <div className="tab-navigatie" style={{ marginBottom: 10 }}>
+            <button
+              className="tab-knop"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('openCategorieSelectie', { detail: { tab: 'multiplayer' } })
+                );
+              }}
+            >
+              🎮 Multiplayer
+            </button>
+            <button
+              className="tab-knop"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('openCategorieSelectie', { detail: { tab: 'highscore' } })
+                );
+              }}
+            >
+              🏆 Highscore
+            </button>
+            <button
+              className="tab-knop"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('openCategorieSelectie', { detail: { tab: 'normaal' } })
+                );
+              }}
+            >
+              📖 Vrije Leermodus
+            </button>
             <button className="tab-knop actief">📚 Leitner</button>
           </div>
-
+        <div className="modal-body">
           {/* Subtabbalk */}
           <div className="tab-navigatie" style={{ marginBottom: 8 }}>
             <button className={`tab-knop ${innerTab === 'categories' ? 'actief' : ''}`} onClick={() => setInnerTab('categories')}>📂 Categorieën</button>

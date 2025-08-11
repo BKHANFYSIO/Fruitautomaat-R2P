@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
@@ -124,8 +124,9 @@ export const CategorieSelectieModal = ({
   const [geselecteerdeCategorieVoorDetail, setGeselecteerdeCategorieVoorDetail] = useState<string | null>(null);
   const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
 
-  // Effect om activeTab bij te werken wanneer initialActiveTab verandert
-  useEffect(() => {
+  // Sync activeTab vóór paint wanneer de modal opent of de gewenste tab wijzigt,
+  // om visuele 'switch' te voorkomen bij eerste render
+  useLayoutEffect(() => {
     if (isOpen && initialActiveTab) {
       setActiveTab(initialActiveTab);
     }
@@ -700,8 +701,10 @@ export const CategorieSelectieModal = ({
                 <React.Fragment key={hoofd}>
                   <tr className="hoofd-categorie-rij">
                     <td onClick={() => toggleHoofdCategorie(hoofd)} className="categorie-naam-cell">
-                      <span className={`pijl ${openHoofdCategorieen[hoofd] ? 'open' : ''}`}>▶</span>
-                      <span className="hoofd-categorie-naam">{hoofd}</span>
+                      <div className="categorie-naam-cell-inner">
+                        <span className={`pijl ${openHoofdCategorieen[hoofd] ? 'open' : ''}`}>▶</span>
+                        <span className="hoofd-categorie-naam">{hoofd}</span>
+                      </div>
                     </td>
                     <td>
                       <input
@@ -732,8 +735,10 @@ export const CategorieSelectieModal = ({
                     return (
                       <tr key={uniekeIdentifier} className="sub-categorie-rij">
                         <td className="categorie-naam-cell sub-categorie">
-                          <span className="sub-categorie-naam">{sub}</span>
-                          {getBronIconen(opdrachten, hoofd, sub)}
+                          <div className="categorie-naam-cell-inner">
+                            <span className="sub-categorie-naam">{sub}</span>
+                            {getBronIconen(opdrachten, hoofd, sub)}
+                          </div>
                         </td>
                         <td>
                           <input

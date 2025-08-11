@@ -24,6 +24,8 @@
   color: white;
   border-radius: 12px;
   transition: all 0.3s ease;
+  /* Fallback achtergrond zodat kaarten nooit transparant zijn als een categorie-stijl ontbreekt */
+  background: linear-gradient(140deg, #2a2a2a, #3a3a3a);
 }
 
 /* Aanklikbare styling */
@@ -87,6 +89,11 @@
 
 .achievement-notificatie-content.categorie-consistentie-leitner {
   background: linear-gradient(140deg, #EC4899, #DB2777);
+}
+
+/* Ontbrekende Leitner categorie: herhaling */
+.achievement-notificatie-content.categorie-herhaling {
+  background: linear-gradient(140deg, #34D399, #059669);
 }
 
 .achievement-icon-large {

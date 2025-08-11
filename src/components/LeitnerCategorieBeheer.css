@@ -4,18 +4,18 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7); /* align met generieke modal */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(5px);
 }
 
 .modal-content.leitner-beheer-modal {
   background-color: #282c34;
   color: #e0e0e0;
-  padding: 20px;
+  padding: 25px; /* consistent met generieke modal */
   border-radius: 12px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   width: 95%;
@@ -58,15 +58,16 @@
 .leitner-modal-close-button {
   background: none;
   border: none;
-  color: #e0e0e0;
-  font-size: 2rem;
+  color: #fff; /* zelfde als generieke close */
+  font-size: 2.5rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0 10px;
   line-height: 1;
+  margin-left: auto;
 }
 
 .leitner-modal-close-button:hover {
-  color: #61dafb;
+  color: #bbb; /* consistent hover kleur */
 }
 
 .modal-body {
@@ -892,7 +893,12 @@
 
 .modal-body {
   background: #1a1a1a;
+  position: relative;
+  overflow-y: auto; /* zorg dat alleen de body scrolt */
+  max-height: 70vh; /* houdt ruimte voor header + tab-balk */
 }
+
+/* De hoofd-tab-navigatie staat nu buiten de body; sticky niet meer nodig */
 
 .modal-footer {
   background: #2a2a2a;
@@ -1033,7 +1039,7 @@
 .modal-content {
   background-color: #282c34;
   color: #e0e0e0;
-  padding: 20px;
+  padding: 25px; /* consistent met generieke modal */
   border-radius: 12px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   width: 95%;
@@ -1053,15 +1059,25 @@
 .modal-close {
   background: none;
   border: none;
-  color: #e0e0e0;
-  font-size: 2rem;
+  color: #fff;
+  font-size: 2.5rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0 10px;
   line-height: 1;
+  margin-left: auto;
 }
 
 .modal-close:hover {
-  color: #61dafb;
+  color: #bbb;
+}
+
+/* Uniformeer titels tussen verschillende modals */
+.modal-header h2,
+.modal-header h3 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: #e0e0e0;
 }
 
 .tab-navigatie {
@@ -1436,16 +1452,21 @@
 
 .categorie-naam-cell {
   cursor: pointer;
-  display: flex;
+  /* Haal flex van de TD zelf af zodat hoogte gelijk is aan andere cellen */
+  height: 60px; /* match rijhoogte */
+  vertical-align: middle;
+}
+
+/* Gebruik een inner wrapper voor horizontale layout zonder de celhoogte te beïnvloeden */
+.categorie-naam-cell-inner {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .categorie-naam-cell.sub-categorie {
   padding-left: 30px;
   background-color: transparent !important;
-  height: 100%; /* Gebruik volledige hoogte van de cel */
 }
 
 .hoofd-categorie-naam {
@@ -2840,7 +2861,7 @@ td.sub-categorie,
 }
 
 .hoofd-categorie-rij td {
-    border-bottom: 2px solid #4a5568 !important;
+    border-bottom: 1px solid #444; /* gelijk aan andere cellen; voorkomt dubbele lijn-illusie */
 }
 
 /* Pauze Functionaliteit Styling */
@@ -3598,4 +3619,14 @@ td.sub-categorie,
   min-height: 60px;
   padding: 12px 8px;
   vertical-align: middle;
+}
+
+/* Forceer consistente rijhoogte in categorie-tabellen (voorkomt ongelijke onderlijnen) */
+.categorie-table tr { height: 60px; }
+.categorie-table th,
+.categorie-table td {
+  height: 60px !important;
+  vertical-align: middle;
+  padding-top: 0;
+  padding-bottom: 0;
 }
