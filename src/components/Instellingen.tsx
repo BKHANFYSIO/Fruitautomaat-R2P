@@ -832,10 +832,12 @@ export const Instellingen = React.memo(({
                   <p className="setting-description">
                     Toont korte, motiverende tips over effectieve leerstrategieën (zoals ophalen uit je geheugen, focus/pin, spaced repetition) tijdens het spelen in de <strong>Vrije Leermodus</strong>. Standaard aan.
                     <br />
-                    <em>Opmerking:</em> In <strong>Geen fruitrol animatie</strong> (alleen Vrije Leermodus) worden deze tips automatisch onderdrukt om afleiding te voorkomen.
+                    <strong>Wanneer verschijnt een tip?</strong> Alleen als je met de fruitautomaat een winnende fruitcombinatie draait (bijv. drie meloenen, drie citroenen, twee kersen, enz.). Je krijgt dan <em>geen punten</em> maar een <em>tip</em> als beloning.
+                    <br />
+                    <em>Opmerking:</em> In <strong>Extra focus-stand (geen fruitrol en geen tips)</strong> worden tips onderdrukt om afleiding te voorkomen.
                     {isKaleModusActiefVrijeLeermodus && (
                       <span style={{ color: '#888', display: 'block', marginTop: '5px' }}>
-                        <strong>Let op:</strong> Tips zijn uitgeschakeld door geen fruitrol animatie.
+                        <strong>Let op:</strong> Tips zijn uitgeschakeld door Extra focus-stand.
                       </span>
                     )}
                   </p>
@@ -846,10 +848,10 @@ export const Instellingen = React.memo(({
                       checked={isKaleModusActiefVrijeLeermodus}
                       onChange={(e) => setIsKaleModusActiefVrijeLeermodus(e.target.checked)}
                     />
-                    Geen fruitrol animatie (alleen opdrachten rol)
+                    Extra focus-stand (geen fruitrol en geen tips)
                   </label>
                   <p className="setting-description">
-                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Ideaal voor snelle oefening zonder afleiding.
+                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Leerstrategietips worden in deze stand niet getoond. Ideaal voor snelle oefening zonder afleiding.
                   </p>
                   
 
@@ -919,6 +921,9 @@ export const Instellingen = React.memo(({
 
                 <div className="settings-group">
                   <h4>Leitner Leermodus</h4>
+                  <p className="setting-description">
+                    Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
+                  </p>
                   <label>
                     <input
                       type="checkbox"
@@ -935,9 +940,10 @@ export const Instellingen = React.memo(({
                   </label>
                   <p className="setting-description">
                     Toont korte, motiverende tips over effectieve leerstrategieën tijdens het oefenen met Leitner. Standaard aan.
-                  </p>
-                  <p className="setting-description">
-                    Gebruik de Leitner Leer Modus voor effectieve herhaling van opdrachten. Nieuwe opdrachten starten in Box 0 (10 minuten). Opdrachten die je "Niet Goed" beoordeelt worden vaker herhaald, terwijl opdrachten die je "Heel Goed" beoordeelt minder vaak voorkomen. "Redelijk" opdrachten blijven in dezelfde box. Dit systeem is gebaseerd op wetenschappelijk bewezen spaced repetition technieken.
+                    <br />
+                    <strong>Wanneer verschijnt een tip?</strong> Alleen als je met de fruitautomaat een winnende fruitcombinatie draait (bijv. drie meloenen, drie citroenen, twee kersen, enz.). Je krijgt dan <em>geen punten</em> maar een <em>tip</em> als beloning.
+                    <br />
+                    <em>Opmerking:</em> In <strong>Extra focus-stand (geen fruitrol en geen tips)</strong> worden tips onderdrukt om afleiding te voorkomen.
                   </p>
                   
                   <label>
@@ -946,10 +952,10 @@ export const Instellingen = React.memo(({
                       checked={isKaleModusActiefLeitnerLeermodus}
                       onChange={(e) => setIsKaleModusActiefLeitnerLeermodus(e.target.checked)}
                     />
-                    Geen fruitrol animatie (alleen opdrachten rol)
+                    Extra focus-stand (geen fruitrol en geen tips)
                   </label>
                   <p className="setting-description">
-                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Ideaal voor snelle oefening zonder afleiding.
+                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Leerstrategietips worden in deze stand niet getoond. Ideaal voor snelle oefening zonder afleiding.
                   </p>
                   
                   {leermodusType === 'leitner' && (

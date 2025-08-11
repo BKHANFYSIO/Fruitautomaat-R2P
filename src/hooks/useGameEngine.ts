@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/types';
 import { getLeerDataManager } from '../data/leerDataManager';
-import { getLeerFeedback } from '../data/leerFeedback';
+import { getTipForCombination } from '../data/tipsEngine';
 import { useSettings } from '../context/SettingsContext';
 
 // Helper functie voor het shufflen van arrays
@@ -49,7 +49,7 @@ export const useGameEngine = () => {
     // Serieuze leer-modus voor single player
     if (gameMode === 'single' && isSerieuzeLeerModusActief) {
       if (jokerCount === 3) {
-        const feedback = getLeerFeedback('drie_jokers');
+        const feedback = getTipForCombination('drie_jokers');
         return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen: ['🃏'], verdiendeSpins: 0 };
       }
 
@@ -62,27 +62,27 @@ export const useGameEngine = () => {
           switch (sym) {
             case '🍒': 
               combinatie = 'drie_kersen';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
             case '🍋': 
               combinatie = 'drie_citroenen';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
             case '🍉': 
               combinatie = 'drie_meloenen';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
             case '7️⃣': 
               combinatie = 'drie_lucky_7s';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
             case '❓': 
               combinatie = 'gemengd';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
             case '🔔': 
               combinatie = 'drie_bellen';
-              feedback = getLeerFeedback(combinatie);
+              feedback = getTipForCombination(combinatie);
               return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
           }
         }
@@ -91,7 +91,7 @@ export const useGameEngine = () => {
       // Controleer voor 2 kersen
       if ((counts['🍒'] || 0) + jokerCount === 2) {
         const winnendeSymbolen = jokerCount > 0 ? ['🍒', '🃏'] : ['🍒'];
-        const feedback = getLeerFeedback('twee_kersen');
+        const feedback = getTipForCombination('twee_kersen');
         return { bonusPunten: 0, actie: 'geen', beschrijving: feedback, winnendeSymbolen, verdiendeSpins: 0 };
       }
 

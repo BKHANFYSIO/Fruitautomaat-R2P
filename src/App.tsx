@@ -5,6 +5,7 @@ import { useOpdrachten } from './data/useOpdrachten';
 import type { Opdracht, Speler, Achievement, GamePhase } from './data/types';
 import { getHighScore, saveHighScore, getPersonalBest, savePersonalBest, getHighScoreLibrary, type HighScore } from './data/highScoreManager';
 import { getLeerDataManager } from './data/leerDataManager';
+import { getHybridTip } from './data/tipsEngine';
 import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
 
 // Components
@@ -107,7 +108,6 @@ function App() {
     forceerMobieleWeergave,
     isSerieuzeLeerModusActief,
     setIsSerieuzeLeerModusActief,
-    isLeerFeedbackActief,
     setIsLeerFeedbackActief,
     leermodusType,
     setLeermodusType,
@@ -120,6 +120,9 @@ function App() {
     isKaleModusActiefLeitnerLeermodus,
     // Gegroepeerde per-modus settings (read-only)
     actieveLeermodusInstellingen,
+    // Tips per modus
+    isLeerstrategietipsActiefVrijeLeermodus,
+    isLeerstrategietipsActiefLeitnerLeermodus,
   } = useSettings();
 
   // Game engine hook
@@ -393,6 +396,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [openLeeranalyseToAchievements, setOpenLeeranalyseToAchievements] = useState(false);
   const [nieuweAchievement, setNieuweAchievement] = useState<Achievement | null>(null);
   const [laatsteBeoordeeldeOpdracht, setLaatsteBeoordeeldeOpdracht] = useState<{ opdracht: any; type: string; box?: number } | null>(null);
+  // Tips-ritme state (serieuze leermodus)
+  const [tipsShownThisSession, setTipsShownThisSession] = useState(0);
+  const [eligibleWinsSinceLastTip, setEligibleWinsSinceLastTip] = useState(0);
 
   // gefilterdeGeselecteerdeLeitnerCategorieen stond al lager; deze versie vervangt die en wordt boven gebruikt door de hook
   const gefilterdeGeselecteerdeLeitnerCategorieen = useMemo(() => {
@@ -652,6 +658,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsAntwoordVergrendeld(false); // Reset antwoord vergrendeling bij spel reset
     setLimietWaarschuwingGenegeerd(false); // Reset limiet waarschuwing
     setMultiplayerWaarschuwingGetoond(false); // Reset multiplayer waarschuwing state
+    // Reset tips-ritme
+    setTipsShownThisSession(0);
+    setEligibleWinsSinceLastTip(0);
   };
 
   // Volledig gefilterde opdrachten op basis van bron en type
@@ -855,6 +864,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       const nieuwe = startSessie(leermodusType);
       if (nieuwe) {
         showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 6000);
+        // Reset tip-ritme bij start van een nieuwe sessie
+        setTipsShownThisSession(0);
+        setEligibleWinsSinceLastTip(0);
       }
     }
     
@@ -1047,9 +1059,47 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setHuidigeSpinAnalyse(analyse);
       setIsAanHetSpinnen(false);
 
-      // Toon leerfeedback in serieuze leer-modus bij combinaties (alleen als kale modus niet actief is)
-      if (!isKaleModusActief && gameMode === 'single' && isSerieuzeLeerModusActief && isLeerFeedbackActief && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
-        showNotificatie(analyse.beschrijving, 'succes', 8000);
+      // Toon tips rustig en alleen bij sterke combinaties: drie dezelfde zonder joker
+      const tipsActiefVoorHuidigeModus = leermodusType === 'leitner' ? isLeerstrategietipsActiefLeitnerLeermodus : isLeerstrategietipsActiefVrijeLeermodus;
+      if (!isKaleModusActief && gameMode === 'single' && isSerieuzeLeerModusActief && tipsActiefVoorHuidigeModus) {
+        const STRONG_SYMBOLS = new Set(['🍒','🍋','🍉','7️⃣','🔔']);
+        const isDrieHetzelfde = jackpotSymbols.length === 3 && jackpotSymbols.every(s => s === jackpotSymbols[0]);
+        const sym = jackpotSymbols[0];
+        const isZonderJoker = !jackpotSymbols.includes('🃏');
+        const isSterkeCombinatie = isDrieHetzelfde && isZonderJoker && STRONG_SYMBOLS.has(sym);
+
+        if (isSterkeCombinatie && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
+          const TIP_INTERVAL = 3; // 1 tip per 3 sterke winmomenten
+          const MAX_TIPS_PER_SESSIE = 6;
+          const magNogTippen = tipsShownThisSession < MAX_TIPS_PER_SESSIE;
+          const isTipBeurt = (eligibleWinsSinceLastTip + 1) >= TIP_INTERVAL;
+
+          if (magNogTippen && isTipBeurt) {
+            // Bepaal combinatie-key voor tipsEngine
+            let comboKey: string | undefined = undefined;
+            switch (sym) {
+              case '🍒': comboKey = 'drie_kersen'; break;
+              case '🍋': comboKey = 'drie_citroenen'; break;
+              case '🍉': comboKey = 'drie_meloenen'; break;
+              case '7️⃣': comboKey = 'drie_lucky_7s'; break;
+              case '🔔': comboKey = 'drie_bellen'; break;
+            }
+            const tip = getHybridTip(comboKey, {
+              leermodusType,
+              sessionId: huidigeSessieId ?? undefined,
+              spinsSoFar: aantalBeurtenGespeeld,
+              selectedCategoriesCount: actieveCategorieSelectie.length,
+            }) || analyse.beschrijving;
+
+            showNotificatie(tip, 'succes', 8000);
+            setTipsShownThisSession(prev => prev + 1);
+            setEligibleWinsSinceLastTip(0);
+          } else {
+            // Korte bevestiging op sterke winst zonder tip, om verwarring te voorkomen
+            showNotificatie('Mooi! Door naar de volgende.', 'succes', 3000);
+            setEligibleWinsSinceLastTip(prev => prev + 1);
+          }
+        }
       }
 
       if (isJokerSpinActief && analyse.verdiendeSpins > 0) {
