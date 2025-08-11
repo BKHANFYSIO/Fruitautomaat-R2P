@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht, Speler, SpinResultaatAnalyse, GamePhase } from '../data/types';
 import Rol from './Rol';
@@ -6,10 +6,96 @@ import { Hendel } from './Hendel'; // Importeer Hendel
 import { useAudio } from '../hooks/useAudio';
 import { useSettings } from '../context/SettingsContext';
 import { opdrachtTypeIconen } from '../data/constants';
-import { InfoTooltip } from './ui/InfoTooltip';
 import './Fruitautomaat.css';
 
 type RolItem = { symbool?: string; img?: string };
+
+// Hulpcomponent voor knoppen met geïntegreerde tooltip functionaliteit
+const TooltipButton = ({
+  onClick,
+  disabled = false,
+  children,
+  tooltipContent,
+  className = '',
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  tooltipContent: React.ReactNode;
+  className?: string;
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+
+  // Effect om tooltip te sluiten bij klikken buiten de knop
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showTooltip && isTouchDevice()) {
+        const target = event.target as Element;
+        const container = target.closest('.tooltip-button-container');
+        if (!container) {
+          setShowTooltip(false);
+        }
+      }
+    };
+
+    if (showTooltip && isTouchDevice()) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showTooltip]);
+
+  const handlePressStart = () => {
+    pressTimer.current = window.setTimeout(() => {
+      setShowTooltip(true);
+    }, 500); // 500ms voor een lange druk
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
+  const handleClick = () => {
+    // Als tooltip open is, sluit deze eerst
+    if (showTooltip) {
+      setShowTooltip(false);
+      return;
+    }
+    // Anders voer de normale klik actie uit
+    onClick();
+  };
+
+  // Detecteer of het een touch-apparaat is
+  const isTouchDevice = () => {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  };
+
+  return (
+    <div
+      className="tooltip-button-container"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onTouchStart={isTouchDevice() ? handlePressStart : undefined}
+      onTouchEnd={isTouchDevice() ? handlePressEnd : undefined}
+      onTouchCancel={isTouchDevice() ? handlePressEnd : undefined}
+      onMouseDown={() => setShowTooltip(false)}
+    >
+      <button
+        className={className}
+        onClick={handleClick}
+        disabled={disabled}
+      >
+        {children}
+      </button>
+      {showTooltip && (
+        <div className="tooltip tooltip-top">{tooltipContent}</div>
+      )}
+    </div>
+  );
+};
 
 
 interface FruitautomaatProps {
@@ -65,6 +151,22 @@ export const Fruitautomaat = ({
   isKaleModusActief = false
 }: FruitautomaatProps) => {
   const { isRolTijdVerkort } = useSettings();
+  
+  // Effect om tooltips te sluiten bij klikken buiten
+  useEffect(() => {
+    const handleGlobalClick = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.tooltip-button-container')) {
+        // Sluit alle open tooltips
+        document.querySelectorAll('.tooltip-button-container.tooltip-active').forEach(container => {
+          container.classList.remove('tooltip-active');
+        });
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
   
   const [activeSpin, setActiveSpin] = useState({
     jackpot1: false, jackpot2: false, jackpot3: false,
@@ -157,29 +259,65 @@ export const Fruitautomaat = ({
 
         {huidigeOpdracht && gamePhase !== 'spinning' && (
           <div className="opdracht-info-footer">
-            <InfoTooltip asChild content={`Bron: ${huidigeOpdracht.opdracht.bron || 'Onbekend'}`}>
-              <span className="info-item">
-                {huidigeOpdracht.opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}
-              </span>
-            </InfoTooltip>
-            <InfoTooltip asChild content={`Type: ${huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}`}>
-              <span className="info-item">
-                {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}
-              </span>
-            </InfoTooltip>
+                         <div className="tooltip-button-container" 
+               onTouchStart={(e) => {
+                 e.preventDefault();
+                 const container = e.currentTarget;
+                 container.classList.add('tooltip-active');
+               }}
+               onClick={(e) => {
+                 const container = e.currentTarget;
+                 if (container.classList.contains('tooltip-active')) {
+                   container.classList.remove('tooltip-active');
+                 }
+               }}
+             >
+               <span className="info-item">
+                 {huidigeOpdracht.opdracht.bron === 'systeem' ? '📖' : '👨‍💼'}
+               </span>
+               <div className="tooltip tooltip-top">
+                 <div className="tooltip-content">
+                   <strong>Bron</strong>
+                   <p>{huidigeOpdracht.opdracht.bron || 'Onbekend'}</p>
+                 </div>
+               </div>
+             </div>
+             <div className="tooltip-button-container"
+               onTouchStart={(e) => {
+                 e.preventDefault();
+                 const container = e.currentTarget;
+                 container.classList.add('tooltip-active');
+               }}
+               onClick={(e) => {
+                 const container = e.currentTarget;
+                 if (container.classList.contains('tooltip-active')) {
+                   container.classList.remove('tooltip-active');
+                 }
+               }}
+             >
+               <span className="info-item">
+                 {opdrachtTypeIconen[huidigeOpdracht.opdracht.opdrachtType || 'Onbekend']}
+               </span>
+               <div className="tooltip tooltip-top">
+                 <div className="tooltip-content">
+                   <strong>Type</strong>
+                   <p>{huidigeOpdracht.opdracht.opdrachtType || 'Onbekend'}</p>
+                 </div>
+               </div>
+             </div>
           </div>
         )}
         
         {/* Pauze knop - alleen tonen na beoordeling in Leitner modus */}
         {(gamePhase === 'ended' || gamePhase === 'idle') && (huidigeOpdracht || laatsteBeoordeeldeOpdracht) && isSerieuzeLeerModusActief && leermodusType === 'leitner' && onPauseOpdracht && (
           <div className="pause-opdracht-footer">
-            <button 
-              className="pause-opdracht-footer-knop" 
+            <TooltipButton
               onClick={onPauseOpdracht}
+              tooltipContent="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt"
+              className="pause-opdracht-footer-knop"
             >
               ⏸️ Pauzeer deze opdracht
-            </button>
-            <InfoTooltip content="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt" />
+            </TooltipButton>
 
             {/* Leitner context & acties */}
             {(() => {
@@ -206,67 +344,66 @@ export const Fruitautomaat = ({
                   <div className="leitner-footer-actions">
                     {kanNaarB0 && (
                       <>
-                        <button
-                          className="pause-opdracht-footer-knop"
+                        <TooltipButton
                           onClick={() => { 
                             mgr.setOpdrachtBox(opdrachtId, 0); 
                             const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
                            window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 0 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 5000 } }));
                           }}
+                          tooltipContent="Zet terug naar Box 0"
+                          className="pause-opdracht-footer-knop"
                         >
                           ↩️ Zet naar Box 0
-                        </button>
-                        <InfoTooltip content="Zet terug naar Box 0" />
+                        </TooltipButton>
                       </>
                     )}
                     {kanNaarB1 && (
                       <>
-                        <button
-                          className="pause-opdracht-footer-knop"
+                        <TooltipButton
                           onClick={() => { 
                             mgr.setOpdrachtBox(opdrachtId, 1);
                             const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
                            window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Opdracht verplaatst naar Box 1 • Volgende herhaling: ${nextTxt}`, type: 'succes', timeoutMs: 5000 } }));
                           }}
+                          tooltipContent="Zet terug naar Box 1"
+                          className="pause-opdracht-footer-knop"
                         >
                           ↩️ Zet naar Box 1
-                        </button>
-                        <InfoTooltip content="Zet terug naar Box 1" />
+                        </TooltipButton>
                       </>
                     )}
                     {allowAdjust && (
                       <>
-                        <button
-                          className="pause-opdracht-footer-knop"
+                        <TooltipButton
                           onClick={() => { 
                             mgr.adjustVolgendeReview(opdrachtId, -Math.round(intervalMin / 2)); 
                             const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
                            window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling vervroegd • ${nextTxt}`, type: 'succes', timeoutMs: 6000 } }));
                           }}
+                          tooltipContent="Versnel volgende herhaling (ongeveer halve interval eerder)"
+                          className="pause-opdracht-footer-knop"
                         >
                           ⏩ Herhaling sneller
-                        </button>
-                        <InfoTooltip content="Versnel volgende herhaling (ongeveer halve interval eerder)" />
+                        </TooltipButton>
                       </>
                     )}
                     {allowAdjust && (
                       <>
-                        <button
-                          className="pause-opdracht-footer-knop"
+                        <TooltipButton
                           onClick={() => { 
                             mgr.adjustVolgendeReview(opdrachtId, Math.round(intervalMin / 2)); 
                             const nextTxt = mgr.getVolgendeHerhalingTekst(opdrachtId);
                            window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Volgende herhaling later gepland • ${nextTxt}`, type: 'succes', timeoutMs: 6000 } }));
                           }}
+                          tooltipContent="Vertraag volgende herhaling (ongeveer halve interval later)"
+                          className="pause-opdracht-footer-knop"
                         >
                           ⏸️ Herhaling later
-                        </button>
-                        <InfoTooltip content="Vertraag volgende herhaling (ongeveer halve interval later)" />
+                        </TooltipButton>
                       </>
                     )}
                     <>
-                      <button
-                        className="pause-opdracht-footer-knop"
+                      <TooltipButton
                         onClick={() => {
                           const pinned = mgr.isPinnedOpdracht(opdrachtId);
                           if (pinned) { 
@@ -278,32 +415,38 @@ export const Fruitautomaat = ({
                           }
                         }}
                         disabled={mgr.isFocusNowActive()}
+                        tooltipContent={mgr.isFocusNowActive() ? 'Focussessie bezig. Gepinde opdrachten worden nu achter elkaar aangeboden.' : 'Oefen alle gepinde opdrachten nu direct achter elkaar'}
+                        className="pause-opdracht-footer-knop"
                       >
                         📌 Pin voor focus
-                      </button>
-                      <InfoTooltip content="Pin voor focus-sessie (nogmaals oefenen)" />
+                      </TooltipButton>
                     </>
                   {pinnedCount > 0 && (
                       <>
                         {mgr.isFocusNowActive() ? (
-                          <button
-                            className={`pause-opdracht-footer-knop focus-now-knop is-active`}
-                            disabled
-                          >
-                            🎯 Focusmodus actief — {pinnedCount} resterend
-                          </button>
-                        ) : (
-                          <button
-                            className={`pause-opdracht-footer-knop focus-now-knop`}
+                          <TooltipButton
                             onClick={() => {
                               mgr.startFocusNow();
                               window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Focus nu gestart (${pinnedCount} opdracht(en))`, type: 'succes', timeoutMs: 6000 } }));
                             }}
+                            tooltipContent={`Focus nu gestart (${pinnedCount} opdracht(en))`}
+                            className={`pause-opdracht-footer-knop focus-now-knop is-active`}
+                            disabled
+                          >
+                            🎯 Focusmodus actief — {pinnedCount} resterend
+                          </TooltipButton>
+                        ) : (
+                          <TooltipButton
+                            onClick={() => {
+                              mgr.startFocusNow();
+                              window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: `Focus nu gestart (${pinnedCount} opdracht(en))`, type: 'succes', timeoutMs: 6000 } }));
+                            }}
+                            tooltipContent={`Focus nu (${pinnedCount})`}
+                            className={`pause-opdracht-footer-knop focus-now-knop`}
                           >
                             🎯 Focus nu ({pinnedCount})
-                          </button>
+                          </TooltipButton>
                         )}
-                        <InfoTooltip content={mgr.isFocusNowActive() ? 'Focussessie bezig. Gepinde opdrachten worden nu achter elkaar aangeboden.' : 'Oefen alle gepinde opdrachten nu direct achter elkaar'} />
                       </>
                     )}
                   </div>

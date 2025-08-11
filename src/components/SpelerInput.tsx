@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import './SpelerInput.css';
 
 interface SpelerInputProps {
@@ -33,56 +33,38 @@ const TooltipButton = ({
   tooltipContent: React.ReactNode;
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  const pressTimer = useRef<number | null>(null);
 
-  // Effect om tooltip te sluiten bij klikken buiten de knop
+  // Effect om tooltip te sluiten bij klikken buiten de knop (alleen wanneer tooltip open is)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showTooltip && isTouchDevice()) {
-        // Check of de klik buiten de knop container was
-        const target = event.target as Element;
-        const container = target.closest('.mode-button-container');
-        if (!container) {
-          setShowTooltip(false);
-        }
+      if (!showTooltip) return;
+      const target = event.target as Element;
+      const container = target.closest('.mode-button-container');
+      if (!container) {
+        setShowTooltip(false);
       }
     };
-
-    if (showTooltip && isTouchDevice()) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [showTooltip]);
 
-  const handlePressStart = () => {
-    pressTimer.current = window.setTimeout(() => {
-      setShowTooltip(true);
-    }, 500); // 500ms voor een lange druk
-  };
-
-  const handlePressEnd = () => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-      // Tooltip blijft open totdat gebruiker ergens anders tikt
-      // We verbergen hem niet automatisch meer
-    }
-  };
+  // Detecteer touch device
+  const isTouchDevice = () => 'ontouchstart' in window || (navigator as any).maxTouchPoints > 0;
 
   const handleClick = () => {
-    // Als tooltip open is, sluit deze eerst
-    if (showTooltip) {
+    if (isTouchDevice()) {
+      if (!showTooltip) {
+        // Eerste tik op mobiel: toon tooltip én selecteer direct
+        setShowTooltip(true);
+        onClick();
+        return;
+      }
+      // Tweede tik: sluit tooltip
       setShowTooltip(false);
       return;
     }
-    // Anders voer de normale klik actie uit
+    // Desktop: normale klik selecteert; tooltip via hover
     onClick();
-  };
-
-  // Detecteer of het een touch-apparaat is - vereenvoudigde versie
-  const isTouchDevice = () => {
-    // Alleen checken voor touch events, niet voor viewport width
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   };
 
   return (
@@ -90,9 +72,6 @@ const TooltipButton = ({
       className="mode-button-container"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
-      onTouchStart={isTouchDevice() ? handlePressStart : undefined}
-      onTouchEnd={isTouchDevice() ? handlePressEnd : undefined}
-      onTouchCancel={isTouchDevice() ? handlePressEnd : undefined}
       onMouseDown={() => setShowTooltip(false)}
     >
       <button

@@ -1,3 +1,4 @@
+/* Verwijder touch-verberg regels en houd hover/positionering intact */
 .speler-input-form {
   display: flex;
   flex-direction: column;
@@ -313,20 +314,9 @@
 }
 
 /* Tooltip styling */
-.tooltip-container {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-  /* Voorkom text selection tijdens long press */
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
 .tooltip {
   position: absolute;
-  z-index: 10000; /* Verhoog z-index om boven andere elementen te komen */
+  z-index: 10000;
   color: #2c3e50;
   border-radius: 8px;
   padding: 12px;
@@ -337,37 +327,11 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  /* Voeg touch-action toe voor betere mobiele ervaring */
-  touch-action: none;
-  /* Zorg ervoor dat de tooltip altijd zichtbaar is */
-  pointer-events: none;
-  /* Debug styling om te zien of tooltip wordt gerenderd */
+  touch-action: none; /* beter gedrag op mobiel */
+  pointer-events: none; /* content zelf niet klikbaar houden */
   min-height: 50px;
-  display: block !important;
-  /* Voeg background toe voor betere zichtbaarheid */
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
-}
-
-/* Toon tooltips alleen op desktop/laptop */
-@media (max-width: 768px) {
-  .tooltip {
-    display: none !important;
-  }
-}
-
-/* Verberg tooltips op apparaten zonder hover ondersteuning */
-@media (hover: none) {
-  .tooltip {
-    display: none !important;
-  }
-}
-
-/* Verberg tooltips op apparaten met coarse pointer (touch) */
-@media (pointer: coarse) {
-  .tooltip {
-    display: none !important;
-  }
 }
 
 .tooltip-top {
@@ -397,7 +361,7 @@
 
 .mode-button-container:nth-child(1) .tooltip-top::after,
 .mode-button-container:nth-child(3) .tooltip-top::after {
-  left: 20px; /* Positioneer pijl correct */
+  left: 20px;
   margin-left: 0;
 }
 
@@ -412,7 +376,7 @@
 .mode-button-container:nth-child(2) .tooltip-top::after,
 .mode-button-container:nth-child(4) .tooltip-top::after {
   left: auto;
-  right: 20px; /* Positioneer de pijl correct */
+  right: 20px;
 }
 
 .tooltip-content h4 {

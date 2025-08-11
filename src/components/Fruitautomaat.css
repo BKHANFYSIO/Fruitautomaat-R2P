@@ -350,3 +350,221 @@
 .info-tooltip .info-tooltip-content[data-open='1'] { 
   display: block; 
 }
+
+/* Nieuwe tooltip styling voor knoppen */
+.tooltip-button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-button-container .tooltip {
+  position: absolute;
+  z-index: 10000;
+  color: #2c3e50;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  width: 250px;
+  font-size: 0.8em;
+  line-height: 1.2;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  touch-action: none;
+  pointer-events: none;
+  min-height: 50px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  top: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 12px;
+  /* Voorkom dat tooltip buiten de viewport valt */
+  max-width: calc(100vw - 40px);
+  width: max-content;
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.tooltip-button-container:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-button-container .tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent #ffffff transparent;
+}
+
+.tooltip-button-container .tooltip-content h4 {
+  margin: 0 0 6px 0;
+  color: #2c3e50;
+  font-size: 0.95em;
+  font-weight: bold;
+}
+
+.tooltip-button-container .tooltip-content {
+  background-color: transparent;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.tooltip-button-container .tooltip-content p {
+  margin: 4px 0;
+  color: #34495e;
+}
+
+.tooltip-button-container .tooltip-content strong {
+  color: #e67e22;
+  font-weight: bold;
+}
+
+/* Desktop tooltip kleuren */
+@media (hover: hover) {
+  .tooltip-button-container .tooltip {
+    background-color: #ffffff;
+  }
+  
+  .tooltip-button-container .tooltip-content {
+    background-color: transparent;
+  }
+  
+  .tooltip-button-container .tooltip-content p {
+    color: #34495e;
+  }
+  
+  .tooltip-button-container .tooltip-content strong {
+    color: #e67e22;
+  }
+}
+
+/* Touch tooltip functionaliteit */
+@media (hover: none) and (pointer: coarse) {
+  .tooltip-button-container .tooltip {
+    display: none;
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Zorg dat tooltips op mobiel goed zichtbaar zijn */
+  .tooltip-button-container.tooltip-active .tooltip {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10001;
+    background-color: #2c3e50;
+    color: #ffffff;
+    border: 2px solid #61dafb;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    width: 90vw;
+    max-width: 400px;
+    min-width: 250px;
+    text-align: center;
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip .tooltip-content {
+    background-color: transparent;
+    color: #ffffff;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip .tooltip-content strong {
+    color: #61dafb;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip .tooltip-content p {
+    color: #ffffff;
+    margin: 8px 0;
+    font-size: 1em;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+  
+  /* Voeg een sluitknop toe voor mobiele tooltips */
+  .tooltip-button-container.tooltip-active .tooltip .tooltip-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #61dafb;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip .tooltip-close:hover {
+    background-color: rgba(97, 218, 251, 0.1);
+    transform: scale(1.1);
+  }
+  
+  /* Voeg een overlay toe voor mobiele tooltips */
+  .tooltip-button-container.tooltip-active .tooltip::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  
+  /* Zorg dat de tooltip zelf ook klikbaar is */
+  .tooltip-button-container.tooltip-active .tooltip {
+    pointer-events: auto;
+  }
+  
+  /* Zorg dat de tooltip boven de overlay staat */
+  .tooltip-button-container.tooltip-active .tooltip {
+    z-index: 10002;
+  }
+  
+  /* Voeg een animatie toe voor mobiele tooltips */
+  .tooltip-button-container.tooltip-active .tooltip {
+    animation: tooltipFadeIn 0.3s ease-out;
+  }
+  
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  
+  .tooltip-button-container.tooltip-active .tooltip::after {
+    display: none;
+  }
+}
