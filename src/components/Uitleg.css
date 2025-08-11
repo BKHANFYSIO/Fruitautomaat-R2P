@@ -173,3 +173,12 @@
 }
 .leitner-tabel tr:nth-child(even) td { background-color: #2b3544; }
 .leitner-tabel tr:nth-child(odd) td { background-color: #2d3748; }
+
+.link-button {
+  background: none;
+  border: none;
+  color: #90cdf4;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}

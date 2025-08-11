@@ -8,6 +8,7 @@ import { CategorieSelectieModal } from './CategorieSelectieModal';
 import { LeitnerCategorieBeheer } from './LeitnerCategorieBeheer';
 import { LimietBereiktModal } from './LimietBereiktModal';
 import { OpdrachtenVoltooidModal } from './OpdrachtenVoltooidModal';
+import { LeerstrategienModal } from './LeerstrategienModal';
 import { BestandsUploader } from './BestandsUploader';
 
 const LeeranalyseLazy = lazy(() => import('./Leeranalyse').then(m => ({ default: m.Leeranalyse })));
@@ -83,6 +84,9 @@ type Props = {
   isOpdrachtenVoltooidModalOpen: boolean;
   onCloseOpdrachtenVoltooid: () => void;
   onOpenCategorieSelectieFromVoltooid: () => void;
+  // Leerstrategieën
+  isLeerstrategienOpen?: boolean;
+  onCloseLeerstrategien?: () => void;
 };
 
 export const AppModals: React.FC<Props> = (props) => {
@@ -143,6 +147,10 @@ export const AppModals: React.FC<Props> = (props) => {
       )}
 
       <Uitleg isOpen={isUitlegOpen} onClose={onCloseUitleg} />
+
+      {props.isLeerstrategienOpen && (
+        <LeerstrategienModal isOpen={props.isLeerstrategienOpen} onClose={props.onCloseLeerstrategien || (() => {})} />
+      )}
 
       <SessieSamenvatting
         isOpen={isSessieSamenvattingOpen}

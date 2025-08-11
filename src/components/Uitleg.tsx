@@ -93,6 +93,9 @@ export const Uitleg = ({ isOpen, onClose }: UitlegProps) => {
             <strong>Vrije Leermodus:</strong> In single player mode kun je de Vrije Leermodus activeren via de instellingen. In deze modus worden geen punten gegeven en geen data opgeslagen. Perfect voor snelle leersessies en eenvoudige herhaling.
           </p>
           <p>
+            Tip: bekijk ook de korte uitleg over de gebruikte <button className="link-button" onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('openLeerstrategien')); }}>leerstrategieën</button> in deze app.
+          </p>
+          <p>
             <strong>Leitner Leermodus:</strong> Geavanceerde leermodus met het Leitner-systeem voor effectieve herhaling van opdrachten. Je leeractiviteiten worden lokaal opgeslagen voor analyses en certificaten. Dit omvat welke opdrachten je hebt voltooid, hoe je jezelf hebt beoordeeld, en de tijd die je hebt genomen.
           </p>
           <p>

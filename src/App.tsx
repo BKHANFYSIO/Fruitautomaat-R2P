@@ -169,6 +169,7 @@ function App() {
 // (verplaatst naar useCategorieSelectie)
 const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
+  const [isLeerstrategienOpen, setIsLeerstrategienOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
   const { toggleFullscreen } = useFullscreen();
   const { notificatie, showNotificatie, hideNotificatie } = useNotificatie();
@@ -192,6 +193,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     window.addEventListener('app:notify', handler as EventListener);
     return () => window.removeEventListener('app:notify', handler as EventListener);
   }, [showNotificatie]);
+
+  // Globale event listener om leerstrategieën modal te openen
+  useEffect(() => {
+    const open = () => setIsLeerstrategienOpen(true);
+    window.addEventListener('openLeerstrategien', open);
+    return () => window.removeEventListener('openLeerstrategien', open);
+  }, []);
 
   // State om bij te houden of de multiplayer waarschuwing al is getoond
   const [multiplayerWaarschuwingGetoond, setMultiplayerWaarschuwingGetoond] = useState(false);
@@ -1417,6 +1425,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             geselecteerdBestand={geselecteerdBestand}
         isUitlegOpen={isUitlegOpen}
         onCloseUitleg={() => setIsUitlegOpen(false)}
+        isLeerstrategienOpen={isLeerstrategienOpen}
+        onCloseLeerstrategien={() => setIsLeerstrategienOpen(false)}
         isSessieSamenvattingOpen={isSessieSamenvattingOpen}
         onCloseSessieSamenvatting={() => setIsSessieSamenvattingOpen(false)}
         eindigdeSessieData={eindigdeSessieData}
