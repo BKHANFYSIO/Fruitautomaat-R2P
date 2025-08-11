@@ -220,7 +220,7 @@ export interface TipMeta {
   cta?: { label: string; event: 'openLeeranalyse'; targetTab?: 'overzicht'|'categorieen'|'achievements'|'leitner'|'tijdlijn' };
 }
 
-const MODE_TIPS: TipMeta[] = [
+export const MODE_TIPS: TipMeta[] = [
   {
     id: 'mode_retrieval_practice',
     bron: 'modus',
@@ -244,7 +244,7 @@ const MODE_TIPS: TipMeta[] = [
   },
 ];
 
-const ANALYSE_TIPS: TipMeta[] = [
+export const ANALYSE_TIPS: TipMeta[] = [
   {
     id: 'analyse_interleaving',
     bron: 'analyse',
@@ -275,7 +275,7 @@ const ANALYSE_TIPS: TipMeta[] = [
   { id: 'analyse_box7', bron: 'analyse', tekst: 'Box 7 bereikt: langetermijngeheugen groeit. Blijf af en toe ophalen.', modes: ['leitner'], leitnerBox7Min: 1, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' } },
 ];
 
-const ALGEMENE_TIPS: TipMeta[] = [
+export const ALGEMENE_TIPS: TipMeta[] = [
   {
     id: 'algemeen_blijf_doen',
     bron: 'algemeen',

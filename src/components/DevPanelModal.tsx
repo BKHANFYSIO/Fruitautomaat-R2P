@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { DevCard } from './ui/DevCard';
 import { CodeChip } from './ui/CodeChip';
 import { InfoTooltip } from './ui/InfoTooltip';
+import { LEER_FEEDBACK_DATABASE, MODE_TIPS, ANALYSE_TIPS, ALGEMENE_TIPS } from '../data/tipsEngine';
 import { extractUrlsFromText, detectMediaKind, getYouTubeId } from '../utils/linkUtils';
 import { SYMBOLEN } from '../data/constants';
 import { SessieSamenvatting } from './SessieSamenvatting';
@@ -448,6 +449,64 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
                 <li>Handig om snel bonus-situaties te testen (bijv. 3 vraagtekens = bonusopdracht).</li>
               </ul>
             </details>
+          </DevCard>
+
+          <DevCard title="Tips-overzicht" subtitle="Snel inzicht in alle tips en drempels">
+            <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ minWidth: 260 }}>
+                <strong>Combinatie-tips</strong>
+                <div style={{ fontSize: 12, opacity: 0.85 }}>Totaal: {LEER_FEEDBACK_DATABASE.length}</div>
+                <ul style={{ maxHeight: 140, overflow: 'auto', marginTop: 6 }}>
+                  {LEER_FEEDBACK_DATABASE.slice(0, 20).map((t, i) => (
+                    <li key={i} style={{ fontSize: 12 }}>
+                      {t.combinatie}: {t.bericht}
+                    </li>
+                  ))}
+                  {LEER_FEEDBACK_DATABASE.length > 20 && (
+                    <li style={{ fontSize: 12, opacity: 0.7 }}>… ({LEER_FEEDBACK_DATABASE.length - 20} meer)</li>
+                  )}
+                </ul>
+              </div>
+
+              <div style={{ minWidth: 260 }}>
+                <strong>Modus-tips</strong>
+                <div style={{ fontSize: 12, opacity: 0.85 }}>Totaal: {MODE_TIPS.length}</div>
+                <ul style={{ maxHeight: 140, overflow: 'auto', marginTop: 6 }}>
+                  {MODE_TIPS.map((t) => (
+                    <li key={t.id} style={{ fontSize: 12 }}>
+                      [{t.modes.join('/')}] {t.tekst}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ minWidth: 260 }}>
+                <strong>Analyse-tips (vast)</strong>
+                <div style={{ fontSize: 12, opacity: 0.85 }}>Totaal: {ANALYSE_TIPS.length}</div>
+                <ul style={{ maxHeight: 140, overflow: 'auto', marginTop: 6 }}>
+                  {ANALYSE_TIPS.map((t) => (
+                    <li key={t.id} style={{ fontSize: 12 }}>
+                      [{t.modes.join('/')}] {t.tekst}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ minWidth: 260 }}>
+                <strong>Algemene tips</strong>
+                <div style={{ fontSize: 12, opacity: 0.85 }}>Totaal: {ALGEMENE_TIPS.length}</div>
+                <ul style={{ maxHeight: 140, overflow: 'auto', marginTop: 6 }}>
+                  {ALGEMENE_TIPS.map((t) => (
+                    <li key={t.id} style={{ fontSize: 12 }}>
+                      {t.tekst}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+              Let op: dynamische analyse-tips (dekkings-/beheersings-/avgBox‑drempels per hoofdcategorie en tijdslijn) worden hier niet individueel opgesomd, want die hangen af van je data. Drempels staan in <code>src/data/tipsConfig.ts</code>.
+            </div>
           </DevCard>
 
           <DevCard title="Alleen nieuwe (test)" subtitle="Negeer herhalingen tot N nieuwe per dag">
