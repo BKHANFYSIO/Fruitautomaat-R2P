@@ -193,6 +193,15 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       const ev = e as CustomEvent<{ message: string; type?: 'succes' | 'fout'; timeoutMs?: number }>;
       if (ev.detail && ev.detail.message) {
         showNotificatie(ev.detail.message, ev.detail.type || 'succes', ev.detail.timeoutMs ?? 4000);
+        // Toon optionele footer-links wanneer relevant
+        if (ev.detail.message.includes('Leerstrategieën')) {
+          const el = document.getElementById('footer-link-leerstrategien');
+          if (el) el.style.display = 'inline';
+        }
+        if (ev.detail.message.includes('Leeranalyse')) {
+          const el = document.getElementById('footer-link-leeranalyse');
+          if (el) el.style.display = 'inline';
+        }
       }
     };
     window.addEventListener('app:notify', handler as EventListener);

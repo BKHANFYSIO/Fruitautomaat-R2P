@@ -279,7 +279,27 @@ export const Fruitautomaat = ({
                  <div className="tooltip-content">
                    <strong>Bron</strong>
                    <p>{huidigeOpdracht.opdracht.bron || 'Onbekend'}</p>
-                 </div>
+              </div>
+              {/* Hint-links (optioneel) naar leeranalyse / leerstrategieën via globale notificaties */}
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                {/* Deze knoppen verschijnen alleen wanneer via notificaties wordt aangemoedigd; anders blijven ze onzichtbaar */}
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('openLeeranalyse'))}
+                  className="link-button"
+                  style={{ display: 'none' }}
+                  id="footer-link-leeranalyse"
+                >
+                  Leeranalyse
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new Event('openLeerstrategien'))}
+                  className="link-button"
+                  style={{ display: 'none' }}
+                  id="footer-link-leerstrategien"
+                >
+                  Leerstrategieën
+                </button>
+              </div>
                </div>
              </div>
              <div className="tooltip-button-container"
