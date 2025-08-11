@@ -102,6 +102,35 @@ export const Uitleg = ({ isOpen, onClose }: UitlegProps) => {
             <strong>Certificaat Generatie:</strong> Binnenkort kun je een certificaat genereren op basis van je leeractiviteiten (alleen beschikbaar in Leitner modus). Dit certificaat toont je inzet, voortgang en ontwikkeling, en kun je gebruiken in je portfolio om te laten zien hoe je systematisch werkt aan je professionele ontwikkeling.
           </p>
 
+          <h4>Leitner Boxen (Spaced Repetition)</h4>
+          <p>
+            In de Leitner-leermodus wordt elke opdracht in een box geplaatst. Hoe hoger de box, hoe langer de pauze tot de volgende herhaling. Een goed antwoord promoveert meestal één box; een onvoldoende antwoord degradeert één box. De volgende herhaling kan je in de pauze-footer sneller of later plannen (vanaf Box 2).
+          </p>
+          <table className="leitner-tabel">
+            <thead>
+              <tr>
+                <th>Box</th>
+                <th>Interval (normaal)</th>
+                <th>Effect beoordeling</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>B0</td><td>10 min</td><td>Goed: naar B1 • Niet goed: blijft of naar B0</td></tr>
+              <tr><td>B1</td><td>1 dag</td><td>Goed: naar B2 • Niet goed: naar B0</td></tr>
+              <tr><td>B2</td><td>2 dagen</td><td>Goed: naar B3 • Niet goed: naar B1</td></tr>
+              <tr><td>B3</td><td>4 dagen</td><td>Goed: naar B4 • Niet goed: naar B2</td></tr>
+              <tr><td>B4</td><td>7 dagen</td><td>Goed: naar B5 • Niet goed: naar B3</td></tr>
+              <tr><td>B5</td><td>14 dagen</td><td>Goed: naar B6 • Niet goed: naar B4</td></tr>
+              <tr><td>B6</td><td>45 dagen</td><td>Goed: naar B7 • Niet goed: naar B5</td></tr>
+              <tr><td>B7</td><td>—</td><td>Doelbox (geen geplande herhaling)</td></tr>
+            </tbody>
+          </table>
+          <ul>
+            <li><strong>Sneller/Later:</strong> vanaf B2 kun je in de footer de volgende herhaling vervroegen of uitstellen met ongeveer de helft van het normale interval.</li>
+            <li><strong>Volgende herhaling:</strong> tekst zoals “morgen”, “over X uur/dagen”, of “nu beschikbaar”.</li>
+            <li><strong>Pin & Focus:</strong> pin opdrachten om ze direct achter elkaar te oefenen in een focussessie.</li>
+          </ul>
+
 
 
           <h4>Portfolio & de VRAAK-methode</h4>

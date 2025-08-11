@@ -154,3 +154,22 @@
   color: #a0aec0;
   margin: 0;
 } 
+
+/* Leitner tabel styling */
+.leitner-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 8px 0;
+  font-size: 0.95rem;
+}
+.leitner-tabel th, .leitner-tabel td {
+  border: 1px solid #4a5568;
+  padding: 8px 10px;
+}
+.leitner-tabel th {
+  background-color: #1f2937;
+  color: #90cdf4;
+  text-align: left;
+}
+.leitner-tabel tr:nth-child(even) td { background-color: #2b3544; }
+.leitner-tabel tr:nth-child(odd) td { background-color: #2d3748; }
