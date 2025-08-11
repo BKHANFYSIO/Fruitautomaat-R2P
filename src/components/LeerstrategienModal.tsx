@@ -40,6 +40,10 @@ export const LeerstrategienModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <li>De footer toont “volgende herhaling” (vandaag/morgen/over X dagen). Vanaf B2 kun je sneller/later plannen.</li>
               <li>Tip: beoordeel eerlijk. Dat houdt de timing realistisch en voorkomt overbodige herhaling of te lange gaten.</li>
             </ul>
+            <div className="strategy-figure">
+              <img src="/images/ForgettingCurve.svg.png" alt="Vergeetcurve van Ebbinghaus: herhaling verplaatst en vlakt de curve." />
+              <small className="figure-caption">Vergeetcurve (Ebbinghaus): met herhaling (spaced) voorkom je snelle verval. Leitner automatiseert deze timing.</small>
+            </div>
           </div>
 
           <div className="strategy-section" id="interleaving">

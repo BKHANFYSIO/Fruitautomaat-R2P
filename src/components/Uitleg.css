@@ -182,3 +182,19 @@
   cursor: pointer;
   padding: 0;
 }
+
+.strategy-figure {
+  margin: 10px 0 0 0;
+  text-align: center;
+}
+.strategy-figure img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+}
+.figure-caption {
+  display: block;
+  color: #a0aec0;
+  margin-top: 6px;
+}
