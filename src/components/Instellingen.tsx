@@ -818,7 +818,7 @@ export const Instellingen = React.memo(({
                       onChange={(e) => setIsLeerFeedbackActief(e.target.checked)}
                       disabled={isKaleModusActiefVrijeLeermodus}
                     />
-                    Leerzame feedback en tips tonen
+                    Leerstrategietips tonen (ook in Leitner)
                     {isKaleModusActiefVrijeLeermodus && (
                       <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
                         (uitgeschakeld in geen fruitrol animatie)
@@ -826,10 +826,12 @@ export const Instellingen = React.memo(({
                     )}
                   </label>
                   <p className="setting-description">
-                    Toon leerzame feedback en tips over effectief leren bij spin combinaties. Standaard aan gezet in Leer Modus. Als uitgeschakeld krijg je alleen de Leer Modus zonder feedback.
+                    Toont korte, motiverende tips over effectieve leerstrategieën (zoals ophalen uit je geheugen, focus/pin, spaced repetition) tijdens het spelen in de serieuze leermodi: <strong>Vrije Leermodus</strong> en <strong>Leitner Leermodus</strong>. Standaard aan.
+                    <br />
+                    <em>Opmerking:</em> In <strong>Geen fruitrol animatie</strong> (alleen Vrije Leermodus) worden deze tips automatisch onderdrukt om afleiding te voorkomen.
                     {isKaleModusActiefVrijeLeermodus && (
                       <span style={{ color: '#888', display: 'block', marginTop: '5px' }}>
-                        <strong>Let op:</strong> In geen fruitrol animatie worden geen leerzame tips getoond om afleiding te voorkomen.
+                        <strong>Let op:</strong> Tips zijn uitgeschakeld door geen fruitrol animatie.
                       </span>
                     )}
                   </p>
