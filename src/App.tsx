@@ -1107,8 +1107,17 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             setTipsShownThisSession(prev => prev + 1);
             setEligibleWinsSinceLastTip(0);
           } else {
-            // Korte bevestiging op sterke winst zonder tip, om verwarring te voorkomen
-            showNotificatie('Mooi! Door naar de volgende.', 'succes', 3000);
+            // Heldere voortgang naar eerstvolgende tip
+            if (!magNogTippen) {
+              showNotificatie('Tiplimiet bereikt voor deze sessie.', 'succes', 4000);
+            } else {
+              const currentCount = eligibleWinsSinceLastTip + 1; // na deze winst
+              const remaining = TIP_INTERVAL - currentCount;
+              const msg = remaining === 1
+                ? `Nog 1 winnende fruitcombinatie voor een tip (${currentCount}/${TIP_INTERVAL}).`
+                : `Nog ${remaining} winnende fruitcombinaties voor een tip (${currentCount}/${TIP_INTERVAL}).`;
+              showNotificatie(msg, 'succes', 3500);
+            }
             setEligibleWinsSinceLastTip(prev => prev + 1);
           }
         }
