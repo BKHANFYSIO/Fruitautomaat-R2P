@@ -1,4 +1,5 @@
 export type LeermodusType = 'normaal' | 'leitner';
+import { TIPS_CONFIG } from './tipsConfig';
 
 export interface TipSelectieContext {
   leermodusType: LeermodusType;
@@ -400,7 +401,7 @@ export const getHybridTipRich = (
   const applyConstraints = (items: TipMeta[], skipRecent: boolean, skipCooldown: boolean): TipMeta[] => {
     return items.filter(t => {
       if (!skipRecent && recentSet.has(t.id)) return false;
-      if (!skipCooldown && isInCooldown(t.id, now, 7)) return false;
+      if (!skipCooldown && isInCooldown(t.id, now)) return false;
       return true;
     });
   };
@@ -409,7 +410,7 @@ export const getHybridTipRich = (
   const dynamicAnalyseTips: TipMeta[] = [];
   // Dekking: 20/40/60/80%
   if (ctx.coveragePercentPerHoofdcategorie) {
-    const thresholds = [20, 40, 60, 80];
+    const thresholds = TIPS_CONFIG.thresholds.coveragePercents;
     Object.entries(ctx.coveragePercentPerHoofdcategorie).forEach(([hc, pct]) => {
       thresholds.forEach(th => {
         if (Math.round(pct) >= th) {
@@ -426,7 +427,7 @@ export const getHybridTipRich = (
   }
   // Beheersing: >0% (eerste), 20%, 50%
   if (ctx.masteryPercentPerHoofdcategorie) {
-    const thresholds = [0.1, 20, 50];
+    const thresholds = TIPS_CONFIG.thresholds.masteryPercents;
     Object.entries(ctx.masteryPercentPerHoofdcategorie).forEach(([hc, pct]) => {
       thresholds.forEach(th => {
         if (pct >= th) {
@@ -444,7 +445,7 @@ export const getHybridTipRich = (
   }
   // Gemiddelde box: 2,4,6
   if (ctx.avgBoxPerHoofdcategorie) {
-    const thresholds = [2, 4, 6];
+    const thresholds = TIPS_CONFIG.thresholds.avgBoxValues;
     Object.entries(ctx.avgBoxPerHoofdcategorie).forEach(([hc, avg]) => {
       thresholds.forEach(th => {
         if (Math.floor(avg) >= th) {
@@ -462,11 +463,12 @@ export const getHybridTipRich = (
   // Tijdslijn: >=7, >=30, >=90 dagen
   if (typeof ctx.totalDaysWithData === 'number') {
     const d = ctx.totalDaysWithData;
-    if (d >= 90) {
+    const { week, month, quarter } = TIPS_CONFIG.thresholds.timelineDays;
+    if (d >= quarter) {
       dynamicAnalyseTips.push({ id: 'analyse_timeline_90', bron: 'analyse', tekst: 'Je kunt 3‑maandsgrafieken bekijken in de leeranalyse.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
-    } else if (d >= 30) {
+    } else if (d >= month) {
       dynamicAnalyseTips.push({ id: 'analyse_timeline_30', bron: 'analyse', tekst: 'Je kunt maandgrafieken bekijken in de leeranalyse.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
-    } else if (d >= 7) {
+    } else if (d >= week) {
       dynamicAnalyseTips.push({ id: 'analyse_timeline_7', bron: 'analyse', tekst: 'Je hebt 7+ dagen data: bekijk de grafieken van de afgelopen week.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
     }
   }
@@ -494,13 +496,13 @@ export const getHybridTipRich = (
     comboTipsC = applyConstraints(comboTips, true, true);
   }
 
-  // Gewichten (aanpasbaar): modus 0.5, combo 0.3, analyse 0.2, val terug op algemeen
+  // Gewichten configurabel via TIPS_CONFIG
   const buckets: Array<{ key: 'modus'|'combinatie'|'analyse'|'algemeen'; w: number; items: TipMeta[] }> = (
     [
-      { key: 'modus' as const, w: 0.5, items: modeTips },
-      { key: 'combinatie' as const, w: 0.3, items: comboTipsC },
-      { key: 'analyse' as const, w: 0.2, items: analyseTips },
-      { key: 'algemeen' as const, w: 0.1, items: algemeneTips },
+      { key: 'modus' as const, w: (TIPS_CONFIG as any).weights?.modus ?? 0.5, items: modeTips },
+      { key: 'combinatie' as const, w: (TIPS_CONFIG as any).weights?.combinatie ?? 0.3, items: comboTipsC },
+      { key: 'analyse' as const, w: (TIPS_CONFIG as any).weights?.analyse ?? 0.2, items: analyseTips },
+      { key: 'algemeen' as const, w: (TIPS_CONFIG as any).weights?.algemeen ?? 0.1, items: algemeneTips },
     ]
   ).filter(b => b.items.length > 0);
 

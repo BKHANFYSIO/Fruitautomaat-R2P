@@ -6,6 +6,7 @@ import type { Opdracht, Speler, Achievement, GamePhase } from './data/types';
 import { getHighScore, saveHighScore, getPersonalBest, savePersonalBest, getHighScoreLibrary, type HighScore } from './data/highScoreManager';
 import { getLeerDataManager } from './data/leerDataManager';
 import { getHybridTipRich } from './data/tipsEngine';
+import { TIPS_CONFIG } from './data/tipsConfig';
 import { buildTipsAnalyticsSnapshot } from './utils/analyticsSnapshot';
 import { BONUS_OPDRACHTEN, SYMBOLEN } from './data/constants';
 
@@ -1070,8 +1071,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         const isSterkeCombinatie = isDrieHetzelfde && isZonderJoker && STRONG_SYMBOLS.has(sym);
 
         if (isSterkeCombinatie && analyse.beschrijving && analyse.beschrijving !== 'Geen combinatie.' && analyse.beschrijving !== 'Blijf leren en groeien!') {
-          const TIP_INTERVAL = 3; // 1 tip per 3 sterke winmomenten
-          const MAX_TIPS_PER_SESSIE = 6;
+          const TIP_INTERVAL = TIPS_CONFIG.tipInterval;
+          const MAX_TIPS_PER_SESSIE = TIPS_CONFIG.maxTipsPerSession;
           const magNogTippen = tipsShownThisSession < MAX_TIPS_PER_SESSIE;
           const isTipBeurt = (eligibleWinsSinceLastTip + 1) >= TIP_INTERVAL;
 
