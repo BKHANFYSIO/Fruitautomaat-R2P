@@ -2112,12 +2112,25 @@ class LeerDataManager {
     const dueMs = last + intervalMin * 60000;
     const diffMs = dueMs - Date.now();
     if (diffMs <= 0) return 'nu beschikbaar';
+    // Bepaal op datum-basis of het morgen is
+    const nowDate = new Date();
+    const dueDate = new Date(dueMs);
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const dayDiff = Math.floor((startOfDay(dueDate) - startOfDay(nowDate)) / 86400000);
+
+    // Specifieke, intuïtieve labels
+    if (dayDiff === 1) {
+      return 'morgen';
+    }
+    if (dayDiff > 1) {
+      return `over ${dayDiff} dagen`;
+    }
+
+    // Zelfde dag: geef minuten/uren
     const mins = Math.round(diffMs / 60000);
     if (mins < 60) return `over ${mins} min`;
     const hours = Math.round(mins / 60);
-    if (hours < 48) return `over ${hours} uur`;
-    const days = Math.round(hours / 24);
-    return `over ${days} dagen`;
+    return `over ${hours} uur`;
   }
 
   getBoxIntervalMin(boxId: number): number {
