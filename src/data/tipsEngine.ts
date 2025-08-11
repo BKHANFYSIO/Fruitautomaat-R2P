@@ -16,6 +16,12 @@ export interface TipSelectieContext {
   leitnerOverdueCount?: number;
   leitnerPromotionsTotal?: number;
   leitnerBox7Count?: number;
+  // Per-hoofdcategorie snapshots (optioneel)
+  coveragePercentPerHoofdcategorie?: { [hoofdcategorie: string]: number };
+  masteryPercentPerHoofdcategorie?: { [hoofdcategorie: string]: number };
+  avgBoxPerHoofdcategorie?: { [hoofdcategorie: string]: number };
+  // Tijdlijn dekking
+  totalDaysWithData?: number; // aantal dagen data beschikbaar
 }
 
 export interface LeerFeedback {
@@ -385,7 +391,7 @@ export const getHybridTipRich = (
   }
 
   const modeTipsAll = MODE_TIPS.filter(t => isEligibleBasic(t, ctx));
-  const analyseTipsAll = ANALYSE_TIPS.filter(t => isEligibleBasic(t, ctx));
+  let analyseTipsAll = ANALYSE_TIPS.filter(t => isEligibleBasic(t, ctx));
   const algemeneTipsAll = ALGEMENE_TIPS.filter(t => isEligibleBasic(t, ctx));
 
   const now = Date.now();
@@ -398,6 +404,74 @@ export const getHybridTipRich = (
       return true;
     });
   };
+
+  // Dynamische analyse-tips op basis van snapshots
+  const dynamicAnalyseTips: TipMeta[] = [];
+  // Dekking: 20/40/60/80%
+  if (ctx.coveragePercentPerHoofdcategorie) {
+    const thresholds = [20, 40, 60, 80];
+    Object.entries(ctx.coveragePercentPerHoofdcategorie).forEach(([hc, pct]) => {
+      thresholds.forEach(th => {
+        if (Math.round(pct) >= th) {
+          dynamicAnalyseTips.push({
+            id: `analyse_cov_${hc}_${th}`,
+            bron: 'analyse',
+            tekst: `Je dekt nu ${Math.round(pct)}% van "${hc}". Mooi bezig, bekijk je spreiding.`,
+            modes: ['beide'],
+            cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'categorieen' },
+          });
+        }
+      });
+    });
+  }
+  // Beheersing: >0% (eerste), 20%, 50%
+  if (ctx.masteryPercentPerHoofdcategorie) {
+    const thresholds = [0.1, 20, 50];
+    Object.entries(ctx.masteryPercentPerHoofdcategorie).forEach(([hc, pct]) => {
+      thresholds.forEach(th => {
+        if (pct >= th) {
+          const label = th < 1 ? 'eerste beheersing' : `${Math.round(th)}% beheersing`;
+          dynamicAnalyseTips.push({
+            id: `analyse_mastery_${hc}_${Math.round(th)}`,
+            bron: 'analyse',
+            tekst: `${label} in "${hc}"! Hou dit ritme vol.`,
+            modes: ['beide'],
+            cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'categorieen' },
+          });
+        }
+      });
+    });
+  }
+  // Gemiddelde box: 2,4,6
+  if (ctx.avgBoxPerHoofdcategorie) {
+    const thresholds = [2, 4, 6];
+    Object.entries(ctx.avgBoxPerHoofdcategorie).forEach(([hc, avg]) => {
+      thresholds.forEach(th => {
+        if (Math.floor(avg) >= th) {
+          dynamicAnalyseTips.push({
+            id: `analyse_avgbox_${hc}_${th}`,
+            bron: 'analyse',
+            tekst: `Gemiddelde Leitner‑box in "${hc}" is ${Math.round(avg)}. Je hoeft minder vaak te herhalen.`,
+            modes: ['leitner'],
+            cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' },
+          });
+        }
+      });
+    });
+  }
+  // Tijdslijn: >=7, >=30, >=90 dagen
+  if (typeof ctx.totalDaysWithData === 'number') {
+    const d = ctx.totalDaysWithData;
+    if (d >= 90) {
+      dynamicAnalyseTips.push({ id: 'analyse_timeline_90', bron: 'analyse', tekst: 'Je kunt 3‑maandsgrafieken bekijken in de leeranalyse.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
+    } else if (d >= 30) {
+      dynamicAnalyseTips.push({ id: 'analyse_timeline_30', bron: 'analyse', tekst: 'Je kunt maandgrafieken bekijken in de leeranalyse.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
+    } else if (d >= 7) {
+      dynamicAnalyseTips.push({ id: 'analyse_timeline_7', bron: 'analyse', tekst: 'Je hebt 7+ dagen data: bekijk de grafieken van de afgelopen week.', modes: ['beide'], cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'tijdlijn' } });
+    }
+  }
+  // Voeg dynamische items toe
+  analyseTipsAll = [...analyseTipsAll, ...dynamicAnalyseTips];
 
   // 1) beide beperkingen actief
   let modeTips = applyConstraints(modeTipsAll, false, false);
