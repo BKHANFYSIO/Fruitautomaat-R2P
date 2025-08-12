@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 're
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
-import { opdrachtTypeIconen } from '../data/constants';
+import { opdrachtTypeIconen, NIVEAU_LABELS } from '../data/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
 
 
@@ -76,8 +76,9 @@ interface CategorieSelectieModalProps {
   filters?: {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
+    niveaus?: Array<1 | 2 | 3 | 'undef'>;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[] }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'> }) => void;
 }
 
 export const CategorieSelectieModal = ({
@@ -114,11 +115,44 @@ export const CategorieSelectieModal = ({
   
 
   
-  // Sorteer functionaliteit
+  // Sticky subtabbalk: verberg bij naar beneden scrollen, toon bij klein stukje omhoog
+  const tabContentRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTopRef = useRef(0);
+  const [isSubtabHidden, setIsSubtabHidden] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = tabContentRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const current = el.scrollTop;
+      const delta = current - lastScrollTopRef.current;
+      const thresholdShow = 8;
+      const thresholdHide = 12;
+
+      if (current <= 0) {
+        setIsSubtabHidden(false);
+      } else if (delta > thresholdHide) {
+        setIsSubtabHidden(true);
+      } else if (delta < -thresholdShow) {
+        setIsSubtabHidden(false);
+      }
+
+      lastScrollTopRef.current = current;
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true } as any);
+    return () => {
+      el.removeEventListener('scroll', handleScroll as any);
+    };
+  }, [isOpen]);
+
+  // Sorteer functionaliteit (standaard alfabetisch op categorienaam)
   const [sortConfig, setSortConfig] = useState<{
     key: 'naam' | 'aantalOpdrachten' | 'geselecteerd' | 'status';
     direction: 'ascending' | 'descending';
-  } | null>(null);
+  } | null>({ key: 'naam', direction: 'ascending' });
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [geselecteerdeCategorieVoorDetail, setGeselecteerdeCategorieVoorDetail] = useState<string | null>(null);
@@ -149,6 +183,10 @@ export const CategorieSelectieModal = ({
   useEffect(() => {
     if (!isOpen) return;
     setInnerTab('categories');
+    // Standaard alle hoofd-categorieën dicht bij openen/tabwissel
+    setOpenHoofdCategorieen({});
+    setIsSubtabHidden(false);
+    lastScrollTopRef.current = 0;
     requestAnimationFrame(() => {
       if (activeTab !== 'leitner') {
         // Bij Vrije Leermodus, Multiplayer en Highscore: naar top zodat subtabbladen zichtbaar zijn
@@ -262,16 +300,28 @@ export const CategorieSelectieModal = ({
   const actieveBulkHandler = getActieveBulkHandler();
 
   // Filter functionaliteit
-  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron } = useMemo(() => {
+  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling } = useMemo(() => {
     const opdrachtenPerType: { [key: string]: number } = {};
     const opdrachtenPerBron: { [key: string]: number } = {};
+    const niveausTelling: { [k in 1|2|3|'undef']?: number } = {};
     
-    // Gebruik alle opdrachten voor de filter tellingen, niet alleen geselecteerde
-    opdrachten.forEach(op => {
+    // Gebruik alleen opdrachten binnen actieve categorie selectie
+    const isCategorieFilterActief = Array.isArray(actieveCategorieSelectie) && actieveCategorieSelectie.length > 0;
+    const subset = isCategorieFilterActief
+      ? opdrachten.filter(op => {
+          const key = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+          return actieveCategorieSelectie.includes(key);
+        })
+      : opdrachten;
+
+    subset.forEach(op => {
       const type = op.opdrachtType || 'Onbekend';
       opdrachtenPerType[type] = (opdrachtenPerType[type] || 0) + 1;
       const bron = op.bron || 'systeem';
       opdrachtenPerBron[bron] = (opdrachtenPerBron[bron] || 0) + 1;
+      const niv = (op as any).niveau as (1|2|3|undefined);
+      const key = (typeof niv === 'number' ? niv : 'undef') as 1|2|3|'undef';
+      niveausTelling[key] = (niveausTelling[key] || 0) + 1;
     });
     
     // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
@@ -281,8 +331,8 @@ export const CategorieSelectieModal = ({
       return a.localeCompare(b);
     });
     
-    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron };
-  }, [opdrachten]);
+    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
+  }, [opdrachten, actieveCategorieSelectie]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     if (!setFilters) return;
@@ -306,6 +356,15 @@ export const CategorieSelectieModal = ({
       ? filters.opdrachtTypes.filter(t => t !== type)
       : [...filters.opdrachtTypes, type];
     setFilters({ ...filters, opdrachtTypes: nieuweTypes });
+  };
+
+  const handleNiveauToggle = (niv: 1 | 2 | 3 | 'undef') => {
+    if (!setFilters) return;
+    const huidige = filters.niveaus || [];
+    const nieuw = huidige.includes(niv)
+      ? huidige.filter(n => n !== niv)
+      : [...huidige, niv];
+    setFilters({ ...filters, niveaus: nieuw });
   };
 
   // Gefilterde opdrachten op basis van huidige filters
@@ -354,6 +413,16 @@ export const CategorieSelectieModal = ({
 
   const toggleHoofdCategorie = (hoofd: string) => {
     setOpenHoofdCategorieen(prev => ({ ...prev, [hoofd]: !prev[hoofd] }));
+  };
+
+  const handleKlapAllesUit = () => {
+    const map: Record<string, boolean> = {};
+    Object.keys(gegroepeerdeCategorieen).forEach(hoofd => { map[hoofd] = true; });
+    setOpenHoofdCategorieen(map);
+  };
+
+  const handleKlapAllesIn = () => {
+    setOpenHoofdCategorieen({});
   };
 
   const handleHoofdCategorieSelectie = (hoofd: string, subcategorieen: string[], isGeselecteerd: boolean) => {
@@ -542,7 +611,7 @@ export const CategorieSelectieModal = ({
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
       {/* Subtabs: Categorieën / Filters / Opgeslagen */}
-      <div className="tab-navigatie" style={{ marginBottom: 8 }}>
+      <div className={`tab-navigatie sticky-subtabs ${isSubtabHidden ? 'hidden' : ''}`} style={{ marginBottom: 8 }}>
         {(['categories','filters','saved'] as const).map(t => (
           <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t)}>
             {t === 'categories' ? '📂 Categorieën' : t === 'filters' ? '🔍 Filters' : '💾 Opgeslagen'}
@@ -613,12 +682,15 @@ export const CategorieSelectieModal = ({
 
       {/* Filter sectie */}
       {(innerTab === 'filters') && setFilters && (
-        <div className="filter-sectie">
+          <div className="filter-sectie">
           <div className="filter-header">
             <h4 className="filter-titel">🔍 Filters Aanpassen</h4>
-            <span className="filter-info">Selecteer op bron en/of type. Combinaties mogelijk. Selecties worden bewaard.</span>
+            <span className="filter-info">Selecteer op bron, type en niveau. Combinaties mogelijk. Selecties worden bewaard.</span>
           </div>
           <div className="filter-groepen">
+            <div style={{ fontSize: '0.85rem', color: '#9aa0a6', margin: '0 0 8px 0' }}>
+              Aantallen hieronder zijn binnen je huidige categorie‑selectie.
+            </div>
             <div className="filter-groep">
               <span className="filter-label">Bron:</span>
               <div className="filter-iconen">
@@ -658,6 +730,29 @@ export const CategorieSelectieModal = ({
                 })}
               </div>
             </div>
+            <div className="filter-groep">
+              <span className="filter-label">Niveau:</span>
+              <div className="filter-iconen">
+                {[1,2,3].map((niv) => (
+                  <InfoTooltip asChild content={`Niv. ${niv}: ${NIVEAU_LABELS[niv as 1|2|3]} — ${(niveausTelling as any)[niv] || 0} opdr.`} key={`niv-${niv}`}>
+                    <span
+                      className={`filter-icon ${filters.niveaus?.includes(niv as any) ? 'active' : 'inactive'}`}
+                      onClick={() => handleNiveauToggle(niv as 1|2|3)}
+                    >
+                      {`N${niv}`}
+                    </span>
+                  </InfoTooltip>
+                ))}
+                <InfoTooltip asChild content={`∅ – ongedefinieerd: ${(niveausTelling as any)['undef'] || 0} opdr.`}>
+                  <span
+                    className={`filter-icon ${filters.niveaus?.includes('undef') ? 'active' : 'inactive'}`}
+                    onClick={() => handleNiveauToggle('undef')}
+                  >
+                    ∅
+                  </span>
+                </InfoTooltip>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -669,6 +764,8 @@ export const CategorieSelectieModal = ({
           <div className="snelle-selectie-knoppen">
             <button onClick={handleSelecteerAlles} className="snelle-selectie-knop">Selecteer Alles</button>
             <button onClick={handleDeselecteerAlles} className="snelle-selectie-knop">Deselecteer Alles</button>
+            <button onClick={handleKlapAllesUit} className="snelle-selectie-knop">Klap Alles Uit</button>
+            <button onClick={handleKlapAllesIn} className="snelle-selectie-knop">Klap Alles In</button>
           </div>
         </div>
         
@@ -831,7 +928,7 @@ export const CategorieSelectieModal = ({
         {/* Geen beschrijving voor visuele consistentie met Leitner modal */}
 
         {/* Tab content */}
-        <div className="tab-content">
+        <div className="tab-content" ref={tabContentRef}>
           {activeTab === 'leitner' ? renderLeitnerTabContent() : renderBasisCategorieSelectie()}
         </div>
 

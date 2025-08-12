@@ -6,6 +6,7 @@ export type OpdrachtBron = 'systeem' | 'gebruiker';
 export interface Filters {
   bronnen: OpdrachtBron[];
   opdrachtTypes: string[];
+  niveaus?: Array<1 | 2 | 3 | 'undef'>; // leeg of undefined = geen niveau-filter
 }
 
 export interface CategorieSelectieState {
@@ -30,14 +31,16 @@ export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieS
       try {
         const parsed = JSON.parse(saved);
         if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
-          if (parsed.bronnen.length === 0) parsed.bronnen = ['systeem'];
+          if (parsed.bronnen.length === 0) parsed.bronnen = ['systeem', 'gebruiker'];
+          // Zorg voor default voor niveaus (geen filter)
+          if (!Array.isArray(parsed.niveaus)) parsed.niveaus = [];
           return parsed;
         }
       } catch {
         // ignore parse errors
       }
     }
-    return { bronnen: ['systeem'], opdrachtTypes: [] };
+    return { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [] };
   });
 
   // Debounced save van filters
@@ -52,8 +55,13 @@ export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieS
     return opdrachten.filter(op => {
       const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes((op.bron as OpdrachtBron) || 'systeem');
       if (!bronMatch) return false;
-      if (filters.opdrachtTypes.length === 0) return true;
-      return filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+      const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+      if (!typeMatch) return false;
+      const nivs = filters.niveaus || [];
+      if (nivs.length === 0) return true; // geen niveau-filter
+      const niv = (op as any).niveau as (1|2|3|undefined);
+      if (typeof niv === 'number') return nivs.includes(niv);
+      return nivs.includes('undef');
     });
   }, [opdrachten, filters]);
 

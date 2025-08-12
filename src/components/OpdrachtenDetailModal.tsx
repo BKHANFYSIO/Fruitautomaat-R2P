@@ -94,7 +94,7 @@ export const OpdrachtenDetailModal: React.FC<OpdrachtenDetailModalProps> = ({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay opdrachten-detail-overlay" onClick={onClose}>
       <div className="modal-content opdrachten-detail-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>OPDRACHTEN IN "{categorieNaam}"</h2>

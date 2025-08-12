@@ -10,6 +10,7 @@ export interface Opdracht {
   Extra_Punten: number;
   bron?: 'systeem' | 'gebruiker';
   opdrachtType?: string;
+  niveau?: 1 | 2 | 3; // optioneel: moeilijkheid (1=opwarmers, 2=basis, 3=uitdagend)
 }
 
 export interface Speler {

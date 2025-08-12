@@ -11,8 +11,7 @@ export const AiOpgaveGenerator = ({ isOpen, onClose }: AiOpgaveGeneratorProps) =
   const [onderwerp, setOnderwerp] = useState('');
   const [aantalOpdrachten, setAantalOpdrachten] = useState(5);
   const [niveau, setNiveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
-  const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e jaar' | '4e jaar'>('2e jaar');
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar'>('2e jaar');
 
   const generatePrompt = () => {
     const niveauInstructie = niveau === 'makkelijk' 
@@ -30,9 +29,7 @@ ${Object.entries(CRITERIA).map(([, category]) =>
 
 Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak de antwoordsleutel specifiek voor de opdracht en gebruik de relevante criteria als richtlijn.`;
 
-    const fileContext = uploadedFiles.length > 0 
-      ? `\n**BIJLAGEN:**\nGebruik de volgende bijlagen als bronmateriaal voor het maken van de opdrachten:\n${uploadedFiles.map(file => `- ${file.name}`).join('\n')}\n\nBaseer de opdrachten en antwoorden op de inhoud van deze documenten.`
-      : '';
+    const fileContext = '';
 
     const voorbeeldOpdrachten = `**VOORBEELD OPDRACHTEN UIT DE APP:**
 
@@ -102,11 +99,11 @@ Lever het resultaat in een van de volgende formaten:
 
 **OPTIE 1: Kopieerbare tabel**
 Geef een tabel met de volgende kolomnamen:
-Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2)
+Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau
 
 **OPTIE 2: Excel-formaat**
 Geef de data in een formaat dat direct in Excel kan worden geplakt, met de volgende kolomnamen:
-Categorie, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2)
+Categorie, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2), Niveau
 
 **KOLOMSPECIFICATIES:**
 - "Categorie": Exact overeenkomen met het opgegeven specifieke onderwerp
@@ -114,18 +111,19 @@ Categorie, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2)
 - "Antwoordsleutel": Het modelantwoord met bronvermelding
 - "Tijdslimiet": Getal in seconden (bijv. 60 voor 1 minuut). Alleen toevoegen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering.
 - "Extra_Punten (max 2)": Getal tussen 0 en 2. Alleen extra punten geven voor moeilijke of complexe opdrachten die meer inspanning vereisen.
+ - "Niveau": 1 (opwarmers/basis), 2 (basis/standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
 
 **VOORBEELD TABEL FORMAAT:**
 
-| Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) |
-|-----------|----------|-----------------|-------------|---------------------|
-| ${onderwerp} | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). | 120 | 1 |
-| ${onderwerp} | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015). | 0 | 0 |
+| Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau |
+|-----------|----------|-----------------|-------------|---------------------|--------|
+| ${onderwerp} | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). | 120 | 1 | 2 |
+| ${onderwerp} | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015). | 0 | 0 | 1 |
 
 **VOORBEELD EXCEL FORMAAT:**
-Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2)
-${onderwerp},"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).",120,1
-${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015).",0,0${fileContext}`;
+Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau
+${onderwerp},"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).",120,1,2
+${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015).",0,0,1${fileContext}`;
   };
 
   const handleCopyPrompt = async () => {
@@ -146,9 +144,9 @@ ${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator 
   };
 
   const handleDownloadTemplate = () => {
-    const template = `Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2)
-Voorbeeld Onderwerp,Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.,Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).,120,1
-Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg uit wat hun functie is bij schouderstabilisatie.,De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren en stabiliseren tijdens bewegingen. Bron: Gray's Anatomy (2015).,90,2`;
+    const template = `Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau
+Voorbeeld Onderwerp,Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.,Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).,120,1,2
+Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg uit wat hun functie is bij schouderstabilisatie.,De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren en stabiliseren tijdens bewegingen. Bron: Gray's Anatomy (2015).,90,2,1`;
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -176,6 +174,9 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
         <div className="ai-generator-body">
           <div className="ai-generator-section">
             <h4>Stap 1: Vul de parameters in</h4>
+            <p className="instruction-text">
+              De waarden hieronder (onderwerp, aantal en studentniveau) worden automatisch verwerkt in de prompt die je in stap 5 kunt kopiëren.
+            </p>
             <div className="form-group">
               <label htmlFor="onderwerp">Onderwerp:</label>
               <input
@@ -226,107 +227,62 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
                   <input
                     type="radio"
                     name="studentNiveau"
-                    value="3e jaar"
-                    checked={studentNiveau === '3e jaar'}
-                    onChange={() => setStudentNiveau('3e jaar')}
+                    value="3e/4e jaar"
+                    checked={studentNiveau === '3e/4e jaar'}
+                    onChange={() => setStudentNiveau('3e/4e jaar')}
                   />
-                  3e jaar
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="studentNiveau"
-                    value="4e jaar"
-                    checked={studentNiveau === '4e jaar'}
-                    onChange={() => setStudentNiveau('4e jaar')}
-                  />
-                  4e jaar
+                  3e/4e jaar
                 </label>
               </div>
             </div>
             
-            <div className="form-group">
-              <label>Vraag moeilijkheidsgraad:</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name="niveau"
-                    value="makkelijk"
-                    checked={niveau === 'makkelijk'}
-                    onChange={() => setNiveau('makkelijk')}
-                  />
-                  Makkelijk
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="niveau"
-                    value="mix"
-                    checked={niveau === 'mix'}
-                    onChange={() => setNiveau('mix')}
-                  />
-                  Mix
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="niveau"
-                    value="moeilijk"
-                    checked={niveau === 'moeilijk'}
-                    onChange={() => setNiveau('moeilijk')}
-                  />
-                  Moeilijk
-                </label>
-              </div>
-            </div>
+            {/* Vraag moeilijkheidsgraad verwijderd op verzoek */}
           </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 1.5: Voeg bronmateriaal toe (optioneel)</h4>
+            <h4>Stap 2: Bepaal en verzamel bronmateriaal (optioneel)</h4>
             <p className="instruction-text">
-              Upload artikelen, transcripties of andere documenten waaruit de AI kan putten om de opdrachten te maken. 
-              Dit zorgt voor meer specifieke en relevante opdrachten.
+              Zoek en verzamel zelf bronmateriaal waarop je de opdrachten wilt baseren. Denk aan:
             </p>
-            <div className="file-upload-section">
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setUploadedFiles(prev => [...prev, ...files]);
-                }}
-                style={{ display: 'none' }}
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="file-upload-label">
-                📎 Voeg bestanden toe
-              </label>
-              
-              {uploadedFiles.length > 0 && (
-                <div className="uploaded-files">
-                  <h5>Toegevoegde bestanden:</h5>
-                  <ul>
-                    {uploadedFiles.map((file, index) => (
-                      <li key={index}>
-                        {file.name}
-                        <button 
-                          onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
-                          className="remove-file-btn"
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            <ul className="instruction-steps">
+              <li>YouTube/kennisclips (tip: met tijdstempel – de app ondersteunt <code>?t=…</code> of <code>?start=…</code>)</li>
+              <li>Artikelen en (kursus)boeken</li>
+              <li>Transcripties, hoorcolleges, slides</li>
+              <li>Websites en richtlijnen</li>
+            </ul>
+            <p className="instruction-text">
+              Dit is optioneel. Zonder bronnen zal het taalmodel zijn eigen kennis gebruiken.
+              Dat werkt vaak prima, maar verhoogt de kans op bias en hallucinaties. Controleer
+              de inhoud dan extra kritisch en voeg bij voorkeur toch concrete bronnen toe.
+            </p>
+          </div>
+
+          <div className="ai-generator-section">
+            <h4>Stap 3: Download sjabloon</h4>
+            <p className="instruction-text">Download het Excel/CSV‑sjabloon waarin je de AI‑output kunt plakken.</p>
+            <button className="download-knop" onClick={handleDownloadTemplate}>
+              Download Sjabloon
+            </button>
+          </div>
+
+          <div className="ai-generator-section">
+            <h4>Stap 4: Kies je AI‑chatbot</h4>
+            <p className="instruction-text">
+              Chatbots en onderliggende modellen veranderen snel; kies wat voor jou werkt. Wil je meer garantie dat opdrachten echt op je eigen
+              bronnen zijn gebaseerd, overweeg dan een chatbot die sterk op geüploade of gelinkte bronnen leunt (bijv. NotebookLM). Binnen een
+              AI‑chatbot kun je vaak ook nog tussen verschillende modellen kiezen; een redeneer/think‑model geeft bij dit soort taken meestal
+              betere resultaten.
+            </p>
+            <div className="chatbot-button-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <button className="download-knop" onClick={() => window.open('https://chat.openai.com/', '_blank', 'noopener,noreferrer')}>ChatGPT</button>
+              <button className="download-knop" onClick={() => window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer')}>NotebookLM</button>
+              <button className="download-knop" onClick={() => window.open('https://claude.ai/', '_blank', 'noopener,noreferrer')}>Claude</button>
+              <button className="download-knop" onClick={() => window.open('https://chat.mistral.ai/', '_blank', 'noopener,noreferrer')}>Mistral</button>
             </div>
           </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 2: Kopieer de prompt</h4>
+            <h4>Stap 5: Kopieer de prompt</h4>
             <p className="instruction-text">
               Klik op "Kopieer Prompt" om de gegenereerde prompt naar je klembord te kopiëren. 
               Plak deze vervolgens in je favoriete AI-tool (zoals ChatGPT, Claude, NotebookLM, etc.).
@@ -341,35 +297,27 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
           </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 3: Controleer en itereren</h4>
-            <div className="instruction-steps">
-              <div className="step">
-                <strong>1. Controleer de output:</strong> AI-resultaten moeten altijd gecontroleerd worden op correctheid en relevantie.
-              </div>
-              <div className="step">
-                <strong>2. Pas de prompt aan:</strong> Als de resultaten niet bevredigend zijn, pas dan de prompt aan:
-                <ul>
-                  <li>"Maak de vragen moeilijker"</li>
-                  <li>"Geef meer praktische voorbeelden"</li>
-                  <li>"Focus meer op code-voorbeelden"</li>
-                  <li>"Maak de vragen korter"</li>
-                </ul>
-              </div>
-              <div className="step">
-                <strong>3. Herhaal indien nodig:</strong> Blijf de prompt aanpassen tot je tevreden bent met de resultaten.
-              </div>
-            </div>
+            <h4>Stap 6: Stappen in de AI‑chatbot</h4>
+            <ol className="steps-list">
+              <li className="step-item"><span className="step-badge">1</span><span className="step-content">Voeg het sjabloon toe (of geef het gewenste kolomformaat).</span></li>
+              <li className="step-item"><span className="step-badge">2</span><span className="step-content">Voeg (een deel van) je bronnen toe (indien van toepassing): links of korte samenvattingen per bron.</span></li>
+              <li className="step-item"><span className="step-badge">3</span><span className="step-content">Plak de prompt.</span></li>
+              <li className="step-item"><span className="step-badge">4</span><span className="step-content">Lees de prompt en pas naar wens aan (toon, niveau, vraagtypen, kolommen).</span></li>
+              <li className="step-item"><span className="step-badge">5</span><span className="step-content">Itereer tot het resultaat goed is (vraag om bijsturen waar nodig).</span></li>
+              <li className="step-item"><span className="step-badge">6</span><span className="step-content">Laat opdrachten, antwoordsleutels en velden (tijdslimiet, extra punten, niveau) bijschaven waar nodig.</span></li>
+              <li className="step-item"><span className="step-badge">7</span><span className="step-content">Vraag om alle opdrachten te leveren in een downloadbaar Excel/CSV met de juiste kolomnamen.</span></li>
+              <li className="step-item"><span className="step-badge">8</span><span className="step-content">Download het bestand.</span></li>
+            </ol>
+            <p className="instruction-text" style={{ marginTop: 10 }}>
+              Tip: valt het resultaat tegen? Probeer minder bronnen te gebruiken of maak het onderwerp concreter (subthema).
+            </p>
           </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 4: Voeg opdrachten toe</h4>
+            <h4>Stap 7: Voeg opdrachten toe</h4>
             <p className="instruction-text">
-              Download het sjabloon en voeg je gegenereerde opdrachten toe in het juiste formaat. 
-              Upload vervolgens het bestand via de instellingen.
+              Plak de AI‑output in het sjabloon (of zet om naar de juiste kolommen) en upload het bestand daarna in de app via Instellingen → Opdrachtenbeheer.
             </p>
-            <button className="download-knop" onClick={handleDownloadTemplate}>
-              Download Sjabloon
-            </button>
           </div>
 
           <div className="ai-generator-section">

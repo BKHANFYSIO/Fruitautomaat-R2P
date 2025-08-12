@@ -7,7 +7,8 @@
   background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* altijd bovenaan */
+  padding-top: 16px; /* ademruimte aan bovenkant */
   z-index: 1000;
   backdrop-filter: blur(5px);
 }
@@ -24,6 +25,7 @@
   max-height: 80vh; /* Maximale hoogte van 80% van de viewport hoogte */
   display: flex;
   flex-direction: column;
+  box-sizing: border-box; /* voorkom overloop door padding */
 }
 
 /* Breedtevarianten */
@@ -42,10 +44,11 @@
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 300;
+  font-size: 1.6rem; /* uniform met andere modals */
+  font-weight: 600;
   width: 100%;
   text-align: center;
+  color: #61dafb; /* gelijk aan Leitner-stijl */
 }
 
 /* Kleurvarianten header */
@@ -65,8 +68,9 @@
   cursor: pointer;
   padding: 0 10px;
   line-height: 1;
-  position: relative; /* Relative positionering binnen de header */
-  margin-left: auto;  /* Duwt de button naar rechts */
+  position: relative; /* binnen de header */
+  margin-left: auto;  /* naar rechts */
+  flex-shrink: 0; /* voorkom dat de knop buiten beeld gedrukt wordt */
 }
 
 .modal-close-button:hover {
@@ -77,7 +81,20 @@
   font-size: 1.1rem;
   line-height: 1.6;
   white-space: pre-wrap; /* Zorgt dat witruimte en nieuwe regels behouden blijven */
-  overflow-y: auto; /* Voegt een scrollbalk toe als de inhoud te hoog is */
+  overflow-y: auto; /* scroll bij te hoge inhoud */
+  overflow-x: hidden; /* geen horizontale scroll door brede content */
+}
+
+/* Mobiel fixes: zorg dat content nooit breder wordt dan viewport */
+@media (max-width: 480px) {
+  .modal-content {
+    width: calc(100% - 24px);
+    max-width: none;
+    margin: 0 12px;
+  }
+  .modal-header h2 {
+    font-size: 1.4rem;
+  }
 }
 
 .antwoord-sectie {

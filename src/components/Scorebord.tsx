@@ -15,9 +15,10 @@ interface ScorebordProps {
   personalBest: HighScore | null;
   isSerieuzeLeerModusActief?: boolean;
   aantalBeurtenGespeeld?: number;
+  isFocusStandActief?: boolean;
 }
 
-export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gameMode, highScore, personalBest, isSerieuzeLeerModusActief = false, aantalBeurtenGespeeld = 0 }: ScorebordProps) => {
+export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gameMode, highScore, personalBest, isSerieuzeLeerModusActief = false, aantalBeurtenGespeeld = 0, isFocusStandActief = false }: ScorebordProps) => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const gesorteerdeSpelers = [...spelers].sort((a, b) => b.score - a.score);
 
@@ -120,7 +121,7 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
           </div>
         )}
       </div>
-      {gameMode === 'single' && !isSerieuzeLeerModusActief && (
+      {gameMode === 'single' && !isSerieuzeLeerModusActief && !isFocusStandActief && (
         <div className="highscore-display">
           <h3>🏆 Highscore Modus</h3>
           {highScore && (
@@ -156,13 +157,13 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
               <div className="speler-info">
                 <div className="speler-stats">
                   <span className="speler-beurten-teller">{speler.beurten} {speler.beurten === 1 ? 'beurt' : 'beurten'}</span>
-                  {speler.extraSpins > 0 && (
+                  {!isFocusStandActief && speler.extraSpins > 0 && (
                     <span className="extra-spins-teller" title={`${speler.extraSpins} extra spin(s)`}>
                       <img src="/images/joker.png" alt="Joker" className="joker-icon" />×{speler.extraSpins}
                     </span>
                   )}
                 </div>
-                {isSerieuzeLeerModusActief ? (
+                {isSerieuzeLeerModusActief || isFocusStandActief ? (
                   <span className="speler-score"></span>
                 ) : (
                   <span className="speler-score">{speler.score.toFixed(1)} pnt</span>

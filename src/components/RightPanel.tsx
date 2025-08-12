@@ -30,6 +30,7 @@ type Props = {
   isBeoordelingDirect: boolean;
   isKaleModusActief: boolean;
   welcomeMessage?: React.ReactNode;
+  isFocusStandActief?: boolean;
 
   // ActieDashboard props
   actieDashboardRef: RefObject<HTMLDivElement | null>;
@@ -71,6 +72,7 @@ export const RightPanel: React.FC<Props> = ({
   isBeoordelingDirect,
   isKaleModusActief,
   welcomeMessage,
+  isFocusStandActief,
   actieDashboardRef,
   handleBeoordeling,
   isTimerActief,
@@ -140,6 +142,7 @@ export const RightPanel: React.FC<Props> = ({
             onBonusRondeVoltooid={onBonusRondeVoltooid}
             onKopOfMuntVoltooid={onKopOfMuntVoltooid}
             isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+            isFocusStandActief={Boolean(isFocusStandActief)}
             aantalBeurtenGespeeld={aantalBeurtenGespeeld}
           />
         )}

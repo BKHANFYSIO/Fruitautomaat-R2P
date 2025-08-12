@@ -4,6 +4,9 @@ import type { ReactNode } from 'react';
 type GameMode = 'single' | 'multi';
 type BonusKans = 'standaard' | 'verhoogd' | 'fors_verhoogd';
 
+type NiveauSelectieStrategie = 'random' | 'ascending';
+type OngedefinieerdGedrag = 'mix' | 'last';
+
 type LeermodusInstellingenView = {
   type: 'normaal' | 'leitner';
   isSpinVergrendelingActief: boolean;
@@ -41,10 +44,15 @@ interface SettingsContextType {
   setIsSpinVergrendelingActiefHighscore: (actief: boolean) => void;
   isJokerSpinActiefHighscore: boolean;
   setIsJokerSpinActiefHighscore: (actief: boolean) => void;
+  // Focus-stand per modus
+  isFocusStandActiefHighscore: boolean;
+  setIsFocusStandActiefHighscore: (actief: boolean) => void;
   isSpinVergrendelingActiefMultiplayer: boolean;
   setIsSpinVergrendelingActiefMultiplayer: (actief: boolean) => void;
   isJokerSpinActiefMultiplayer: boolean;
   setIsJokerSpinActiefMultiplayer: (actief: boolean) => void;
+  isFocusStandActiefMultiplayer: boolean;
+  setIsFocusStandActiefMultiplayer: (actief: boolean) => void;
   isSpinVergrendelingActiefVrijeLeermodus: boolean;
   setIsSpinVergrendelingActiefVrijeLeermodus: (actief: boolean) => void;
       isSpinVergrendelingActiefLeitnerLeermodus: boolean;
@@ -80,6 +88,27 @@ interface SettingsContextType {
   setIsMaxNewQuestionsLimitActief: (actief: boolean) => void;
   negeerBox0Wachttijd: boolean;
   setNegeerBox0Wachttijd: (negeer: boolean) => void;
+
+  // Selectie op basis van niveau (per modus)
+  selectieOpNiveauVrije: NiveauSelectieStrategie;
+  setSelectieOpNiveauVrije: (s: NiveauSelectieStrategie) => void;
+  ongedefinieerdGedragVrije: OngedefinieerdGedrag;
+  setOngedefinieerdGedragVrije: (g: OngedefinieerdGedrag) => void;
+
+  selectieOpNiveauLeitner: NiveauSelectieStrategie;
+  setSelectieOpNiveauLeitner: (s: NiveauSelectieStrategie) => void;
+  ongedefinieerdGedragLeitner: OngedefinieerdGedrag;
+  setOngedefinieerdGedragLeitner: (g: OngedefinieerdGedrag) => void;
+
+  selectieOpNiveauHighscore: NiveauSelectieStrategie;
+  setSelectieOpNiveauHighscore: (s: NiveauSelectieStrategie) => void;
+  ongedefinieerdGedragHighscore: OngedefinieerdGedrag;
+  setOngedefinieerdGedragHighscore: (g: OngedefinieerdGedrag) => void;
+
+  selectieOpNiveauMultiplayer: NiveauSelectieStrategie;
+  setSelectieOpNiveauMultiplayer: (s: NiveauSelectieStrategie) => void;
+  ongedefinieerdGedragMultiplayer: OngedefinieerdGedrag;
+  setOngedefinieerdGedragMultiplayer: (g: OngedefinieerdGedrag) => void;
   
   // Dev settings
   isBox0IntervalVerkort: boolean;
@@ -184,8 +213,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [isSpinVergrendelingActiefHighscore, setIsSpinVergrendelingActiefHighscore] = useState(() => 
     loadFromStorage('isSpinVergrendelingActiefHighscore', true)
   );
+  const [isFocusStandActiefHighscore, setIsFocusStandActiefHighscore] = useState(() =>
+    loadFromStorage('isFocusStandActiefHighscore', false)
+  );
   const [isSpinVergrendelingActiefMultiplayer, setIsSpinVergrendelingActiefMultiplayer] = useState(() => 
     loadFromStorage('isSpinVergrendelingActiefMultiplayer', true)
+  );
+  const [isFocusStandActiefMultiplayer, setIsFocusStandActiefMultiplayer] = useState(() =>
+    loadFromStorage('isFocusStandActiefMultiplayer', false)
   );
   const [isSpinVergrendelingActiefVrijeLeermodus, setIsSpinVergrendelingActiefVrijeLeermodus] = useState(() => 
     loadFromStorage('isSpinVergrendelingActiefVrijeLeermodus', true)
@@ -227,6 +262,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [maxNewLeitnerQuestionsPerDay, setMaxNewLeitnerQuestionsPerDay] = useState(() => loadFromStorage('maxNewLeitnerQuestionsPerDay', 10));
   const [isMaxNewQuestionsLimitActief, setIsMaxNewQuestionsLimitActief] = useState(() => loadFromStorage('isMaxNewQuestionsLimitActief', true));
   const [negeerBox0Wachttijd, setNegeerBox0Wachttijd] = useState(() => loadFromStorage('negeerBox0Wachttijd', true));
+
+  // Selectie op basis van niveau (per modus)
+  const [selectieOpNiveauVrije, setSelectieOpNiveauVrije] = useState<NiveauSelectieStrategie>(() => loadFromStorage('selectieOpNiveauVrije', 'random'));
+  const [ongedefinieerdGedragVrije, setOngedefinieerdGedragVrije] = useState<OngedefinieerdGedrag>(() => loadFromStorage('ongedefinieerdGedragVrije', 'mix'));
+  const [selectieOpNiveauLeitner, setSelectieOpNiveauLeitner] = useState<NiveauSelectieStrategie>(() => loadFromStorage('selectieOpNiveauLeitner', 'random'));
+  const [ongedefinieerdGedragLeitner, setOngedefinieerdGedragLeitner] = useState<OngedefinieerdGedrag>(() => loadFromStorage('ongedefinieerdGedragLeitner', 'mix'));
+  const [selectieOpNiveauHighscore, setSelectieOpNiveauHighscore] = useState<NiveauSelectieStrategie>(() => loadFromStorage('selectieOpNiveauHighscore', 'random'));
+  const [ongedefinieerdGedragHighscore, setOngedefinieerdGedragHighscore] = useState<OngedefinieerdGedrag>(() => loadFromStorage('ongedefinieerdGedragHighscore', 'mix'));
+  const [selectieOpNiveauMultiplayer, setSelectieOpNiveauMultiplayer] = useState<NiveauSelectieStrategie>(() => loadFromStorage('selectieOpNiveauMultiplayer', 'random'));
+  const [ongedefinieerdGedragMultiplayer, setOngedefinieerdGedragMultiplayer] = useState<OngedefinieerdGedrag>(() => loadFromStorage('ongedefinieerdGedragMultiplayer', 'mix'));
 
   // Dev settings
   const [isBox0IntervalVerkort, setIsBox0IntervalVerkort] = useState(() => loadFromStorage('isBox0IntervalVerkort', false));
@@ -285,12 +330,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [isJokerSpinActiefHighscore]);
 
   useEffect(() => {
+    saveToStorage('isFocusStandActiefHighscore', isFocusStandActiefHighscore);
+  }, [isFocusStandActiefHighscore]);
+
+  useEffect(() => {
     saveToStorage('isSpinVergrendelingActiefMultiplayer', isSpinVergrendelingActiefMultiplayer);
   }, [isSpinVergrendelingActiefMultiplayer]);
 
   useEffect(() => {
     saveToStorage('isJokerSpinActiefMultiplayer', isJokerSpinActiefMultiplayer);
   }, [isJokerSpinActiefMultiplayer]);
+
+  useEffect(() => {
+    saveToStorage('isFocusStandActiefMultiplayer', isFocusStandActiefMultiplayer);
+  }, [isFocusStandActiefMultiplayer]);
 
   useEffect(() => {
     saveToStorage('isSpinVergrendelingActiefVrijeLeermodus', isSpinVergrendelingActiefVrijeLeermodus);
@@ -337,6 +390,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   useEffect(() => {
     saveToStorage('negeerBox0Wachttijd', negeerBox0Wachttijd);
   }, [negeerBox0Wachttijd]);
+
+  // Persist selectie op niveau instellingen
+  useEffect(() => { saveToStorage('selectieOpNiveauVrije', selectieOpNiveauVrije); }, [selectieOpNiveauVrije]);
+  useEffect(() => { saveToStorage('ongedefinieerdGedragVrije', ongedefinieerdGedragVrije); }, [ongedefinieerdGedragVrije]);
+  useEffect(() => { saveToStorage('selectieOpNiveauLeitner', selectieOpNiveauLeitner); }, [selectieOpNiveauLeitner]);
+  useEffect(() => { saveToStorage('ongedefinieerdGedragLeitner', ongedefinieerdGedragLeitner); }, [ongedefinieerdGedragLeitner]);
+  useEffect(() => { saveToStorage('selectieOpNiveauHighscore', selectieOpNiveauHighscore); }, [selectieOpNiveauHighscore]);
+  useEffect(() => { saveToStorage('ongedefinieerdGedragHighscore', ongedefinieerdGedragHighscore); }, [ongedefinieerdGedragHighscore]);
+  useEffect(() => { saveToStorage('selectieOpNiveauMultiplayer', selectieOpNiveauMultiplayer); }, [selectieOpNiveauMultiplayer]);
+  useEffect(() => { saveToStorage('ongedefinieerdGedragMultiplayer', ongedefinieerdGedragMultiplayer); }, [ongedefinieerdGedragMultiplayer]);
 
   useEffect(() => {
     saveToStorage('isBox0IntervalVerkort', isBox0IntervalVerkort);
@@ -394,10 +457,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsSpinVergrendelingActiefHighscore,
     isJokerSpinActiefHighscore,
     setIsJokerSpinActiefHighscore,
+    isFocusStandActiefHighscore,
+    setIsFocusStandActiefHighscore,
     isSpinVergrendelingActiefMultiplayer,
     setIsSpinVergrendelingActiefMultiplayer,
     isJokerSpinActiefMultiplayer,
     setIsJokerSpinActiefMultiplayer,
+    isFocusStandActiefMultiplayer,
+    setIsFocusStandActiefMultiplayer,
     isSpinVergrendelingActiefVrijeLeermodus,
     setIsSpinVergrendelingActiefVrijeLeermodus,
     isSpinVergrendelingActiefLeitnerLeermodus,
@@ -426,6 +493,24 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setIsMaxNewQuestionsLimitActief,
     negeerBox0Wachttijd,
     setNegeerBox0Wachttijd,
+
+    // Selectie op niveau
+    selectieOpNiveauVrije,
+    setSelectieOpNiveauVrije,
+    ongedefinieerdGedragVrije,
+    setOngedefinieerdGedragVrije,
+    selectieOpNiveauLeitner,
+    setSelectieOpNiveauLeitner,
+    ongedefinieerdGedragLeitner,
+    setOngedefinieerdGedragLeitner,
+    selectieOpNiveauHighscore,
+    setSelectieOpNiveauHighscore,
+    ongedefinieerdGedragHighscore,
+    setOngedefinieerdGedragHighscore,
+    selectieOpNiveauMultiplayer,
+    setSelectieOpNiveauMultiplayer,
+    ongedefinieerdGedragMultiplayer,
+    setOngedefinieerdGedragMultiplayer,
     
     // Dev settings
     isBox0IntervalVerkort,

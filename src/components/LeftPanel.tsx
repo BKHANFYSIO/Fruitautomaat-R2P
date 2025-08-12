@@ -19,6 +19,7 @@ type Props = {
   isSerieuzeLeerModusActief: boolean;
   leermodusType: 'normaal' | 'leitner';
   aantalBeurtenGespeeld: number;
+  isFocusStandActief?: boolean;
 
   // Score info
   currentHighScore: HighScore | null;
@@ -75,6 +76,7 @@ export const LeftPanel: React.FC<Props> = ({
   isSerieuzeLeerModusActief,
   leermodusType,
   aantalBeurtenGespeeld,
+  isFocusStandActief = false,
   currentHighScore,
   currentPersonalBest,
   alleUniekeCategorieen,
@@ -134,6 +136,7 @@ export const LeftPanel: React.FC<Props> = ({
         highScore={currentHighScore}
         personalBest={currentPersonalBest}
         isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
+        isFocusStandActief={isFocusStandActief}
         aantalBeurtenGespeeld={aantalBeurtenGespeeld}
       />
 

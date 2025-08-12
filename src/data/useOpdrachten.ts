@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { OPDRACHT_TYPE_ORDER } from './constants';
 import * as XLSX from 'xlsx';
 import type { Opdracht } from './types';
 
@@ -46,10 +47,68 @@ export const useOpdrachten = (defaultFilePath: string) => {
     const worksheet = workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json<any>(worksheet, { raw: false, defval: "" });
 
+    const toAscii = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}+/gu, '');
+    const levenshtein = (a: string, b: string) => {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost
+          );
+        }
+      }
+      return dp[m][n];
+    };
+    const ALIASES: Record<string, string> = {
+      // canonical → list of alias keys mapped below
+    };
+    const aliasTuples: Array<[string, string]> = [
+      ['feitenkennis', 'feiten'],
+      ['begrijpen', 'begrip'],
+      ['toepassing', 'toepassen'],
+      ['uitleggen', 'uitleg'],
+      ['tekenen', 'schetsen'],
+      ['communicatie', 'communiceren'],
+      ['fysiotherapie', 'fysio'],
+      ['praktijk', 'praktisch']
+    ];
+    aliasTuples.forEach(([canon, alias]) => { ALIASES[alias] = canon; });
+
+    const canonicalSet = new Set(OPDRACHT_TYPE_ORDER.map(t => t.toLowerCase()));
+    const normalizeType = (raw: any): string => {
+      if (!raw || String(raw).trim() === '') return 'Onbekend';
+      const base = toAscii(String(raw).trim().toLowerCase());
+      // Exact canonical
+      if (canonicalSet.has(base)) return capitalize(base);
+      // Alias
+      if (ALIASES[base]) return capitalize(ALIASES[base]);
+      // Fuzzy: pak d<=2 naar dichtstbijzijnde canonical
+      let best: { t: string; d: number } | null = null;
+      for (const t of canonicalSet) {
+        const d = levenshtein(base, t);
+        if (best === null || d < best.d) best = { t, d };
+      }
+      if (best && best.d <= 2) return capitalize(best.t);
+      return 'Onbekend';
+    };
+
     return json.map(row => {
       const tijdslimiet = Number(row["Tijdslimiet (sec)"]) || Number(row.Tijdslimiet);
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
-      const opdrachtType = row.OpdrachtType || row.opdrachtType || 'Onbekend';
+      const opdrachtType = normalizeType(row.OpdrachtType || row.opdrachtType || '');
+      // Niveau kolom (1-3), tolerant voor strings
+      let niveau: 1 | 2 | 3 | undefined;
+      const rawNiveau = row.Niveau ?? row.niveau ?? '';
+      const nivNum = Number(String(rawNiveau).trim());
+      if (!isNaN(nivNum) && [1,2,3].includes(nivNum)) {
+        niveau = nivNum as 1|2|3;
+      }
 
       const hoofdcategorie = row.Hoofdcategorie?.trim();
       const categorie = row.Categorie?.trim();
@@ -62,7 +121,8 @@ export const useOpdrachten = (defaultFilePath: string) => {
         Tijdslimiet: !isNaN(tijdslimiet) && tijdslimiet > 0 ? tijdslimiet : 0,
         Extra_Punten: !isNaN(extraPunten) ? extraPunten : 0,
         bron,
-        opdrachtType: opdrachtType ? capitalize(opdrachtType) : 'Onbekend',
+        opdrachtType,
+        niveau,
       };
     });
   }, []);

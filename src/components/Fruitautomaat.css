@@ -334,7 +334,7 @@
 }
 .info-tooltip-content { 
   position: absolute; 
-  top: 125%; 
+  bottom: 125%; /* boven het icoon */
   left: 50%; 
   transform: translateX(-50%); 
   background: #222; 

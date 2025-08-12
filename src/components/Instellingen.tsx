@@ -5,6 +5,7 @@ const AiOpgaveGeneratorLazy = lazy(() => import('./AiOpgaveGenerator').then(m =>
 const LeeranalyseLazy = lazy(() => import('./Leeranalyse').then(m => ({ default: m.Leeranalyse })));
 const CertificaatModalLazy = lazy(() => import('./CertificaatModal').then(m => ({ default: m.CertificaatModal })));
 import * as XLSX from 'xlsx';
+import { Modal as SimpleModal } from './Modal';
 import './Instellingen.css';
 import { generateCertificaat } from '../utils/certificaatGenerator';
 import { getLeerDataManager } from '../data/leerDataManager';
@@ -98,10 +99,14 @@ export const Instellingen = React.memo(({
     setIsSpinVergrendelingActiefHighscore,
     isJokerSpinActiefHighscore,
     setIsJokerSpinActiefHighscore,
+    isFocusStandActiefHighscore,
+    setIsFocusStandActiefHighscore,
     isSpinVergrendelingActiefMultiplayer,
     setIsSpinVergrendelingActiefMultiplayer,
     isJokerSpinActiefMultiplayer,
     setIsJokerSpinActiefMultiplayer,
+    isFocusStandActiefMultiplayer,
+    setIsFocusStandActiefMultiplayer,
     isSpinVergrendelingActiefVrijeLeermodus,
     setIsSpinVergrendelingActiefVrijeLeermodus,
     isSpinVergrendelingActiefLeitnerLeermodus,
@@ -111,6 +116,23 @@ export const Instellingen = React.memo(({
     setIsKaleModusActiefVrijeLeermodus,
     isKaleModusActiefLeitnerLeermodus,
     setIsKaleModusActiefLeitnerLeermodus,
+    // Niveau-selectie instellingen
+    selectieOpNiveauVrije,
+    setSelectieOpNiveauVrije,
+    ongedefinieerdGedragVrije,
+    setOngedefinieerdGedragVrije,
+    selectieOpNiveauLeitner,
+    setSelectieOpNiveauLeitner,
+    ongedefinieerdGedragLeitner,
+    setOngedefinieerdGedragLeitner,
+    selectieOpNiveauHighscore,
+    setSelectieOpNiveauHighscore,
+    ongedefinieerdGedragHighscore,
+    setOngedefinieerdGedragHighscore,
+    selectieOpNiveauMultiplayer,
+    setSelectieOpNiveauMultiplayer,
+    ongedefinieerdGedragMultiplayer,
+    setOngedefinieerdGedragMultiplayer,
     // isBox0IntervalVerkort, // Niet meer gebruikt
     // setIsBox0IntervalVerkort, // Niet meer gebruikt
     // isRolTijdVerkort, // Niet meer gebruikt
@@ -136,6 +158,7 @@ export const Instellingen = React.memo(({
 
   const [isBonusBeheerOpen, setIsBonusBeheerOpen] = useState(false);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
+  const [isSjabloonUitlegOpen, setIsSjabloonUitlegOpen] = useState(false);
   const [isLeeranalyseOpen, setIsLeeranalyseOpen] = useState(false);
   const [isCertificaatModalOpen, setIsCertificaatModalOpen] = useState(false);
   const [isSerieuzeModusWaarschuwingOpen, setIsSerieuzeModusWaarschuwingOpen] = useState(false);
@@ -451,19 +474,7 @@ export const Instellingen = React.memo(({
                     <strong>Tip:</strong> Schakel de timer uit als je nog bezig bent met het leren van nieuwe stof - dan kan de druk afleiden van het begrijpen van de materie.
                   </p>
                   
-                  {/* Herstel Standaard Instellingen Knop */}
-                  <div className="herstel-standaard-sectie">
-                    <button 
-                      onClick={handleHerstelStandaardInstellingen}
-                      className="herstel-standaard-knop"
-                      title="Herstel alle instellingen naar de standaardwaarden"
-                    >
-                      🔄 Herstel Standaard Instellingen
-                    </button>
-                    <p className="setting-description">
-                      Herstelt alle instellingen naar de standaardwaarden. Dit heeft geen invloed op je opgeslagen data (scores, leerdata, etc.).
-                    </p>
-                  </div>
+                  {/* Herstel Standaard Instellingen verplaatst naar onderaan Algemeen-tab */}
                 </div>
 
                 {/* --- Groep: Opdrachtenbeheer --- */}
@@ -478,14 +489,71 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={() => {
                         const data = [
+                          // Basisrij — Feitenkennis met tijdslimiet
                           { 
-                            Hoofdcategorie: 'Voorbeeld Hoofdcategorie',
-                            Categorie: 'Voorbeeld Categorie', 
-                            Opdracht: 'Voorbeeld Opdracht', 
-                            Antwoordsleutel: 'Voorbeeld Antwoord (kan ook een URL zijn)',
-                            Tijdslimiet: 60,
+                            Hoofdcategorie: 'Anatomie',
+                            Categorie: 'Schouder', 
+                            Opdracht: 'Noem 3 spieren die betrokken zijn bij abductie van de schouder.', 
+                            Antwoordsleutel: 'm. deltoideus (pars acromialis), m. supraspinatus, m. trapezius (stabiliserend) — bron: boek/college',
+                            "Tijdslimiet (sec)": 60,
                             "Extra_Punten (max 2)": 0,
-                            OpdrachtType: 'Feitenkennis'
+                            OpdrachtType: 'Feitenkennis',
+                            Niveau: 1
+                          },
+                          // Begrijpen — zonder tijdslimiet
+                          {
+                            Hoofdcategorie: 'Fysiologie',
+                            Categorie: 'Energievoorziening',
+                            Opdracht: 'Leg kort uit waarom intervaltraining de VO2max kan verbeteren.',
+                            Antwoordsleutel: 'Verhoogt slagvolume, perifere adaptaties (capillarisatie, mitochondriën).',
+                            "Tijdslimiet (sec)": 0,
+                            "Extra_Punten (max 2)": 1,
+                            OpdrachtType: 'Begrijpen',
+                            Niveau: 1
+                          },
+                          // Toepassing — met YouTube link in antwoordsleutel
+                          {
+                            Hoofdcategorie: 'Revalidatie',
+                            Categorie: 'Knie',
+                            Opdracht: 'Demonstreer 2 progressies van de squat voor vroege knie‑revalidatie.',
+                            Antwoordsleutel: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ (voorbeeldvideo) — benoem: ROM, snelheid, steunvlak.',
+                            "Tijdslimiet (sec)": 90,
+                            "Extra_Punten (max 2)": 2,
+                            OpdrachtType: 'Toepassing',
+                            Niveau: 2
+                          },
+                          // Uitleggen — met afbeeldingslink
+                          {
+                            Hoofdcategorie: 'Neurologie',
+                            Categorie: 'Zenuwstelsel',
+                            Opdracht: 'Leg uit wat saltatoire conductie is met een schets of voorbeeld.',
+                            Antwoordsleutel: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Myelin_sheath_neuron.png (afbeelding) — myeline → sprongsgewijze geleiding via knopen van Ranvier.',
+                            "Tijdslimiet (sec)": 75,
+                            "Extra_Punten (max 2)": 1,
+                            OpdrachtType: 'Uitleggen',
+                            Niveau: 2
+                          },
+                          // Tekenen — zonder media
+                          {
+                            Hoofdcategorie: 'Anatomie',
+                            Categorie: 'Wervelkolom',
+                            Opdracht: 'Teken een wervel en label corpus, arcus, processus spinosus en foramen vertebrale.',
+                            Antwoordsleutel: 'Schets met labels. Controleer: verhoudingen en juiste benamingen.',
+                            "Tijdslimiet (sec)": 0,
+                            "Extra_Punten (max 2)": 0,
+                            OpdrachtType: 'Tekenen',
+                            Niveau: 2
+                          },
+                          // Communicatie — met externe bron
+                          {
+                            Hoofdcategorie: 'Communicatie',
+                            Categorie: 'Patiënteducatie',
+                            Opdracht: 'Leg in simpele bewoordingen uit wat tendinopathie is en wat de rol van belasting is.',
+                            Antwoordsleutel: 'Gebruik metafoor “spierpees als touw” — link: https://bsl.nl/artikel/tendinopathie (voorbeeldbron).',
+                            "Tijdslimiet (sec)": 60,
+                            "Extra_Punten (max 2)": 0,
+                            OpdrachtType: 'Communicatie',
+                            Niveau: 3
                           }
                         ];
                         const worksheet = XLSX.utils.json_to_sheet(data);
@@ -497,8 +565,19 @@ export const Instellingen = React.memo(({
                     >
                       📥 Download Excel Sjabloon
                     </button>
-                    
-                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      {/* Instructie-knop direct onder de downloadknop */}
+                      <div>
+                        <button 
+                          className="instellingen-knop"
+                          onClick={() => setIsSjabloonUitlegOpen(true)}
+                          title="Uitleg over kolommen, filters en links in Excel"
+                          style={{ marginTop: 8 }}
+                        >
+                          ℹ️ Instructie Excel‑sjabloon
+                        </button>
+                      </div>
+
+                      <p className="setting-description" style={{ marginLeft: 0, marginTop: '10px', marginBottom: '15px' }}>
                       <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
                       Dit is een snelle manier om veel opdrachten te maken.
                     </p>
@@ -579,25 +658,89 @@ export const Instellingen = React.memo(({
                     <strong>Verwijder Alle Gegevens</strong> verwijdert: alle leerdata, highscores, bonusopdrachten, eigen opdrachten, categorie selecties, filters, instellingen en UI voorkeuren. Dit is een complete reset van alle opgeslagen data.
                   </p>
                 </div>
+
+                {/* --- Groep: Herstel Standaard Instellingen (onderaan) --- */}
+                <div className="settings-group">
+                  <h4>🔄 Herstel Standaard Instellingen</h4>
+                  <button 
+                    onClick={handleHerstelStandaardInstellingen}
+                    className="herstel-standaard-knop"
+                    title="Herstel alle instellingen naar de standaardwaarden"
+                  >
+                    Herstel alle instellingen
+                  </button>
+                  <p className="setting-description">
+                    Herstelt alle instellingen naar de standaardwaarden. Dit heeft geen invloed op je opgeslagen data (scores, leerdata, etc.).
+                  </p>
+                </div>
               </>
             )}
 
             {/* --- Tab: Highscore Modus --- */}
             {activeTab === 'highscore' && (
-              <div className="settings-group">
-                <h4>Spelverloop</h4>
-                <label>
+              <>
+                <div className="settings-group">
+                  <h4>Extra focus-stand</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isFocusStandActiefHighscore}
+                      onChange={() => setIsFocusStandActiefHighscore(!isFocusStandActiefHighscore)}
+                    />
+                    Focus op leren (geen fruitrol, geen bonusmechanieken, geen highscore)
+                  </label>
+                  <p className="setting-description">
+                    Verbergt fruitanimaties en geluiden, schakelt bonussen/jokers/verdubbelaar uit en slaat geen highscores op. Gericht oefenen zonder afleiding.
+                  </p>
+                </div>
+                <div className="settings-group">
+                  <h4>Selectie op basis van niveau</h4>
+                  <div className="radio-group">
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectHighscore"
+                        checked={selectieOpNiveauHighscore === 'random'}
+                        onChange={() => setSelectieOpNiveauHighscore('random')}
+                      />
+                      Ad random (1, 2, 3 door elkaar)
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectHighscore"
+                        checked={selectieOpNiveauHighscore === 'ascending'}
+                        onChange={() => setSelectieOpNiveauHighscore('ascending')}
+                      />
+                      Eerst 1 → dan 2 → dan 3
+                    </label>
+                  </div>
+                  <label style={{ marginTop: 8 }}>
+                    Gedrag voor ongedefinieerd niveau:
+                    <select
+                      value={ongedefinieerdGedragHighscore}
+                      onChange={(e) => setOngedefinieerdGedragHighscore(e.target.value as any)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <option value="mix">Random tussendoor</option>
+                      <option value="last">Altijd aan het eind</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="settings-group">
+                  <h4>Spelverloop</h4>
+                  <label>
                   <input
                     type="checkbox"
                     checked={isSpinVergrendelingActiefHighscore}
                     onChange={() => setIsSpinVergrendelingActiefHighscore(!isSpinVergrendelingActiefHighscore)}
                   />
                   Blokkeer spin tot na antwoord
-                </label>
-                <p className="setting-description">
-                  Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
-                </p>
-                <label>
+                  </label>
+                  <p className="setting-description">
+                    Je kunt tijdens een beurt niet opnieuw de spin draaien. Je moet de opdracht afronden. Pas als er een score is gegeven kan een nieuwe spin gestart worden.
+                  </p>
+                  <label>
                   <input
                     type="checkbox"
                     checked={isJokerSpinActiefHighscore}
@@ -605,16 +748,66 @@ export const Instellingen = React.memo(({
                     disabled={!isSpinVergrendelingActiefHighscore}
                   />
                   Jokers leveren extra spins op
-                </label>
-                <p className="setting-description">
-                  Bij een geblokkeerde spin kunnen spelers jokers sparen en inzetten voor extra spins. De beurt blijft bij dezelfde speler, maar geeft een nieuwe opdracht en punten. Deze optie vereist dat de spin geblokkeerd is na een antwoord.
-                </p>
-              </div>
+                  </label>
+                  <p className="setting-description">
+                    Bij een geblokkeerde spin kunnen spelers jokers sparen en inzetten voor extra spins. De beurt blijft bij dezelfde speler, maar geeft een nieuwe opdracht en punten. Deze optie vereist dat de spin geblokkeerd is na een antwoord.
+                  </p>
+                </div>
+              </>
             )}
 
             {/* --- Tab: Multiplayer Modus --- */}
             {activeTab === 'multiplayer' && (
               <>
+                {/* --- Focus-stand bovenaan --- */}
+                <div className="settings-group">
+                  <h4>Extra focus-stand</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isFocusStandActiefMultiplayer}
+                      onChange={() => setIsFocusStandActiefMultiplayer(!isFocusStandActiefMultiplayer)}
+                    />
+                    Focus op leren (geen fruitrol, geen bonusmechanieken, geen punten)
+                  </label>
+                  <p className="setting-description">
+                    Verbergt fruitanimaties en geluiden, schakelt bonussen/jokers/verdubbelaar uit en telt geen punten. Alleen beurten en opdrachten.
+                  </p>
+                </div>
+                <div className="settings-group">
+                  <h4>Selectie op basis van niveau</h4>
+                  <div className="radio-group">
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectMulti"
+                        checked={selectieOpNiveauMultiplayer === 'random'}
+                        onChange={() => setSelectieOpNiveauMultiplayer('random')}
+                      />
+                      Ad random (1, 2, 3 door elkaar)
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectMulti"
+                        checked={selectieOpNiveauMultiplayer === 'ascending'}
+                        onChange={() => setSelectieOpNiveauMultiplayer('ascending')}
+                      />
+                      Eerst 1 → dan 2 → dan 3
+                    </label>
+                  </div>
+                  <label style={{ marginTop: 8 }}>
+                    Gedrag voor ongedefinieerd niveau:
+                    <select
+                      value={ongedefinieerdGedragMultiplayer}
+                      onChange={(e) => setOngedefinieerdGedragMultiplayer(e.target.value as any)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <option value="mix">Random tussendoor</option>
+                      <option value="last">Altijd aan het eind</option>
+                    </select>
+                  </label>
+                </div>
                 {/* --- Groep: Spelverloop --- */}
                 <div className="settings-group">
                   <h4>Spelverloop</h4>
@@ -794,6 +987,56 @@ export const Instellingen = React.memo(({
             {/* --- Tab: Vrije Leermodus --- */}
             {activeTab === 'vrijeleermodus' && (
               <>
+                {/* --- Focus-stand bovenaan --- */}
+                <div className="settings-group">
+                  <h4>Extra focus-stand</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isKaleModusActiefVrijeLeermodus}
+                      onChange={(e) => setIsKaleModusActiefVrijeLeermodus(e.target.checked)}
+                    />
+                    Focus op leren (geen fruitrol en geen tips)
+                  </label>
+                  <p className="setting-description">
+                    Verbergt fruitanimaties en geluiden en toont direct de opdracht. Leerstrategietips worden niet getoond, voor maximale focus.
+                  </p>
+                </div>
+                <div className="settings-group">
+                  <h4>Selectie op basis van niveau</h4>
+                  <div className="radio-group">
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectVrij"
+                        checked={selectieOpNiveauVrije === 'random'}
+                        onChange={() => setSelectieOpNiveauVrije('random')}
+                      />
+                      Ad random (1, 2, 3 door elkaar)
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectVrij"
+                        checked={selectieOpNiveauVrije === 'ascending'}
+                        onChange={() => setSelectieOpNiveauVrije('ascending')}
+                      />
+                      Eerst 1 → dan 2 → dan 3
+                    </label>
+                  </div>
+                  <label style={{ marginTop: 8 }}>
+                    Gedrag voor ongedefinieerd niveau:
+                    <select
+                      value={ongedefinieerdGedragVrije}
+                      onChange={(e) => setOngedefinieerdGedragVrije(e.target.value as any)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <option value="mix">Random tussendoor</option>
+                      <option value="last">Altijd aan het eind</option>
+                    </select>
+                  </label>
+                </div>
+
                 {/* --- Groep: Spelverloop voor Vrije Leermodus --- */}
                 <div className="settings-group">
                   <h4>Spelverloop</h4>
@@ -825,36 +1068,13 @@ export const Instellingen = React.memo(({
                     Leerstrategietips tonen
                     {isKaleModusActiefVrijeLeermodus && (
                       <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
-                        (uitgeschakeld in geen fruitrol animatie)
+                        (uitgeschakeld in Extra focus-stand)
                       </span>
                     )}
                   </label>
                   <p className="setting-description">
                     Toont korte, motiverende tips over effectieve leerstrategieën (zoals ophalen uit je geheugen, focus/pin, spaced repetition) tijdens het spelen in de <strong>Vrije Leermodus</strong>. Standaard aan.
-                    <br />
-                    <strong>Wanneer verschijnt een tip?</strong> Alleen als je met de fruitautomaat een winnende fruitcombinatie draait (bijv. drie meloenen, drie citroenen, twee kersen, enz.). Je krijgt dan <em>geen punten</em> maar een <em>tip</em> als beloning.
-                    <br />
-                    <em>Opmerking:</em> In <strong>Extra focus-stand (geen fruitrol en geen tips)</strong> worden tips onderdrukt om afleiding te voorkomen.
-                    {isKaleModusActiefVrijeLeermodus && (
-                      <span style={{ color: '#888', display: 'block', marginTop: '5px' }}>
-                        <strong>Let op:</strong> Tips zijn uitgeschakeld door Extra focus-stand.
-                      </span>
-                    )}
                   </p>
-                  
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isKaleModusActiefVrijeLeermodus}
-                      onChange={(e) => setIsKaleModusActiefVrijeLeermodus(e.target.checked)}
-                    />
-                    Extra focus-stand (geen fruitrol en geen tips)
-                  </label>
-                  <p className="setting-description">
-                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Leerstrategietips worden in deze stand niet getoond. Ideaal voor snelle oefening zonder afleiding.
-                  </p>
-                  
-
                 </div>
 
                 {/* Leeranalyse en certificaat knoppen */}
@@ -903,6 +1123,56 @@ export const Instellingen = React.memo(({
             {/* --- Tab: Leitner Leermodus --- */}
             {activeTab === 'leitnerleermodus' && (
               <>
+                {/* --- Focus-stand bovenaan --- */}
+                <div className="settings-group">
+                  <h4>Extra focus-stand</h4>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isKaleModusActiefLeitnerLeermodus}
+                      onChange={(e) => setIsKaleModusActiefLeitnerLeermodus(e.target.checked)}
+                    />
+                    Focus op leren (geen fruitrol en geen tips)
+                  </label>
+                  <p className="setting-description">
+                    Verbergt fruitanimaties en geluiden en toont direct de opdracht. Leerstrategietips worden niet getoond, voor maximale focus.
+                  </p>
+                </div>
+                <div className="settings-group">
+                  <h4>Selectie op basis van niveau</h4>
+                  <div className="radio-group">
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectLeitner"
+                        checked={selectieOpNiveauLeitner === 'random'}
+                        onChange={() => setSelectieOpNiveauLeitner('random')}
+                      />
+                      Ad random (1, 2, 3 door elkaar) — Alleen voor nieuwe kaarten
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="nivSelectLeitner"
+                        checked={selectieOpNiveauLeitner === 'ascending'}
+                        onChange={() => setSelectieOpNiveauLeitner('ascending')}
+                      />
+                      Eerst 1 → dan 2 → dan 3 — Alleen voor nieuwe kaarten
+                    </label>
+                  </div>
+                  <label style={{ marginTop: 8 }}>
+                    Gedrag voor ongedefinieerd niveau:
+                    <select
+                      value={ongedefinieerdGedragLeitner}
+                      onChange={(e) => setOngedefinieerdGedragLeitner(e.target.value as any)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <option value="mix">Random tussendoor</option>
+                      <option value="last">Altijd aan het eind</option>
+                    </select>
+                  </label>
+                </div>
+
                 {/* --- Groep: Spelverloop voor Leitner Leermodus --- */}
                 <div className="settings-group">
                   <h4>Spelverloop</h4>
@@ -934,28 +1204,12 @@ export const Instellingen = React.memo(({
                     Leerstrategietips tonen
                     {isKaleModusActiefLeitnerLeermodus && (
                       <span style={{ color: '#888', fontSize: '0.9rem', marginLeft: '8px' }}>
-                        (uitgeschakeld in geen fruitrol animatie)
+                        (uitgeschakeld in Extra focus-stand)
                       </span>
                     )}
                   </label>
                   <p className="setting-description">
                     Toont korte, motiverende tips over effectieve leerstrategieën tijdens het oefenen met Leitner. Standaard aan.
-                    <br />
-                    <strong>Wanneer verschijnt een tip?</strong> Alleen als je met de fruitautomaat een winnende fruitcombinatie draait (bijv. drie meloenen, drie citroenen, twee kersen, enz.). Je krijgt dan <em>geen punten</em> maar een <em>tip</em> als beloning.
-                    <br />
-                    <em>Opmerking:</em> In <strong>Extra focus-stand (geen fruitrol en geen tips)</strong> worden tips onderdrukt om afleiding te voorkomen.
-                  </p>
-                  
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isKaleModusActiefLeitnerLeermodus}
-                      onChange={(e) => setIsKaleModusActiefLeitnerLeermodus(e.target.checked)}
-                    />
-                    Extra focus-stand (geen fruitrol en geen tips)
-                  </label>
-                  <p className="setting-description">
-                    Schakelt de fruitrol uit en toont alleen de opdrachten rol. Geen geluiden, geen fruitanimaties, direct naar de opdracht. Leerstrategietips worden in deze stand niet getoond. Ideaal voor snelle oefening zonder afleiding.
                   </p>
                   
                   {leermodusType === 'leitner' && (
@@ -1086,6 +1340,87 @@ export const Instellingen = React.memo(({
         />
       </Suspense>
 
+      {/* Instructie Excel-sjabloon (gestileerd) */}
+      <SimpleModal isOpen={isSjabloonUitlegOpen} onClose={() => setIsSjabloonUitlegOpen(false)} title={<span style={{ color: '#61dafb' }}>Instructie – Excel sjabloon</span>}>
+        <div className="col" style={{ gap: 16 }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, border: '1px solid #444', borderRadius: 8, overflow: 'hidden' as any }}>
+              <thead>
+                <tr style={{ backgroundColor: '#1f1f1f' }}>
+                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #444', color: '#61dafb', fontWeight: 600 }}>Kolom</th>
+                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #444', color: '#61dafb', fontWeight: 600 }}>Verplicht?</th>
+                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #444', color: '#61dafb', fontWeight: 600 }}>Waarde / Voorbeeld</th>
+                </tr>
+              </thead>
+              <tbody style={{ backgroundColor: '#2a2a2a' }}>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Hoofdcategorie</code></td>
+                  <td style={{ padding: 12 }}>Aanrader</td>
+                  <td style={{ padding: 12 }}>Anatomie, Fysiologie, … (groepeert subcategorieën)</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Categorie</code></td>
+                  <td style={{ padding: 12 }}>Aanrader</td>
+                  <td style={{ padding: 12 }}>Schouder, Knie, …</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Opdracht</code></td>
+                  <td style={{ padding: 12 }}><strong>Ja</strong></td>
+                  <td style={{ padding: 12 }}>“Noem 3 spieren …”</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Antwoordsleutel</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>Tekst en/of URL’s. Voorbeeld: “https://…/plaatje.png” of “https://youtube.com/watch?v=…”.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Tijdslimiet (sec)</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>Geheel getal ≥ 0. 0 = geen timer.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Extra_Punten (max 2)</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>0, 1 of 2.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Niveau</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>
+                    Toegestane waarden: <strong>1</strong> (<em>Beginner</em>), <strong>2</strong> (<em>Gevorderd</em>) of <strong>3</strong> (<em>Expert</em>). Laat leeg als het niveau niet van toepassing is of onbekend is. Leeg wordt behandeld als
+                    <em> ongedefinieerd</em> (verschijnt als <code>∅</code> in de filters en telt mee onder <em>Ongedefinieerd</em> in de niveau‑telling).
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>OpdrachtType</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>Vaste set: Feitenkennis, Begrijpen, Toepassing, Uitleggen, Tekenen, Communicatie, Fysiotherapie, Praktijk, Onbekend. (niet‑hoofdlettergevoelig, kleine spelfouten worden herkend)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <h4 style={{ color: '#61dafb', marginBottom: 8 }}>Links in de antwoordsleutel</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🔗</span><span>Je kunt één of meerdere URL’s in de cel zetten. De app herkent automatisch media en toont deze onder de antwoordsleutel.</span></li>
+              <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🖼️</span><span><strong>Afbeeldingen (embed)</strong>: bestandseindes <code>.png</code>, <code>.jpg</code>/<code>.jpeg</code>, <code>.gif</code>, <code>.webp</code>, <code>.svg</code>.</span></li>
+              <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🎬</span><span><strong>Video (YouTube, embed)</strong>: plak de YouTube‑link. Optionele starttijd: <code>?t=363</code>, <code>?t=6m3s</code> of <code>?start=363</code>.</span></li>
+              <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>📄</span><span><strong>Overige links</strong> (website, PDF/document, enz.): blijven normale klikbare links en worden niet ingebed.</span></li>
+              <li style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🧩</span><span>Tekst + URL mogen samen in één cel; de app haalt de link(s) eruit en laat jouw tekst intact.</span></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 style={{ color: '#61dafb', marginBottom: 8 }}>Filters in de app</h4>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🎯</span><span><strong>Bron</strong>: vast – ‘systeem’ en ‘gebruiker’.</span></div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>🏷️</span><span><strong>Type</strong>: vaste lijst hierboven. Onbekende waarden → “Onbekend”.</span></div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}><span>📊</span><span><strong>Niveau</strong>: kies uit <strong>1</strong>, <strong>2</strong>, <strong>3</strong> of <strong>∅</strong> (ongedefinieerd). Als de kolom <code>Niveau</code> leeg is in Excel, wordt deze als <em>ongedefinieerd</em> geteld en kun je deze via <code>∅</code> filteren.</span></div>
+            </div>
+          </div>
+        </div>
+      </SimpleModal>
       {/* Serieuze Modus Waarschuwing Modal */}
       {isSerieuzeModusWaarschuwingOpen && (
         <div className="serieuze-modus-modal-overlay" onClick={() => setIsSerieuzeModusWaarschuwingOpen(false)}>

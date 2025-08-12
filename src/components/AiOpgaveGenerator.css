@@ -180,8 +180,8 @@
 
 .kopieer-knop,
 .download-knop {
-  background-color: #63b3ed;
-  color: #1a202c;
+  background-color: #4CAF50; /* groen zoals menu knoppen */
+  color: white;
   border: none;
   border-radius: 5px;
   padding: 10px 20px;
@@ -193,7 +193,7 @@
 
 .kopieer-knop:hover,
 .download-knop:hover {
-  background-color: #90cdf4;
+  background-color: #45a049; /* donkerder groen bij hover */
 }
 
 .kopieer-knop:disabled {
@@ -225,6 +225,39 @@
 .step li {
   margin-bottom: 5px;
   color: #a0aec0;
+}
+
+/* Nieuwe genummerde stappenlijst met badges */
+.steps-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #e2e8f0;
+}
+
+.step-badge {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background-color: #4CAF50;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.step-content {
+  flex: 1;
 }
 
 /* De .sluit-knop styling is verplaatst naar Modal.css als .modal-close-button */

@@ -27,6 +27,7 @@ interface ActieDashboardProps {
   opgespaardeBonusPunten: number;
   isSerieuzeLeerModusActief?: boolean;
   aantalBeurtenGespeeld?: number;
+  isFocusStandActief?: boolean;
 }
 
 export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
@@ -48,7 +49,8 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
   onGebruikExtraSpin,
   isJokerSpinActief,
   isSerieuzeLeerModusActief = false,
-  aantalBeurtenGespeeld = 0
+  aantalBeurtenGespeeld = 0,
+  isFocusStandActief = false
 }, ref) => {
 
   const [gekozenPartner, setGekozenPartner] = useState('');
@@ -105,7 +107,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
     <div className="actie-dashboard" ref={ref}>
       <div className="jackpot-notificatie">
         <p>
-          {isSerieuzeLeerModusActief ? (
+          {isSerieuzeLeerModusActief || isFocusStandActief ? (
             <>
               <span>Al {aantalBeurtenGespeeld} opdracht{aantalBeurtenGespeeld !== 1 ? 'en' : ''} gedaan deze sessie</span>
               <span className={`opdracht-type-indicator ${huidigeOpdracht.type}`}>
@@ -134,7 +136,7 @@ export const ActieDashboard = forwardRef<HTMLDivElement, ActieDashboardProps>(({
               {opgespaardeBonusPunten > 0 && (
                 <span className="bonus-punten-animatie"> +{opgespaardeBonusPunten} uit bonus!</span>
               )}
-              {isJokerSpinActief && spinAnalyse.verdiendeSpins > 0 && (
+              {isJokerSpinActief && !isFocusStandActief && spinAnalyse.verdiendeSpins > 0 && (
                 <span className="verdiende-spin-notificatie">
                   {' • '}
                   +{spinAnalyse.verdiendeSpins} extra spin! <img src="/images/joker.png" alt="Joker" className="joker-icon" />

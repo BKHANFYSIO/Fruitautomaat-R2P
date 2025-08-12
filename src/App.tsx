@@ -125,6 +125,9 @@ function App() {
     // Tips per modus
     isLeerstrategietipsActiefVrijeLeermodus,
     isLeerstrategietipsActiefLeitnerLeermodus,
+    // Focus-stand per modus
+    isFocusStandActiefHighscore,
+    isFocusStandActiefMultiplayer,
   } = useSettings();
 
   // Game engine hook
@@ -154,8 +157,16 @@ function App() {
 
   // UI state
 
+  // Bepaal focus-stand per huidige modus
+  const isFocusHighscore = gameMode === 'single' && !isSerieuzeLeerModusActief && isFocusStandActiefHighscore;
+  const isFocusMultiplayer = gameMode === 'multi' && isFocusStandActiefMultiplayer;
+
   // Bepaal of kale modus actief is voor de hele component
-  const isKaleModusActiefGlobal = Boolean(actieveLeermodusInstellingen?.isKaleModusActief);
+  const isKaleModusActiefGlobal = Boolean(
+    actieveLeermodusInstellingen?.isKaleModusActief ||
+    isFocusHighscore ||
+    isFocusMultiplayer
+  );
 
   // Bepaal de huidige spelmodus voor automatische tab selectie
   const getCurrentGameMode = (): 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus' => {
@@ -849,7 +860,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     }
 
     // Specifieke checks voor spelmodi
-    if (gameMode === 'single' && !isSerieuzeLeerModusActief && gefilterdeOpdrachten.length < 10) {
+    if (gameMode === 'single' && !isSerieuzeLeerModusActief && !isFocusHighscore && gefilterdeOpdrachten.length < 10) {
       showNotificatie(`Highscore modus vereist minimaal 10 unieke opdrachten. Je hebt er nu ${gefilterdeOpdrachten.length} geselecteerd. Selecteer meer categorieën.`, 'fout', 8000);
       return;
     }
@@ -939,8 +950,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const voerSpinUit = (gekozenSpeler: Speler) => {
     // Bepaal of kale modus actief is
-    const isKaleModusActief = (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner' && isKaleModusActiefLeitnerLeermodus) ||
-                               (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'normaal' && isKaleModusActiefVrijeLeermodus);
+    const isKaleModusActief = (
+      (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'leitner' && isKaleModusActiefLeitnerLeermodus) ||
+      (isSerieuzeLeerModusActief && gameMode === 'single' && leermodusType === 'normaal' && isKaleModusActiefVrijeLeermodus) ||
+      isFocusHighscore ||
+      isFocusMultiplayer
+    );
     
       // Alleen geluid en animatie spelen als kale modus niet actief is
   if (!isKaleModusActief) {
@@ -974,18 +989,48 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         return;
       }
     } else {
-      // Standaard selectie voor multiplayer of niet-serieuze modus
-      const beschikbareOpdrachten = gefilterdeOpdrachten.filter(
+      // Niet-Leitner selectie (single normaal, highscore, multiplayer): pas niveau-strategie toe
+      const { selectieOpNiveauHighscore, ongedefinieerdGedragHighscore, selectieOpNiveauMultiplayer, ongedefinieerdGedragMultiplayer, selectieOpNiveauVrije, ongedefinieerdGedragVrije } = useSettings();
+      const strategienaam = ((): 'random' | 'ascending' => {
+        if (gameMode === 'multi') return selectieOpNiveauMultiplayer;
+        if (!isSerieuzeLeerModusActief) return selectieOpNiveauHighscore; // single highscore
+        return selectieOpNiveauVrije; // single normaal serieuze modus
+      })();
+      const undefGedrag = ((): 'mix' | 'last' => {
+        if (gameMode === 'multi') return ongedefinieerdGedragMultiplayer;
+        if (!isSerieuzeLeerModusActief) return ongedefinieerdGedragHighscore;
+        return ongedefinieerdGedragVrije;
+      })();
+
+      const poolRecentGefilterd = gefilterdeOpdrachten.filter(
         op => !recentGebruikteOpdrachten.find(ruo => ruo.Opdracht === op.Opdracht)
       );
-      
-      if (beschikbareOpdrachten.length === 0) {
-        // Als er geen opdrachten meer zijn na het filteren van recent gebruikte,
-        // gebruik dan de volledige gefilterde lijst.
-        gekozenOpdracht = gefilterdeOpdrachten[Math.floor(Math.random() * gefilterdeOpdrachten.length)];
-      } else {
-        gekozenOpdracht = beschikbareOpdrachten[Math.floor(Math.random() * beschikbareOpdrachten.length)];
+      const basisPool = poolRecentGefilterd.length > 0 ? poolRecentGefilterd : gefilterdeOpdrachten;
+
+      let kiesPool = basisPool;
+      if (strategienaam === 'ascending') {
+        const g1 = basisPool.filter(op => (op as any).niveau === 1);
+        const g2 = basisPool.filter(op => (op as any).niveau === 2);
+        const g3 = basisPool.filter(op => (op as any).niveau === 3);
+        const undef = basisPool.filter(op => (op as any).niveau === undefined);
+        const basis = ([] as typeof basisPool).concat(...[g1, g2, g3].filter(g => g.length > 0));
+        if (basis.length > 0) {
+          kiesPool = basis;
+          if (undefGedrag === 'mix' && undef.length > 0) {
+            kiesPool = [...basis, ...undef];
+          }
+        } else {
+          // geen gedefinieerde niveaus beschikbaar → alleen undef over
+          kiesPool = undef.length > 0 ? undef : basisPool;
+        }
+      } else if (strategienaam === 'random') {
+        if (undefGedrag === 'last') {
+          const metNiv = basisPool.filter(op => (op as any).niveau !== undefined);
+          kiesPool = metNiv.length > 0 ? metNiv : basisPool;
+        }
       }
+
+      gekozenOpdracht = kiesPool[Math.floor(Math.random() * kiesPool.length)];
       opdrachtType = 'nieuw';
     }
 
@@ -1066,7 +1111,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         ? [gekozenSpeler] // Gebruik alleen de virtuele speler
         : spelers; // Gebruik normale speler array
       
-      const analyse = analyseerSpin(jackpotSymbols, spelerArrayVoorAnalyse, gameMode, isSerieuzeLeerModusActief, isBonusOpdrachtenActief);
+      // In focus-stand (highscore/multiplayer) zijn bonusmechanieken uit
+      const effectiveBonusActief = isBonusOpdrachtenActief && !isFocusHighscore && !isFocusMultiplayer;
+      const analyse = analyseerSpin(jackpotSymbols, spelerArrayVoorAnalyse, gameMode, isSerieuzeLeerModusActief, effectiveBonusActief);
       setHuidigeSpinAnalyse(analyse);
       setIsAanHetSpinnen(false);
 
@@ -1141,18 +1188,19 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         }
       }
 
-      if (isJokerSpinActief && analyse.verdiendeSpins > 0) {
+      const effectiveJokerActief = isJokerSpinActief && !isFocusHighscore && !isFocusMultiplayer;
+      if (effectiveJokerActief && analyse.verdiendeSpins > 0) {
         playJokerWin(); // Speel joker win geluid
         setVerdiendeSpinsDezeBeurt(analyse.verdiendeSpins); // Sla op in tijdelijke state
         showNotificatie(`${gekozenSpeler.naam} verdient ${analyse.verdiendeSpins} extra spin(s)! Deze kan vanaf de volgende beurt ingezet worden.`, 'succes', 8000);
       }
 
-      if (analyse.actie === 'bonus_opdracht' && isBonusOpdrachtenActief) {
+      if (!isFocusHighscore && !isFocusMultiplayer && analyse.actie === 'bonus_opdracht' && isBonusOpdrachtenActief) {
         playBonusStart(); // Speel bonus start geluid
         const bonusOpdracht = bonusOpdrachten[Math.floor(Math.random() * bonusOpdrachten.length)];
         setHuidigeBonusOpdracht(bonusOpdracht);
         setGamePhase('bonus_round');
-      } else if (analyse.actie === 'partner_kiezen') {
+      } else if (!isFocusHighscore && !isFocusMultiplayer && analyse.actie === 'partner_kiezen') {
         setGamePhase('partner_choice');
       } else {
         setGamePhase('assessment');
@@ -1178,23 +1226,30 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const checkSpelEinde = useCallback((speler?: Speler) => {
     if (gameMode === 'single' && speler) {
-      const wasNieuwRecord = saveHighScore(geselecteerdeCategorieen, speler.score, speler.naam);
-      const wasNieuwPb = savePersonalBest(geselecteerdeCategorieen, speler.score, speler.naam);
-      setIsNieuwRecord(wasNieuwRecord);
-      setIsNieuwPersoonlijkRecord(wasNieuwPb);
-      
-      // Speel geluid op basis van resultaat
-      if (wasNieuwRecord) {
-        playNewRecord(); // Nieuw record geluid
+      if (isFocusHighscore) {
+        // Geen highscore opslag en geen nieuw-record geluid in focus-stand
+        setIsNieuwRecord(false);
+        setIsNieuwPersoonlijkRecord(false);
+        playGameEnd();
       } else {
-        playGameEnd(); // Normaal einde geluid
+        const wasNieuwRecord = saveHighScore(geselecteerdeCategorieen, speler.score, speler.naam);
+        const wasNieuwPb = savePersonalBest(geselecteerdeCategorieen, speler.score, speler.naam);
+        setIsNieuwRecord(wasNieuwRecord);
+        setIsNieuwPersoonlijkRecord(wasNieuwPb);
+        
+        // Speel geluid op basis van resultaat
+        if (wasNieuwRecord) {
+          playNewRecord(); // Nieuw record geluid
+        } else {
+          playGameEnd(); // Normaal einde geluid
+        }
       }
     } else {
       // Multiplayer einde
       playMultiplayerEnd(); // Feestelijk einde geluid
     }
     setGamePhase('ended');
-  }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd]);
+  }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd, isFocusHighscore]);
 
   const handlePauseOpdracht = useCallback(() => {
     const opdrachtOmTePauzeren = huidigeOpdracht || laatsteBeoordeeldeOpdracht;
@@ -1248,8 +1303,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       }
     }
 
-    // In serieuze leer-modus worden geen punten gegeven
-    if (gameMode === 'single' && isSerieuzeLeerModusActief) {
+    // In serieuze leer-modus en in focus-stand (highscore/multiplayer) worden geen punten gegeven
+    if ((gameMode === 'single' && isSerieuzeLeerModusActief) || isFocusHighscore || isFocusMultiplayer) {
       // Sla de laatste beoordeelde opdracht op voor pauze functionaliteit
       setLaatsteBeoordeeldeOpdracht(huidigeOpdracht);
       
@@ -1577,6 +1632,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
           leermodusType={leermodusType}
             aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+          isFocusStandActief={isFocusHighscore || isFocusMultiplayer}
           currentHighScore={currentHighScore}
           currentPersonalBest={currentPersonalBest}
           alleUniekeCategorieen={alleUniekeCategorieen}
@@ -1671,7 +1727,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             }
           }}
                 onGebruikExtraSpin={handleGebruikExtraSpin}
-                isJokerSpinActief={isJokerSpinActief}
+            isJokerSpinActief={isJokerSpinActief && !isFocusHighscore && !isFocusMultiplayer}
                 puntenVoorVerdubbeling={puntenVoorVerdubbeling}
           onKopOfMunt={(keuze) => {
             const uitkomst = Math.random() < 0.5 ? 'kop' : 'munt';
@@ -1724,7 +1780,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
               window.scrollTo(0, 0);
             }, 2500);
           }}
-        />
+            isFocusStandActief={isFocusHighscore || isFocusMultiplayer}
+          />
       </div>
     </div>
   );

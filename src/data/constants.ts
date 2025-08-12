@@ -20,6 +20,25 @@ export const opdrachtTypeIconen: { [key: string]: string } = {
   'Onbekend': '❓'
 };
 
+// Vaste set opdrachttypes (in gewenste volgorde) — gebruikt door filters en validatie
+export const OPDRACHT_TYPE_ORDER: string[] = [
+  'Feitenkennis',
+  'Begrijpen',
+  'Toepassing',
+  'Uitleggen',
+  'Tekenen',
+  'Communicatie',
+  'Fysiotherapie',
+  'Praktijk',
+  'Onbekend'
+];
+
+export const NIVEAU_LABELS: Record<1 | 2 | 3, string> = {
+  1: 'opwarmers',
+  2: 'standaard',
+  3: 'uitdagend',
+};
+
 export const BONUS_OPDRACHTEN = [
   { opdracht: "Geef een korte, dramatische monoloog vanuit het perspectief van een object of persoon gerelateerd aan het thema (bv. De biceps brachi, een patiënt met angst voor bewegen, een neuron, adrenaline).", punten: [2, 3, 4] },
   { opdracht: "Start een 'rap battle' met de speler tegenover je. Het onderwerp wordt bepaald door de andere spelers en moet gerelateerd zijn aan het thema. Jij begint de battle. Als je wint krijg je punten.", punten: [3, 4] },

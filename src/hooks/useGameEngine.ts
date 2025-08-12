@@ -15,7 +15,7 @@ export const shuffle = <T,>(array: T[]): T[] => {
 };
 
 export const useGameEngine = () => {
-  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay } = useSettings();
+  const { maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay, selectieOpNiveauLeitner, ongedefinieerdGedragLeitner } = useSettings();
 
   // Game state
   const [spelers, setSpelers] = useState<Speler[]>([]);
@@ -199,7 +199,10 @@ export const useGameEngine = () => {
         return geselecteerdeCategorieen.some(cat => cat.startsWith(hoofdcategorie));
       });
       
-      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen);
+      const result = leerDataManager.selectLeitnerOpdracht(opdrachten, gefilterdeHerhalingen, geselecteerdeCategorieen, {
+        niveauStrategie: selectieOpNiveauLeitner,
+        ongedefinieerdGedrag: ongedefinieerdGedragLeitner,
+      });
       
       // Check of we een nieuwe opdracht willen en of de limiet is bereikt
       if (result.type === 'nieuw') {
@@ -226,7 +229,7 @@ export const useGameEngine = () => {
       const gekozenOpdracht = teKiezenLijst[Math.floor(Math.random() * teKiezenLijst.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };
     }
-  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay]);
+  }, [maxNewLeitnerQuestionsPerDay, isMaxNewQuestionsLimitActief, negeerBox0Wachttijd, devForceOnlyNew, devMaxOnlyNewPerDay, selectieOpNiveauLeitner, ongedefinieerdGedragLeitner]);
 
   const checkSpelEinde = useCallback((
     effectieveMaxRondes: number,

@@ -31,8 +31,8 @@ export interface LeerFeedback {
   combinatie: string;
 }
 
-// Enkele, centrale bron met alle huidige tips per fruitcombinatie
-export const LEER_FEEDBACK_DATABASE: LeerFeedback[] = [
+// Enkele, centrale bron met alle huidige tips per fruitcombinatie (basis)
+const BASE_LEER_FEEDBACK_DATABASE: LeerFeedback[] = [
   // Twee Kersen - Motivatie
   {
     type: 'motivatie',
@@ -187,6 +187,61 @@ export const LEER_FEEDBACK_DATABASE: LeerFeedback[] = [
   }
 ];
 
+// Extra generieke combinatie-tips (toegevoegd op verzoek) — worden toegepast op meerdere combinaties
+const EXTRA_COMBO_TIPS_TEXTS: string[] = [
+  'Elke 5 minuten oefenen telt. Kleine inspanningen bouwen grote kennis op.',
+  'Jij bent nu letterlijk je brein aan het trainen.',
+  'Deze kennis neem je mee naar je werk met echte cliënten.',
+  'Blijf het herhalen – dat maakt je een expert.',
+  'Doorzetters leren dieper en onthouden langer.',
+  'Je bent nu bezig met leren op de lange termijn.',
+  'Actief leren = sneller onthouden.',
+  'Door te oefenen ‘train’ je je geheugen.',
+  'Je legt nu ‘sterke kabels’ aan in je brein.',
+  'Leg het uit alsof je het aan een vriend vertelt.',
+  'Koppel nieuwe kennis aan bekende voorbeelden.',
+  'Herhaling maakt moeilijke stof vanzelf makkelijker.',
+  'Kennis ophalen = leren sterker maken.',
+  'Je maakt je geheugen ‘spier’ sterker.',
+  'Verspreid oefenen = beter onthouden.',
+  'Wissel af: het maakt je brein alerter.',
+  'Plan kort en slim, niet lang en zwaar.',
+  'Probeer een mix van lezen, praten, tekenen.',
+  'Na elk spel: schrijf 1 sterk punt, 1 verbeterpunt.',
+  'Vraag jezelf: “Waarom is dit belangrijk?”',
+  'Houd bij welke aanpak het meeste oplevert.',
+  'Zet je volgende oefenmoment nu al in je agenda.',
+  'Kies vandaag 1 concreet leerdoel.',
+  'Leer leren: ken je sterke en zwakke punten.',
+  'Na 25 minuten leren: 5 minuten pauze.',
+  'Slapen = leren zonder inspanning.',
+  'Bewegen maakt je brein scherper.',
+  'Vier kleine successen, dat geeft motivatie om door te gaan.',
+  'Leren is als trainen: je wordt sterker met herhaling.',
+  'Laat je niet ontmoedigen door fouten – ze zijn je beste leermeesters.',
+  'Houd je voortgang bij – zien wat je al bereikt hebt motiveert enorm.',
+  'Leer samen: uitleg geven helpt jou én de ander.'
+];
+
+// Combinaties waarop we de extra generieke tips willen toepassen
+const EXTRA_COMBO_TARGETS = [
+  'twee_kersen',
+  'drie_kersen',
+  'drie_citroenen',
+  'drie_meloenen',
+  'drie_lucky_7s',
+  'drie_bellen',
+  'twee_jokers',
+  'drie_jokers'
+];
+
+export const LEER_FEEDBACK_DATABASE: LeerFeedback[] = [
+  ...BASE_LEER_FEEDBACK_DATABASE,
+  ...EXTRA_COMBO_TARGETS.flatMap((comb) =>
+    EXTRA_COMBO_TIPS_TEXTS.map((bericht) => ({ type: 'motivatie' as const, combinatie: comb, bericht }))
+  ),
+];
+
 export const getTipForCombination = (combinatie: string): string => {
   const beschikbareFeedback = LEER_FEEDBACK_DATABASE.filter(f => f.combinatie === combinatie);
   if (beschikbareFeedback.length === 0) return 'Blijf leren en groeien!';
@@ -225,6 +280,13 @@ export const MODE_TIPS: TipMeta[] = [
     id: 'mode_retrieval_practice',
     bron: 'modus',
     tekst: 'Ophalen uit je geheugen (retrieval practice) werkt: denk eerst zelf na, kijk pas daarna naar de antwoordsleutel.',
+    modes: ['beide'],
+    minSpins: 1
+  },
+  {
+    id: 'mode_kleine_stappen',
+    bron: 'modus',
+    tekst: 'Kleine stappen, vaak herhalen. Dat is de snelste weg naar blijvende kennis.',
     modes: ['beide'],
     minSpins: 1
   },
@@ -275,14 +337,7 @@ export const ANALYSE_TIPS: TipMeta[] = [
   { id: 'analyse_box7', bron: 'analyse', tekst: 'Box 7 bereikt: langetermijngeheugen groeit. Blijf af en toe ophalen.', modes: ['leitner'], leitnerBox7Min: 1, cta: { label: 'Bekijk leeranalyse', event: 'openLeeranalyse', targetTab: 'leitner' } },
 ];
 
-export const ALGEMENE_TIPS: TipMeta[] = [
-  {
-    id: 'algemeen_blijf_doen',
-    bron: 'algemeen',
-    tekst: 'Kleine stappen, vaak herhalen. Dat is de snelste weg naar blijvende kennis.',
-    modes: ['beide']
-  }
-];
+export const ALGEMENE_TIPS: TipMeta[] = [];
 
 // Sessie-geheugen: onthoud de laatste N tips per sessie (geen strikte blokkade voor hele sessie)
 const sessionRecentTips = new Map<string, string[]>();

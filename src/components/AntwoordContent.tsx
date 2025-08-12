@@ -8,11 +8,25 @@ interface AntwoordContentProps {
 }
 
 type EmbedItem =
-  | { kind: 'youtube'; id: string; url: string }
+  | { kind: 'youtube'; id: string; url: string; startSec?: number }
   | { kind: 'vimeo'; id: string; url: string }
   | { kind: 'image'; url: string };
 
 const urlRegex = /(https?:\/\/[^\s)]+)(?=[\s)|]|$)/gi;
+
+function parseYouTubeStartParam(url: URL): number | undefined {
+  // YouTube ondersteunt t= (bijv. 1h2m3s of 363) en start= (seconden)
+  const raw = url.searchParams.get('t') || url.searchParams.get('start') || undefined;
+  if (!raw) return undefined;
+  const s = String(raw).trim().toLowerCase();
+  if (/^\d+$/.test(s)) return Math.max(0, parseInt(s, 10));
+  const m = s.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (!m) return undefined;
+  const h = parseInt(m[1] || '0', 10);
+  const mi = parseInt(m[2] || '0', 10);
+  const se = parseInt(m[3] || '0', 10);
+  return h * 3600 + mi * 60 + se;
+}
 
 function extractEmbedsFromUrls(urls: string[]): EmbedItem[] {
   const embeds: EmbedItem[] = [];
@@ -33,7 +47,8 @@ function extractEmbedsFromUrls(urls: string[]): EmbedItem[] {
           videoId = url.pathname.split('/').filter(Boolean)[1] || null;
         }
         if (videoId) {
-          embeds.push({ kind: 'youtube', id: videoId, url: rawUrl });
+          const startSec = parseYouTubeStartParam(url);
+          embeds.push({ kind: 'youtube', id: videoId, url: rawUrl, startSec });
           continue;
         }
       }
@@ -159,7 +174,8 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
               );
             }
             if (item.kind === 'youtube') {
-              const embedSrc = `https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1`;
+              const startQuery = typeof item.startSec === 'number' && item.startSec > 0 ? `&start=${item.startSec}` : '';
+              const embedSrc = `https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1${startQuery}`;
               const entry: ManifestEntry | undefined = manifestMap[item.url];
               return (
                 <div className="media-video" key={`yt-${i}`}>

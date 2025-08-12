@@ -7,13 +7,14 @@
   background-color: rgba(0, 0, 0, 0.7); /* align met generieke modal */
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* altijd bovenaan */
+  padding-top: 16px; /* ademruimte aan bovenkant */
   z-index: 1000;
   backdrop-filter: blur(5px);
 }
 
 .modal-content.leitner-beheer-modal {
-  background-color: #282c34;
+  background-color: #282c34; /* zelfde als andere modals */
   color: #e0e0e0;
   padding: 25px; /* consistent met generieke modal */
   border-radius: 12px;
@@ -55,20 +56,7 @@
   margin: 2px 0 0 0;
 }
 
-.leitner-modal-close-button {
-  background: none;
-  border: none;
-  color: #fff; /* zelfde als generieke close */
-  font-size: 2.5rem;
-  cursor: pointer;
-  padding: 0 10px;
-  line-height: 1;
-  margin-left: auto;
-}
-
-.leitner-modal-close-button:hover {
-  color: #bbb; /* consistent hover kleur */
-}
+/* Gebruik overal dezelfde .modal-close stijl, zie ook OpdrachtenDetailModal.css */
 
 .modal-body {
   flex: 1;
@@ -832,7 +820,7 @@
   display: flex;
   border-bottom: 2px solid #444;
   margin-bottom: 20px;
-  background: #1a1a1a;
+  background: #282c34;
   border-radius: 8px 8px 0 0;
 }
 
@@ -878,7 +866,7 @@
 }
 
 .modal-content.leitner-beheer-modal {
-  background: #1a1a1a;
+  background-color: #282c34;
   color: #e0e0e0;
 }
 
@@ -892,7 +880,7 @@
 }
 
 .modal-body {
-  background: #1a1a1a;
+  background-color: #282c34;
   position: relative;
   overflow-y: auto; /* zorg dat alleen de body scrolt */
   max-height: 70vh; /* houdt ruimte voor header + tab-balk */
@@ -951,7 +939,7 @@
 }
 
 .sub-categorie-lijst {
-  background: #1a1a1a;
+  background: #282c34;
   padding: 10px 15px;
 }
 
@@ -1053,7 +1041,7 @@
 .modal-header h3 {
   margin: 0;
   color: #61dafb;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
 }
 
 .modal-close {
@@ -1071,13 +1059,13 @@
   color: #bbb;
 }
 
-/* Uniformeer titels tussen verschillende modals */
+/* Uniformeer titels tussen verschillende modals: blauw accent */
 .modal-header h2,
 .modal-header h3 {
   margin: 0;
   font-weight: 600;
   font-size: 1.6rem;
-  color: #e0e0e0;
+  color: #61dafb;
 }
 
 .tab-navigatie {
@@ -1086,6 +1074,21 @@
   margin-bottom: 15px;
   border-bottom: 1px solid #444;
   padding-bottom: 10px;
+}
+
+/* Sticky subtabs gedrag binnen scrollende modal-body/tab-content */
+.sticky-subtabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #282c34;
+  padding-top: 8px;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.sticky-subtabs.hidden {
+  transform: translateY(-110%);
+  opacity: 0.2;
 }
 
 .tab-knop {
@@ -1127,6 +1130,11 @@
 .tab-content {
   flex: 1;
   overflow-y: auto;
+}
+
+/* Zorg dat body dezelfde achtergrond heeft als container en niet diep zwart toont */
+.modal-body {
+  background-color: #282c34;
 }
 
 .categorie-selectie-container {

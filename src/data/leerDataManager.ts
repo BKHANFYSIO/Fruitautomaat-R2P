@@ -2272,7 +2272,11 @@ class LeerDataManager {
   selectLeitnerOpdracht(
     alleOpdrachten: Opdracht[],
     herhalingItems: { opdrachtId: string; boxId: number }[],
-    geselecteerdeCategorieen: string[]
+    geselecteerdeCategorieen: string[],
+    opties?: {
+      niveauStrategie?: 'random' | 'ascending';
+      ongedefinieerdGedrag?: 'mix' | 'last';
+    }
   ): { opdracht: Opdracht | null; type: 'herhaling' | 'nieuw' | 'geen', box?: number } {
     // 1. Geef altijd voorrang aan de aangeleverde herhalingItems.
     //    Sorteer op "oudst eerst" (meest overdue bovenaan).
@@ -2307,7 +2311,39 @@ class LeerDataManager {
     }
 
     // 2. Als er GEEN herhalingen zijn, zoek dan naar een nieuwe opdracht.
-    const nieuweOpdrachten = this.getNieuweOpdrachten(alleOpdrachten, geselecteerdeCategorieen);
+    let nieuweOpdrachten = this.getNieuweOpdrachten(alleOpdrachten, geselecteerdeCategorieen);
+    // Niveau selectie voor nieuwe kaarten
+    if (opties) {
+      const { niveauStrategie = 'random', ongedefinieerdGedrag = 'mix' } = opties;
+      if (niveauStrategie === 'ascending') {
+        const grp1 = nieuweOpdrachten.filter(op => (op as any).niveau === 1);
+        const grp2 = nieuweOpdrachten.filter(op => (op as any).niveau === 2);
+        const grp3 = nieuweOpdrachten.filter(op => (op as any).niveau === 3);
+        const undef = nieuweOpdrachten.filter(op => (op as any).niveau === undefined);
+        const volgorde = [grp1, grp2, grp3];
+        const basis = ([] as Opdracht[]).concat(...volgorde.filter(g => g.length > 0));
+        if (basis.length > 0) {
+          nieuweOpdrachten = basis;
+        } else {
+          // Alleen ongedefinieerd beschikbaar
+          nieuweOpdrachten = undef;
+        }
+        if (ongedefinieerdGedrag === 'last' && basis.length > 0) {
+          // nothing, undef blijft buiten beschouwing totdat basis leeg is
+        } else if (ongedefinieerdGedrag === 'mix' && undef.length > 0) {
+          // Meng een deel van undef ertussen: 1 op 3 kans
+          nieuweOpdrachten = [...basis, ...undef];
+        }
+      } else {
+        // random strategie: voorrang niet wijzigen; alleen undef-gedrag kan de pool uitbreiden
+        if (ongedefinieerdGedrag === 'mix') {
+          // niets extra nodig, getNieuweOpdrachten bevat alle niveaus
+        } else if (ongedefinieerdGedrag === 'last') {
+          const metNiv = nieuweOpdrachten.filter(op => (op as any).niveau !== undefined);
+          nieuweOpdrachten = metNiv.length > 0 ? metNiv : nieuweOpdrachten;
+        }
+      }
+    }
     if (nieuweOpdrachten.length > 0) {
       const gekozenOpdracht = nieuweOpdrachten[Math.floor(Math.random() * nieuweOpdrachten.length)];
       return { opdracht: gekozenOpdracht, type: 'nieuw' };

@@ -457,18 +457,41 @@ export const DevPanelModal: React.FC<DevPanelModalProps> = ({
                 onClick={() => {
                   const w = window.open('', 'tips_overzicht_popup', 'width=700,height=800');
                   if (w) {
-                    const style = '<style>body{font-family:system-ui,Segoe UI,Helvetica,Arial,sans-serif;background:#111;color:#ddd;padding:16px;} h3{margin-top:16px;} ul{max-height:240px;overflow:auto;} li{font-size:12px;margin:4px 0}</style>';
+                    const style = '<style>body{font-family:system-ui,Segoe UI,Helvetica,Arial,sans-serif;background:#111;color:#ddd;padding:16px;box-sizing:border-box;} h3{margin-top:16px;} ul{max-height:240px;overflow:auto;padding-left:18px;} li{font-size:12px;margin:4px 0} .row{display:flex;gap:8px;margin:8px 0} .muted{opacity:.8;font-size:12px} .hint{font-size:12px;opacity:.85;margin:-6px 0 8px 0}</style>';
                     const renderList = (title: string, items: string[]) => `<h3>${title} (${items.length})</h3><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
                     const combo = LEER_FEEDBACK_DATABASE.map(t=>`${t.combinatie}: ${t.bericht}`);
                     const modus = MODE_TIPS.map(t=>`[${t.modes.join('/')}] ${t.tekst}`);
                     const analyse = ANALYSE_TIPS.map(t=>`[${t.modes.join('/')}] ${t.tekst}`);
                     const algemeen = ALGEMENE_TIPS.map(t=>t.tekst);
+                    const toCsv = (rows: string[][]) => rows.map(r => r.map(v => '"'+v.replace(/"/g,'""')+'"').join(',')).join('\n');
+                    const downloadCsv = () => {
+                      const rows: string[][] = [
+                        ['bron','categorie','tekst','modes','combinaties']
+                      ];
+                      LEER_FEEDBACK_DATABASE.forEach(t=> rows.push(['combinatie', t.type, t.bericht, 'beide', t.combinatie]));
+                      MODE_TIPS.forEach(t=> rows.push(['modus','', t.tekst, t.modes.join('/'), '']));
+                      ANALYSE_TIPS.forEach(t=> rows.push(['analyse','', t.tekst, t.modes.join('/'), '']));
+                      ALGEMENE_TIPS.forEach(t=> rows.push(['algemeen','', t.tekst, 'beide', '']));
+                      const csv = toCsv(rows);
+                      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const a = w.document.createElement('a');
+                      a.href = url;
+                      a.download = 'tips-overzicht.csv';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    };
+                    (w as any).downloadTipsCsv = downloadCsv;
                     w.document.write(`<!doctype html><html><head>${style}<title>Tips-overzicht</title></head><body>`+
                       `<h2>Tips-overzicht</h2>`+
+                      `<div class="row"><button onclick="downloadTipsCsv()">Download als CSV</button><span class="muted">Bron: src/data/tipsEngine.ts • Drempels: src/data/tipsConfig.ts</span></div>`+
                       renderList('Combinatie-tips', combo)+
+                      `<div class="hint">Combinatie-tips verschijnen bij winnende fruitcombinaties.</div>`+
                       renderList('Modus-tips', modus)+
+                      `<div class="hint">Modus-tips sluiten aan bij de inhoud van de modal ‘Leerstrategieën in deze app’. Bij tonen opent de link naar deze modal.</div>`+
                       renderList('Analyse-tips (vast)', analyse)+
-                      renderList('Algemene tips', algemeen)+
+                      `<div class="hint">Analyse-tips zijn gekoppeld aan jouw leerdata en openen via de link de leeranalyse‑modal (juiste tab).</div>`+
+                      (algemeen.length ? renderList('Algemene tips', algemeen) : '')+
                       `<p style="font-size:12px;opacity:.8">Dynamische analyse-tips (coverage/mastery/avgBox/tijdslijn) hangen af van data; drempels in src/data/tipsConfig.ts.</p>`+
                       `</body></html>`);
                     w.document.close();
