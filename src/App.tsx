@@ -1613,6 +1613,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           onOpenCategorieBeheer={handleOpenLeitnerCategorieBeheer}
           onOpenCategorieSelectie={() => setIsCategorieSelectieOpen(true)}
           currentGameMode={getCurrentGameMode()}
+          hoofdcategorieen={Array.from(new Set(opdrachten.map(o => o.Hoofdcategorie).filter((v): v is string => Boolean(v)))).sort((a,b) => a.localeCompare(b))}
             onFileSelected={handleFileSelected}
         onAnnuleerUpload={handleAnnuleerUpload}
         onVerwerkBestand={handleVerwerkBestand}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { CRITERIA } from '../data/criteria';
 import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';
@@ -7,17 +7,20 @@ import './AiOpgaveGenerator.css';
 interface AiOpgaveGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
+  hoofdcategorieen?: string[];
+  subcategorieenPerHoofdcategorie?: Record<string, string[]>;
 }
 
-export const AiOpgaveGenerator = ({ isOpen, onClose }: AiOpgaveGeneratorProps) => {
+export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subcategorieenPerHoofdcategorie = {} }: AiOpgaveGeneratorProps) => {
   const [hoofdcategorie, setHoofdcategorie] = useState('');
-  const [aantalOpdrachten, setAantalOpdrachten] = useState(5);
+  const [gekozenBestaandeHoofdcategorie, setGekozenBestaandeHoofdcategorie] = useState('');
+  const [aantalOpdrachten, setAantalOpdrachten] = useState(30);
   const [niveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
   const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar'>('2e jaar');
   const [subcatMode, setSubcatMode] = useState<'ai' | 'handmatig'>('ai');
   // legacy input verwijderd; vervangen door handmatige lijst met aantallen
   const [onderwerpBeschrijving, setOnderwerpBeschrijving] = useState('');
-  const [handmatigeSubcats, setHandmatigeSubcats] = useState<Array<{ naam: string; aantal: number }>>([{ naam: '', aantal: 1 }]);
+  const [handmatigeSubcats, setHandmatigeSubcats] = useState<Array<{ naam: string; aantal: number }>>([{ naam: '', aantal: 15 }]);
   const TYPE_BESCHRIJVINGEN: Record<string, string> = {
     'Feitenkennis': 'Eén juist, kort feit/definitie zonder context.',
     'Begripsuitleg': 'Concept/proces helder uitleggen zonder casus of patiënt.',
@@ -59,12 +62,16 @@ export const AiOpgaveGenerator = ({ isOpen, onClose }: AiOpgaveGeneratorProps) =
   };
 
   const addSubcatRow = () => {
-    setHandmatigeSubcats(prev => [...prev, { naam: '', aantal: 1 }]);
+    setHandmatigeSubcats(prev => [...prev, { naam: '', aantal: 15 }]);
   };
 
   const removeSubcatRow = (index: number) => {
     setHandmatigeSubcats(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
   };
+
+  const totaalHandmatig = handmatigeSubcats
+    .filter(s => s.naam.trim())
+    .reduce((sum, s) => sum + (Number.isFinite(s.aantal) ? s.aantal : 0), 0);
 
   const toggleType = (type: string) => {
     setGeselecteerdeTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
@@ -283,8 +290,13 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
   }
 
   return (
-    <div className="ai-generator-overlay" onClick={onClose}>
-      <div className="ai-generator-content" onClick={(e) => e.stopPropagation()}>
+    <div className="ai-generator-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div
+        className="ai-generator-content"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="ai-generator-header">
           <h2>Genereer Nieuwe Opdrachten met AI</h2>
           <button onClick={onClose} className="modal-close-button">&times;</button>
@@ -311,16 +323,42 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               )}
             </div>
             <div className="form-group">
-              <label htmlFor="hoofdcategorie">Hoofdcategorie:</label>
-              <input
-                id="hoofdcategorie"
-                type="text"
-                value={hoofdcategorie}
-                onChange={(e) => setHoofdcategorie(e.target.value)}
-                placeholder="bijv. Anatomie, Pathofysiologie, Vak Fysiotherapie, Gedrag & Communicatie"
-              />
+              <label htmlFor="hoofdcategorie-select">Hoofdcategorie:</label>
+              <select
+                id="hoofdcategorie-select"
+                value={gekozenBestaandeHoofdcategorie}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setGekozenBestaandeHoofdcategorie(value);
+                  if (value) {
+                    setHoofdcategorie(value);
+                  } else {
+                    // Laat vrije invoer veld actief wanneer leeg
+                    setHoofdcategorie(prev => prev);
+                  }
+                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
+              >
+                <option value="">Kies bestaande hoofdcategorie (optioneel)</option>
+                {hoofdcategorieen.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              {/* Vrije invoer blijft beschikbaar zolang niets uit de lijst gekozen is */}
+              {gekozenBestaandeHoofdcategorie === '' && (
+                <>
+                  <input
+                    id="hoofdcategorie"
+                    type="text"
+                    value={hoofdcategorie}
+                    onChange={(e) => setHoofdcategorie(e.target.value)}
+                    placeholder="of typ een nieuwe hoofdcategorie (bijv. Anatomie, Pathofysiologie)"
+                    style={{ marginTop: 8 }}
+                  />
+                </>
+              )}
               <div className="instruction-text" style={{ marginTop: 6 }}>
-                Dit is de hoofdcategorie waarin de opdrachten vallen. Je kunt kiezen uit bestaande categorieën in de app (Anatomie, Pathofysiologie, Vak Fysiotherapie, Gedrag & Communicatie) of zelf een nieuwe categorie opgeven. Nieuwe categorieën worden toegevoegd.
+                Kies een bestaande hoofdcategorie uit de app of laat de selectie leeg en vul je eigen hoofdcategorie in. Nieuwe categorieën worden toegevoegd.
               </div>
             </div>
             <div className="form-group">
@@ -349,6 +387,15 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               </div>
               {subcatMode === 'handmatig' && (
                 <div style={{ marginTop: 8 }}>
+                  {(() => {
+                    const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
+                    const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+                    return suggesties.length > 0 ? (
+                      <div className="instruction-text" style={{ marginBottom: 8 }}>
+                        Suggesties op basis van hoofdcategorie: {key ? <strong>{key}</strong> : '—'}
+                      </div>
+                    ) : null;
+                  })()}
                   {handmatigeSubcats.map((row, index) => (
                     <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
                       <input
@@ -358,6 +405,26 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                         placeholder="Bijv.: Schouder, Knie, Wervelkolom"
                         style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
                       />
+                      {(() => {
+                        const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
+                        const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+                        return suggesties.length > 0 ? (
+                          <select
+                            value={''}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v) updateHandmatigeSubcat(index, 'naam', v);
+                            }}
+                            style={{ minWidth: 180, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
+                            aria-label="Kies bestaande subcategorie"
+                          >
+                            <option value="">Kies bestaande…</option>
+                            {suggesties.map((s) => (
+                              <option key={`${key}-${s}`} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        ) : null;
+                      })()}
                       <input
                         type="number"
                         min={1}
@@ -368,11 +435,26 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                         aria-label="Aantal opdrachten"
                         title="Aantal opdrachten voor deze subcategorie"
                       />
-                      <button className="download-knop" onClick={() => removeSubcatRow(index)} aria-label="Verwijder rij">−</button>
+                      <button
+                        className="download-knop"
+                        onClick={() => removeSubcatRow(index)}
+                        aria-label="Verwijder rij"
+                        disabled={handmatigeSubcats.length <= 1}
+                        title={handmatigeSubcats.length <= 1 ? 'Minimaal één rij vereist' : 'Verwijder rij'}
+                      >
+                        −
+                      </button>
                     </div>
                   ))}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="download-knop" onClick={addSubcatRow}>+ Subcategorie</button>
+                    <button
+                      className="download-knop"
+                      onClick={addSubcatRow}
+                      disabled={!hoofdcategorie && !gekozenBestaandeHoofdcategorie}
+                      title={!hoofdcategorie && !gekozenBestaandeHoofdcategorie ? 'Kies eerst een hoofdcategorie' : 'Voeg subcategorie toe'}
+                    >
+                      + Subcategorie
+                    </button>
                   </div>
                   <div className="instruction-text" style={{ marginTop: 6 }}>
                     Je kunt bestaande subcategorieën uit de app kiezen of zelf nieuwe bedenken. De opgegeven aantallen worden exact aangehouden.
@@ -382,15 +464,32 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
             </div>
             
             <div className="form-group">
-              <label htmlFor="aantal">Aantal opdrachten:</label>
-              <input
-                id="aantal"
-                type="number"
-                value={aantalOpdrachten}
-                onChange={(e) => setAantalOpdrachten(Number(e.target.value))}
-                min="1"
-                max="20"
-              />
+              {subcatMode === 'ai' ? (
+                <>
+                  <label htmlFor="aantal">Aantal opdrachten:</label>
+                  <input
+                    id="aantal"
+                    type="number"
+                    value={aantalOpdrachten}
+                    onChange={(e) => setAantalOpdrachten(Number(e.target.value))}
+                    min="1"
+                    max="100"
+                  />
+                  <div className="instruction-text" style={{ marginTop: 6 }}>AI bepaalt zelf subcategorieën; dit is het totale aantal opdrachten.</div>
+                </>
+              ) : (
+                <>
+                  <label>Totaal aantal (op basis van subcategorieën):</label>
+                  <input
+                    type="number"
+                    value={totaalHandmatig}
+                    readOnly
+                    style={{ opacity: 0.8 }}
+                    min={0}
+                  />
+                  <div className="instruction-text" style={{ marginTop: 6 }}>Dit totaal wordt berekend uit de aantallen per opgegeven subcategorie.</div>
+                </>
+              )}
             </div>
             
             <div className="form-group">

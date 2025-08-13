@@ -31,6 +31,10 @@ interface InstellingenProps {
   onOpenCategorieSelectie?: () => void;
   // Huidige modus voor automatische tab selectie
   currentGameMode?: 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus';
+  // Lijst van huidige hoofdcategorieën (voor AI generator)
+  hoofdcategorieen?: string[];
+  // Mapping van hoofdcategorie -> subcategorieën (voor AI generator)
+  subcategorieenPerHoofdcategorie?: Record<string, string[]>;
 }
 
 export const Instellingen = React.memo(({
@@ -51,6 +55,8 @@ export const Instellingen = React.memo(({
   // onOpenCategorieSelectie, // Niet meer gebruikt
   // Huidige modus voor automatische tab selectie
   currentGameMode,
+  hoofdcategorieen = [],
+  subcategorieenPerHoofdcategorie = {},
 }: InstellingenProps) => {
   // Settings context
   const {
@@ -163,13 +169,6 @@ export const Instellingen = React.memo(({
   const [isCertificaatModalOpen, setIsCertificaatModalOpen] = useState(false);
   const [isSerieuzeModusWaarschuwingOpen, setIsSerieuzeModusWaarschuwingOpen] = useState(false);
   const [isSerieuzeModusUitschakelenOpen, setIsSerieuzeModusUitschakelenOpen] = useState(false);
-
-  // Luister naar extern event om direct de certificaatmodal te openen
-  useEffect(() => {
-    const handleOpenCertificaat = () => setIsCertificaatModalOpen(true);
-    window.addEventListener('openCertificaat' as any, handleOpenCertificaat as any);
-    return () => window.removeEventListener('openCertificaat' as any, handleOpenCertificaat as any);
-  }, []);
 
   const handleOpenLeitnerBeheer = useCallback(() => {
     onOpenCategorieBeheer();
@@ -1287,6 +1286,8 @@ export const Instellingen = React.memo(({
         <AiOpgaveGeneratorLazy 
           isOpen={isAiGeneratorOpen}
           onClose={() => setIsAiGeneratorOpen(false)}
+          hoofdcategorieen={hoofdcategorieen}
+          subcategorieenPerHoofdcategorie={subcategorieenPerHoofdcategorie}
         />
       </Suspense>
       

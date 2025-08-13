@@ -26,6 +26,9 @@ type Props = {
   onOpenCategorieBeheer: () => void;
   onOpenCategorieSelectie: () => void;
   currentGameMode: 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus';
+  hoofdcategorieen?: string[];
+  subcategorieenPerHoofdcategorie?: Record<string, string[]>;
+  hoofdcategorieen?: string[];
 
   // BestandsUploader
   onFileSelected: (file: File) => void;
@@ -115,6 +118,8 @@ export const AppModals: React.FC<Props> = (props) => {
     isLimietModalOpen, onCloseLimietModal, onConfirmLimiet, maxVragen, onOpenInstellingenFromLimiet,
     // Voltooid
     isOpdrachtenVoltooidModalOpen, onCloseOpdrachtenVoltooid, onOpenCategorieSelectieFromVoltooid,
+    hoofdcategorieen,
+    subcategorieenPerHoofdcategorie,
   } = props;
 
   return (
@@ -132,6 +137,20 @@ export const AppModals: React.FC<Props> = (props) => {
           onOpenCategorieBeheer={onOpenCategorieBeheer}
           onOpenCategorieSelectie={onOpenCategorieSelectie}
           currentGameMode={currentGameMode}
+          hoofdcategorieen={hoofdcategorieen || Array.from(new Set(opdrachten.map(o => o.Hoofdcategorie).filter((v): v is string => Boolean(v)))).sort((a,b) => a.localeCompare(b))}
+          subcategorieenPerHoofdcategorie={subcategorieenPerHoofdcategorie || (() => {
+            const map: Record<string, Set<string>> = {};
+            for (const o of opdrachten) {
+              const hc = o.Hoofdcategorie || '';
+              const sc = o.Categorie || '';
+              if (!hc || !sc) continue;
+              if (!map[hc]) map[hc] = new Set();
+              map[hc].add(sc);
+            }
+            const out: Record<string, string[]> = {};
+            Object.keys(map).forEach(h => out[h] = Array.from(map[h]).sort((a,b)=>a.localeCompare(b)));
+            return out;
+          })()}
         >
           <BestandsUploader
             onFileSelected={onFileSelected}

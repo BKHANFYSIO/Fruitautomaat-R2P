@@ -123,7 +123,7 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
             {isSerieuzeLeerModusActief ? (
               <span className="infinity-symbol" title="Oneindige leermodus - je kunt oneindig door blijven gaan zonder limiet">∞</span>
             ) : maxRondes > 0 ? (
-              `Ronde ${huidigeRonde} van ${maxRondes}`
+              `Ronde ${huidigeRonde}/${maxRondes}`
             ) : (
               <>Rondes<br/>Geen limiet</>
             )}
