@@ -144,7 +144,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               <div className="filter-icon-group">
                 <InfoTooltip asChild content={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}>
                   <span
-                    className={`filter-icon ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                    className={`filter-icon bron ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
                     onClick={() => handleBronToggle('systeem')}
                   >
                     📖
@@ -152,7 +152,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 </InfoTooltip>
                 <InfoTooltip asChild content={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}>
                   <span
-                    className={`filter-icon ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                    className={`filter-icon bron ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
                     onClick={() => handleBronToggle('gebruiker')}
                   >
                     👨‍💼
