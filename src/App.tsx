@@ -61,7 +61,17 @@ function App() {
   const actieDashboardRef = useRef<HTMLDivElement>(null);
 
   // Data hooks
-  const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData, verwijderGebruikerOpdrachten } = useOpdrachten('/opdrachten.xlsx');
+  // Je kunt hier meerdere paden opgeven; alle geldige bestanden worden samengevoegd
+  // Je kunt óf expliciete paden geven, óf een simpele glob: '/opdrachten*.xlsx'
+  const { opdrachten, loading, warning, laadNieuweOpdrachten, parseExcelData, verwijderGebruikerOpdrachten } = useOpdrachten('/opdrachten*.xlsx');
+
+  // Maak waarschuwing wegklikbaar: luister naar event en wis waarschuwing lokaal
+  const [dismissedWarning, setDismissedWarning] = useState<string | null>(null);
+  useEffect(() => {
+    const handler = () => setDismissedWarning(warning || '');
+    window.addEventListener('app:clear-warning' as any, handler);
+    return () => window.removeEventListener('app:clear-warning' as any, handler);
+  }, [warning]);
   
   // Effect om opdrachten door te geven aan de data manager
   useEffect(() => {
@@ -128,6 +138,13 @@ function App() {
     // Focus-stand per modus
     isFocusStandActiefHighscore,
     isFocusStandActiefMultiplayer,
+    // Selectie op niveau per modus
+    selectieOpNiveauHighscore,
+    ongedefinieerdGedragHighscore,
+    selectieOpNiveauMultiplayer,
+    ongedefinieerdGedragMultiplayer,
+    selectieOpNiveauVrije,
+    ongedefinieerdGedragVrije,
   } = useSettings();
 
   // Game engine hook
@@ -990,7 +1007,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       }
     } else {
       // Niet-Leitner selectie (single normaal, highscore, multiplayer): pas niveau-strategie toe
-      const { selectieOpNiveauHighscore, ongedefinieerdGedragHighscore, selectieOpNiveauMultiplayer, ongedefinieerdGedragMultiplayer, selectieOpNiveauVrije, ongedefinieerdGedragVrije } = useSettings();
       const strategienaam = ((): 'random' | 'ascending' => {
         if (gameMode === 'multi') return selectieOpNiveauMultiplayer;
         if (!isSerieuzeLeerModusActief) return selectieOpNiveauHighscore; // single highscore
@@ -1669,7 +1685,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
         <RightPanel
           notificatie={notificatie}
-          warning={warning}
+          warning={dismissedWarning ? null : warning}
           DevPanelSlot={null}
             titel="Return2Performance"
             opdrachten={opdrachtenVoorSelectie}

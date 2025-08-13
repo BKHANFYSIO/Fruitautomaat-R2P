@@ -7,6 +7,7 @@ export interface Filters {
   bronnen: OpdrachtBron[];
   opdrachtTypes: string[];
   niveaus?: Array<1 | 2 | 3 | 'undef'>; // leeg of undefined = geen niveau-filter
+  alleenTekenen?: boolean; // nieuwe filter voor teken-opdrachten
 }
 
 export interface CategorieSelectieState {
@@ -40,7 +41,7 @@ export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieS
         // ignore parse errors
       }
     }
-    return { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [] };
+    return { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], alleenTekenen: false };
   });
 
   // Debounced save van filters
@@ -57,6 +58,9 @@ export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieS
       if (!bronMatch) return false;
       const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
       if (!typeMatch) return false;
+      if (filters.alleenTekenen) {
+        if (!(op as any).isTekenen) return false;
+      }
       const nivs = filters.niveaus || [];
       if (nivs.length === 0) return true; // geen niveau-filter
       const niv = (op as any).niveau as (1|2|3|undefined);

@@ -10,26 +10,24 @@ export const SYMBOLEN = [
 
 export const opdrachtTypeIconen: { [key: string]: string } = {
   'Feitenkennis': '📚',
-  'Begrijpen': '💭',
-  'Toepassing': '⚙️',
-  'Uitleggen': '📢',
-  'Tekenen': '✏️',
-  'Communicatie': '📞',
-  'Fysiotherapie': '🏥',
-  'Praktijk': '🎯',
+  'Begripsuitleg': '💭',
+  'Toepassing in casus': '⚙️',
+  'Vaardigheid – Onderzoek': '🔎',
+  'Vaardigheid – Behandeling': '🛠️',
+  'Communicatie met patiënt': '🗣️',
+  'Klinisch redeneren': '🧠',
   'Onbekend': '❓'
 };
 
 // Vaste set opdrachttypes (in gewenste volgorde) — gebruikt door filters en validatie
 export const OPDRACHT_TYPE_ORDER: string[] = [
   'Feitenkennis',
-  'Begrijpen',
-  'Toepassing',
-  'Uitleggen',
-  'Tekenen',
-  'Communicatie',
-  'Fysiotherapie',
-  'Praktijk',
+  'Begripsuitleg',
+  'Toepassing in casus',
+  'Vaardigheid – Onderzoek',
+  'Vaardigheid – Behandeling',
+  'Communicatie met patiënt',
+  'Klinisch redeneren',
   'Onbekend'
 ];
 

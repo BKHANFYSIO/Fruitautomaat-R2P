@@ -9,8 +9,9 @@ interface FilterDashboardProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
+    alleenTekenen?: boolean;
   };
-  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'> }) => void;
+  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
   opdrachten: Opdracht[];
   actieveCategorieSelectie: string[];
 }
@@ -176,7 +177,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               </div>
               <div className="filter-icon-group">
                 {[1,2,3].map((niv) => (
-                  <InfoTooltip asChild content={`Niv. ${niv}: ${NIVEAU_LABELS[niv]} — ${(niveausTelling as any)[niv] || 0} opdr.`} key={`niv-${niv}`}>
+                  <InfoTooltip asChild content={`Niv. ${niv}: ${NIVEAU_LABELS[niv as 1|2|3]} — ${(niveausTelling as any)[niv] || 0} opdr.`} key={`niv-${niv}`}>
                     <span
                       className={`filter-icon ${filters.niveaus?.includes(niv as any) ? 'active' : 'inactive'}`}
                       onClick={() => handleNiveauToggle(niv as 1|2|3)}
@@ -191,6 +192,23 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                     onClick={() => handleNiveauToggle('undef')}
                   >
                     ∅
+                  </span>
+                </InfoTooltip>
+              </div>
+            </div>
+
+            {/* Tekenen filter */}
+            <div className="filter-group">
+              <div className="filter-label-container">
+                <span className="filter-label">Tekenen:</span>
+              </div>
+              <div className="filter-icon-group">
+                <InfoTooltip asChild content={`Toon alleen opdrachten waarbij tekenen is gevraagd.`}>
+                  <span
+                    className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
+                    onClick={() => setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                  >
+                    ✏️
                   </span>
                 </InfoTooltip>
               </div>

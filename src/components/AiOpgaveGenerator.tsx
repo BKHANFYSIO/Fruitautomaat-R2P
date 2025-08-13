@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { CRITERIA } from '../data/criteria';
 import './AiOpgaveGenerator.css';
 
@@ -8,10 +9,53 @@ interface AiOpgaveGeneratorProps {
 }
 
 export const AiOpgaveGenerator = ({ isOpen, onClose }: AiOpgaveGeneratorProps) => {
-  const [onderwerp, setOnderwerp] = useState('');
+  const [hoofdcategorie, setHoofdcategorie] = useState('');
   const [aantalOpdrachten, setAantalOpdrachten] = useState(5);
-  const [niveau, setNiveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
+  const [niveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
   const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar'>('2e jaar');
+  const [subcatMode, setSubcatMode] = useState<'ai' | 'handmatig'>('ai');
+  // legacy input verwijderd; vervangen door handmatige lijst met aantallen
+  const [onderwerpBeschrijving, setOnderwerpBeschrijving] = useState('');
+  const [handmatigeSubcats, setHandmatigeSubcats] = useState<Array<{ naam: string; aantal: number }>>([{ naam: '', aantal: 1 }]);
+  const TYPE_BESCHRIJVINGEN: Record<string, string> = {
+    'Feitenkennis': 'Eén juist, kort feit/definitie zonder context.',
+    'Begripsuitleg': 'Concept/proces helder uitleggen zonder casus of patiënt.',
+    'Toepassing in casus': 'Kennis toepassen op een korte praktijksituatie met keuze/onderbouwing. Vereist casusbeschrijving.',
+    'Vaardigheid – Onderzoek': 'Demonstreren/uitvoeren van lichamelijk onderzoek.',
+    'Vaardigheid – Behandeling': 'Uitvoeren/demonstreren van interventie of oefenprogramma.',
+    'Communicatie met patiënt': 'Patiëntgerichte uitleg/instructie/motiveren.',
+    'Klinisch redeneren': 'Hypothesevorming/differentiaal/keuze op basis van argumentatie. Vereist casusbeschrijving.'
+  };
+  const BESCHIKBARE_TYPES = Object.keys(TYPE_BESCHRIJVINGEN);
+  const [geselecteerdeTypes, setGeselecteerdeTypes] = useState<string[]>([]);
+  const [isTekenen, setIsTekenen] = useState<boolean>(false);
+
+  const updateHandmatigeSubcat = (index: number, veld: 'naam' | 'aantal', waarde: string | number) => {
+    setHandmatigeSubcats(prev => {
+      const kopie = [...prev];
+      const item = { ...kopie[index] };
+      if (veld === 'naam') {
+        item.naam = String(waarde);
+      } else {
+        const parsed = Number(waarde);
+        item.aantal = Number.isFinite(parsed) && parsed > 0 ? Math.min(20, Math.max(1, parsed)) : 1;
+      }
+      kopie[index] = item;
+      return kopie;
+    });
+  };
+
+  const addSubcatRow = () => {
+    setHandmatigeSubcats(prev => [...prev, { naam: '', aantal: 1 }]);
+  };
+
+  const removeSubcatRow = (index: number) => {
+    setHandmatigeSubcats(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
+  };
+
+  const toggleType = (type: string) => {
+    setGeselecteerdeTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
 
   const generatePrompt = () => {
     const niveauInstructie = niveau === 'makkelijk' 
@@ -31,11 +75,29 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
 
     const fileContext = '';
 
+    const subcategorieen = subcatMode === 'handmatig'
+      ? handmatigeSubcats.map(s => s.naam).filter(Boolean)
+      : [];
+
+    const subcatInstructie = subcatMode === 'handmatig' && handmatigeSubcats.some(s => s.naam.trim())
+      ? `Gebruik exact de volgende subcategorieën en aantallen en schrijf ze in kolom "Categorie". Respecteer de aantallen per subcategorie (maak niet meer en niet minder): ${handmatigeSubcats.filter(s => s.naam.trim()).map(s => `"${s.naam}" (${s.aantal} opdrachten)`).join(', ')}. Zet voor elke rij de kolom "Hoofdcategorie" op "${hoofdcategorie}".`
+      : `Bepaal logische subcategorieën binnen "${hoofdcategorie}" en schrijf die in kolom "Categorie" (één per opdracht). Zet voor elke rij de kolom "Hoofdcategorie" op "${hoofdcategorie}".`;
+
+    const typeLijst = BESCHIKBARE_TYPES.join(', ');
+    const typeRestrictie = (geselecteerdeTypes && geselecteerdeTypes.length > 0)
+      ? `Beperk je tot de volgende opdrachttypes: ${geselecteerdeTypes.join(', ')}.`
+      : `Gebruik geschikte opdrachttypes uit de lijst: ${typeLijst}.`
+
+    const totaalGevraagd = subcatMode === 'handmatig'
+      ? handmatigeSubcats.filter(s => s.naam.trim()).reduce((sum, s) => sum + (Number.isFinite(s.aantal) ? s.aantal : 0), 0)
+      : aantalOpdrachten;
+
     const voorbeeldOpdrachten = `**VOORBEELD OPDRACHTEN UIT DE APP:**
 
 **KENNISVRAAG (Anatomie) - ZONDER TIJD EN EXTRA PUNTEN:**
 {
-  "Categorie": "Anatomie",
+  "Hoofdcategorie": "Anatomie",
+  "Categorie": "Schouder",
   "Opdracht": "Benoem de botten in de onderarm",
   "Antwoordsleutel": "Radius (spaakbeen) en Ulna (ellepijp). De radius ligt aan de duimzijde en de ulna aan de pinkzijde. Bron: Gray's Anatomy (2015).",
   "Tijdslimiet": 0,
@@ -44,7 +106,8 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
 
 **COMMUNICATIEVAARDIGHEDEN - MET TIJD:**
 {
-  "Categorie": "Communicatie",
+  "Hoofdcategorie": "Communicatie",
+  "Categorie": "Patiënteducatie",
   "Opdracht": "Leg een patiënt met lage rugpijn uit wat de oorzaak kan zijn en geef advies over houding en beweging",
   "Antwoordsleutel": "1) Luister actief naar de klachten en stel open vragen. 2) Leg in begrijpelijke taal uit dat rugpijn vaak door houding, spanning of overbelasting komt. 3) Geef concrete adviezen: rechtop zitten, regelmatig bewegen, tillen met gebogen knieën. 4) Toon empathie en betrek de patiënt bij de oplossing. Bron: KNGF-richtlijn Communicatie (2019).",
   "Tijdslimiet": 90,
@@ -53,7 +116,8 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
 
 **MOTORISCHE VAARDIGHEDEN - MET TIJD EN EXTRA PUNTEN:**
 {
-  "Categorie": "Lichamelijk Onderzoek",
+  "Hoofdcategorie": "Lichamelijk Onderzoek",
+  "Categorie": "Schouderonderzoek",
   "Opdracht": "Voer een ROM-test uit van de schouder en leg uit wat je onderzoekt",
   "Antwoordsleutel": "1) Start met inspectie van beide schouders. 2) Test actieve ROM: flexie, extensie, abductie, adductie, endo- en exorotatie. 3) Test passieve ROM met correcte handvattingen. 4) Vergelijk met de gezonde zijde. 5) Noteer pijn, crepitaties en eindgevoel. 6) Leg uit dat je bewegingsbeperkingen, pijnpatronen en asymmetrieën onderzoekt. Bron: Maitland's Peripheral Manipulation (2014).",
   "Tijdslimiet": 120,
@@ -62,7 +126,8 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
 
 **PRAKTISCHE CASUS - MET TIJD EN EXTRA PUNTEN:**
 {
-  "Categorie": "Trainingsleer",
+  "Hoofdcategorie": "Trainingsleer",
+  "Categorie": "Hardlooprevalidatie",
   "Opdracht": "Een 45-jarige patiënt wil na een knieoperatie weer gaan hardlopen. Stel een trainingsschema op",
   "Antwoordsleutel": "1) Start met wandelen en geleidelijke opbouw. 2) Voeg intervaltraining toe: 1 min hardlopen, 2 min wandelen. 3) Verhoog geleidelijk de hardloopduur. 4) Let op pijnsignalen en pas schema aan. 5) Combineer met kracht- en stabiliteitsoefeningen. 6) Doel: binnen 12 weken 30 minuten aaneengesloten hardlopen. Bron: ACSM Guidelines for Exercise Testing and Prescription (2022).",
   "Tijdslimiet": 150,
@@ -70,16 +135,19 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
 }`;
 
     return `**ROL:**
-Je bent een expert-docent en curriculumontwikkelaar op het gebied van ${onderwerp}. Je bent gespecialiseerd in het creëren van heldere en effectieve leeropdrachten voor fysiotherapiestudenten.
+Je bent een expert-docent en curriculumontwikkelaar op het gebied van ${onderwerpBeschrijving}. Je bent gespecialiseerd in het creëren van heldere en effectieve leeropdrachten voor fysiotherapiestudenten.
 
 **CONTEXT:**
-Je ontwikkelt opdrachten voor een educatieve fruitautomaat-game. De opdrachten worden gebruikt om de kennis van hbo-studenten fysiotherapie te toetsen. Ze moeten kort, eenduidig en uitdagend zijn.
+Je ontwikkelt opdrachten voor een educatieve fruitautomaat-game. De opdrachten worden gebruikt om de kennis en vaardigheden van hbo-studenten fysiotherapie te toetsen. Ze moeten kort, eenduidig en uitdagend zijn.
 
 **DOELGROEP:**
 ${studentNiveauInstructie}
 
-**INSTRUCTIE:**
-Genereer ${aantalOpdrachten} nieuwe, unieke opdrachten over het specifieke onderwerp: **${onderwerp}**.
+ **INSTRUCTIE:**
+ Genereer ${totaalGevraagd} nieuwe, unieke opdrachten binnen de hoofdcategorie: **${hoofdcategorie}**.
+${subcatInstructie}
+${typeRestrictie}
+Als aantallen per subcategorie zijn opgegeven, gebruik precies de som daarvan (negeer dan het algemene aantal).
 
 **STAPPENPLAN VOOR DE AI:**
 1. Analyseer de kernconcepten van het opgegeven specifieke onderwerp.
@@ -92,6 +160,12 @@ Genereer ${aantalOpdrachten} nieuwe, unieke opdrachten over het specifieke onder
 **BEOORDELINGSCRITERIA:**
 ${criteriaInstructie}
 
+**OPDRACHTTYPES EN DEFINITIES:**
+Kies per opdracht één type en vul dat in in kolom "Type". Toegestane waarden en betekenis:
+${BESCHIKBARE_TYPES.map(t => `- ${t}: ${TYPE_BESCHRIJVINGEN[t]}`).join('\n')}
+- Als je geen passend type kunt bepalen, zet "Type" op "Onbekend".
+\nZet kolom "Tekenen" op "Ja" als de opdracht tekenen/schetsen vraagt (ongeacht type), anders "Nee".
+
 ${voorbeeldOpdrachten}
 
 **OUTPUT FORMAAT:**
@@ -99,31 +173,33 @@ Lever het resultaat in een van de volgende formaten:
 
 **OPTIE 1: Kopieerbare tabel**
 Geef een tabel met de volgende kolomnamen:
-Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau
+Hoofdcategorie | Categorie | Type | Tekenen | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau | Casus
 
 **OPTIE 2: Excel-formaat**
 Geef de data in een formaat dat direct in Excel kan worden geplakt, met de volgende kolomnamen:
-Categorie, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2), Niveau
+Hoofdcategorie, Categorie, Type, Tekenen, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2), Niveau, Casus
 
 **KOLOMSPECIFICATIES:**
 - "Categorie": Exact overeenkomen met het opgegeven specifieke onderwerp
+- "Type": Eén waarde uit deze lijst: ${typeLijst}. Als onbekend, gebruik "Onbekend".
+- "Tekenen": "Ja" of "Nee". Gebruik "Ja" alleen wanneer de opdracht expliciet om tekenen/schetsen vraagt.
 - "Opdracht": De vraag of opdrachttekst
 - "Antwoordsleutel": Het modelantwoord met bronvermelding
 - "Tijdslimiet": Getal in seconden (bijv. 60 voor 1 minuut). Alleen toevoegen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering.
 - "Extra_Punten (max 2)": Getal tussen 0 en 2. Alleen extra punten geven voor moeilijke of complexe opdrachten die meer inspanning vereisen.
- - "Niveau": 1 (opwarmers/basis), 2 (basis/standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
+- "Niveau": 1 (opwarmers/basis), 2 (basis/standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
 
 **VOORBEELD TABEL FORMAAT:**
 
-| Categorie | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau |
-|-----------|----------|-----------------|-------------|---------------------|--------|
-| ${onderwerp} | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). | 120 | 1 | 2 |
-| ${onderwerp} | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015). | 0 | 0 | 1 |
+| Hoofdcategorie | Categorie | Type | Tekenen | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau | Casus |
+|----------------|-----------|------|---------|----------|-----------------|-------------|---------------------|--------|-------|
+| ${hoofdcategorie} | ${subcategorieen[0] || 'Subcategorie 1'} | Begripsuitleg | Nee | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). | 120 | 1 | 2 |  |
+| ${hoofdcategorie} | ${subcategorieen[1] || 'Subcategorie 2'} | Feitenkennis | Ja | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015). | 0 | 0 | 1 |  |
 
 **VOORBEELD EXCEL FORMAAT:**
-Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau
-${onderwerp},"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).",120,1,2
-${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015).",0,0,1${fileContext}`;
+Hoofdcategorie,Categorie,Type,Tekenen,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau,Casus
+${hoofdcategorie},${subcategorieen[0] || 'Subcategorie 1'},Begripsuitleg,Nee,"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).",120,1,2,
+${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015).",0,0,1,${fileContext}`;
   };
 
   const handleCopyPrompt = async () => {
@@ -144,19 +220,36 @@ ${onderwerp},"Benoem de belangrijkste spieren van de rotator cuff.","De rotator 
   };
 
   const handleDownloadTemplate = () => {
-    const template = `Categorie,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau
-Voorbeeld Onderwerp,Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.,Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).,120,1,2
-Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg uit wat hun functie is bij schouderstabilisatie.,De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren en stabiliseren tijdens bewegingen. Bron: Gray's Anatomy (2015).,90,2,1`;
-    
-    const blob = new Blob([template], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'opdrachten_sjabloon.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    const data = [
+      {
+        Hoofdcategorie: 'Anatomie',
+        Categorie: 'Schouder',
+        Type: 'Begripsuitleg',
+        Tekenen: 'Nee',
+        Opdracht: 'Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.',
+        Antwoordsleutel: 'Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden.',
+        Tijdslimiet: 120,
+        'Extra_Punten (max 2)': 1,
+        Niveau: 2,
+        Casus: ''
+      },
+      {
+        Hoofdcategorie: 'Revalidatie',
+        Categorie: 'Knie',
+        Type: 'Toepassing in casus',
+        Tekenen: 'Nee',
+        Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
+        Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
+        Tijdslimiet: 90,
+        'Extra_Punten (max 2)': 2,
+        Niveau: 2,
+        Casus: 'Patiënt 45 jaar, 6 weken post‑VKB; doel: traplopen zonder pijn.'
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Opdrachten');
+    XLSX.writeFile(workbook, 'opdrachten_sjabloon.xlsx');
   };
 
   if (!isOpen) {
@@ -175,17 +268,91 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
           <div className="ai-generator-section">
             <h4>Stap 1: Vul de parameters in</h4>
             <p className="instruction-text">
-              De waarden hieronder (onderwerp, aantal en studentniveau) worden automatisch verwerkt in de prompt die je in stap 5 kunt kopiëren.
+              De waarden hieronder (hoofdcategorie, onderwerp-beschrijving, aantal, studentniveau en eventuele subcategorieën) worden automatisch verwerkt in de prompt die je in stap 5 kunt kopiëren.
             </p>
             <div className="form-group">
-              <label htmlFor="onderwerp">Onderwerp:</label>
+              <label htmlFor="onderwerpBeschrijving">Beschrijving van het onderwerp (verplicht):</label>
               <input
-                id="onderwerp"
+                id="onderwerpBeschrijving"
                 type="text"
-                value={onderwerp}
-                onChange={(e) => setOnderwerp(e.target.value)}
-                placeholder="bijv. Trainingsleer, Anatomie, etc."
+                value={onderwerpBeschrijving}
+                onChange={(e) => setOnderwerpBeschrijving(e.target.value)}
+                placeholder="Bijv.: Revalidatie na voorste kruisband reconstructie binnen de sportfysiotherapie"
+                required
               />
+              {!onderwerpBeschrijving.trim() && (
+                <div className="instruction-text" style={{ color: '#fca5a5', marginTop: 6 }}>Vul een korte beschrijving van het onderwerp in.</div>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="hoofdcategorie">Hoofdcategorie:</label>
+              <input
+                id="hoofdcategorie"
+                type="text"
+                value={hoofdcategorie}
+                onChange={(e) => setHoofdcategorie(e.target.value)}
+                placeholder="bijv. Anatomie, Pathofysiologie, Vak Fysiotherapie, Gedrag & Communicatie"
+              />
+              <div className="instruction-text" style={{ marginTop: 6 }}>
+                Dit is de hoofdcategorie waarin de opdrachten vallen. Je kunt kiezen uit bestaande categorieën in de app (Anatomie, Pathofysiologie, Vak Fysiotherapie, Gedrag & Communicatie) of zelf een nieuwe categorie opgeven. Nieuwe categorieën worden toegevoegd.
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Subcategorieën:</label>
+              <div className="radio-group">
+                <label>
+                  <input
+                    type="radio"
+                    name="subcatMode"
+                    value="ai"
+                    checked={subcatMode === 'ai'}
+                    onChange={() => setSubcatMode('ai')}
+                  />
+                  Laat de AI subcategorieën bepalen
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="subcatMode"
+                    value="handmatig"
+                    checked={subcatMode === 'handmatig'}
+                    onChange={() => setSubcatMode('handmatig')}
+                  />
+                  Ik geef zelf subcategorieën op
+                </label>
+              </div>
+              {subcatMode === 'handmatig' && (
+                <div style={{ marginTop: 8 }}>
+                  {handmatigeSubcats.map((row, index) => (
+                    <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                      <input
+                        type="text"
+                        value={row.naam}
+                        onChange={(e) => updateHandmatigeSubcat(index, 'naam', e.target.value)}
+                        placeholder="Bijv.: Schouder, Knie, Wervelkolom"
+                        style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={row.aantal}
+                        onChange={(e) => updateHandmatigeSubcat(index, 'aantal', Number(e.target.value))}
+                        style={{ width: 90, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
+                        aria-label="Aantal opdrachten"
+                        title="Aantal opdrachten voor deze subcategorie"
+                      />
+                      <button className="download-knop" onClick={() => removeSubcatRow(index)} aria-label="Verwijder rij">−</button>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="download-knop" onClick={addSubcatRow}>+ Subcategorie</button>
+                  </div>
+                  <div className="instruction-text" style={{ marginTop: 6 }}>
+                    Je kunt bestaande subcategorieën uit de app kiezen of zelf nieuwe bedenken. De opgegeven aantallen worden exact aangehouden.
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="form-group">
@@ -236,7 +403,34 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
               </div>
             </div>
             
-            {/* Vraag moeilijkheidsgraad verwijderd op verzoek */}
+            <div className="form-group">
+              <label>Opdracht types (meerdere mogelijk):</label>
+              <div className="instruction-text" style={{ marginBottom: 6 }}>
+                Vink de typen aan die je wilt laten genereren. Laat alles leeg om de keuze aan de AI over te laten.
+              </div>
+              <div className="radio-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                {BESCHIKBARE_TYPES.map((t) => (
+                  <label key={t} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <input
+                      type="checkbox"
+                      checked={geselecteerdeTypes.includes(t)}
+                      onChange={() => toggleType(t)}
+                    />
+                    <span>
+                      <strong>{t}</strong>
+                      <div className="instruction-text">{TYPE_BESCHRIJVINGEN[t]}</div>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="instruction-text" style={{ marginTop: 8 }}>
+                Secundair kenmerk: zet <strong>Tekenen</strong> aan als opdrachten een schets/schetslabel vragen (ongeacht type).
+              </div>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+                <input type="checkbox" checked={isTekenen} onChange={(e) => setIsTekenen(e.target.checked)} />
+                Tekenen gevraagd
+              </label>
+            </div>
           </div>
 
           <div className="ai-generator-section">
@@ -289,8 +483,14 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
             </p>
             <button 
               className="kopieer-knop"
-              onClick={handleCopyPrompt}
-              disabled={!onderwerp.trim()}
+              onClick={() => {
+                if (!onderwerpBeschrijving.trim()) {
+                  window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Vul eerst de onderwerp-beschrijving in (Stap 1).', type: 'error', timeoutMs: 6000 } }));
+                  return;
+                }
+                handleCopyPrompt();
+              }}
+              disabled={!onderwerpBeschrijving.trim()}
             >
               Kopieer Prompt
             </button>
@@ -299,14 +499,47 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
           <div className="ai-generator-section">
             <h4>Stap 6: Stappen in de AI‑chatbot</h4>
             <ol className="steps-list">
-              <li className="step-item"><span className="step-badge">1</span><span className="step-content">Voeg het sjabloon toe (of geef het gewenste kolomformaat).</span></li>
-              <li className="step-item"><span className="step-badge">2</span><span className="step-content">Voeg (een deel van) je bronnen toe (indien van toepassing): links of korte samenvattingen per bron.</span></li>
-              <li className="step-item"><span className="step-badge">3</span><span className="step-content">Plak de prompt.</span></li>
-              <li className="step-item"><span className="step-badge">4</span><span className="step-content">Lees de prompt en pas naar wens aan (toon, niveau, vraagtypen, kolommen).</span></li>
-              <li className="step-item"><span className="step-badge">5</span><span className="step-content">Itereer tot het resultaat goed is (vraag om bijsturen waar nodig).</span></li>
-              <li className="step-item"><span className="step-badge">6</span><span className="step-content">Laat opdrachten, antwoordsleutels en velden (tijdslimiet, extra punten, niveau) bijschaven waar nodig.</span></li>
-              <li className="step-item"><span className="step-badge">7</span><span className="step-content">Vraag om alle opdrachten te leveren in een downloadbaar Excel/CSV met de juiste kolomnamen.</span></li>
-              <li className="step-item"><span className="step-badge">8</span><span className="step-content">Download het bestand.</span></li>
+              <li className="step-item">
+                <span className="step-badge">1</span>
+                <div className="step-content">
+                  <strong>Bestanden toevoegen</strong>
+                  <ul className="substeps-list">
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Sjabloon toevoegen (of het gewenste kolomformaat benoemen).</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Br(on)nen toevoegen (indien van toepassing): links of korte samenvattingen per bron.</span></li>
+                  </ul>
+                </div>
+              </li>
+              <li className="step-item">
+                <span className="step-badge">2</span>
+                <div className="step-content">
+                  <strong>Prompt gebruiken</strong>
+                  <ul className="substeps-list">
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Plak de prompt.</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Lees en pas naar wens aan (toon, niveau, vraagtypen, kolommen).</span></li>
+                    <li className="substep-item"><span className="substep-badge">c</span><span>Stuur de prompt.</span></li>
+                  </ul>
+                </div>
+              </li>
+              <li className="step-item">
+                <span className="step-badge">3</span>
+                <div className="step-content">
+                  <strong>Itereren</strong>
+                  <ul className="substeps-list">
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Pas de prompt aan als het resultaat nog niet naar wens is.</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Vraag extra opdrachten of bijsturing om de output te verbeteren.</span></li>
+                  </ul>
+                </div>
+              </li>
+              <li className="step-item">
+                <span className="step-badge">4</span>
+                <div className="step-content">
+                  <strong>Output</strong>
+                  <ul className="substeps-list">
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Vraag om een downloadbaar Excel/CSV met de juiste kolomnamen en download.</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Lukt downloaden niet? Kopieer de tabel, plak in het gedownloade sjabloon en sla op.</span></li>
+                  </ul>
+                </div>
+              </li>
             </ol>
             <p className="instruction-text" style={{ marginTop: 10 }}>
               Tip: valt het resultaat tegen? Probeer minder bronnen te gebruiken of maak het onderwerp concreter (subthema).
@@ -315,9 +548,7 @@ Voorbeeld Onderwerp,Benoem de belangrijkste spieren van de rotator cuff en leg u
 
           <div className="ai-generator-section">
             <h4>Stap 7: Voeg opdrachten toe</h4>
-            <p className="instruction-text">
-              Plak de AI‑output in het sjabloon (of zet om naar de juiste kolommen) en upload het bestand daarna in de app via Instellingen → Opdrachtenbeheer.
-            </p>
+            <p className="instruction-text">Upload het bestand in de app via Instellingen → Opdrachtenbeheer.</p>
           </div>
 
           <div className="ai-generator-section">

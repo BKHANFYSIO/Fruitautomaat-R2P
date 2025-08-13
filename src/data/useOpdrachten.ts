@@ -35,7 +35,7 @@ export const getDisplayCategorie = (opdracht: Opdracht, alleOpdrachten: Opdracht
 };
 
 
-export const useOpdrachten = (defaultFilePath: string) => {
+export const useOpdrachten = (defaultFilePaths: string | string[]) => {
   const [opdrachten, setOpdrachten] = useState<Opdracht[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -65,18 +65,15 @@ export const useOpdrachten = (defaultFilePath: string) => {
       }
       return dp[m][n];
     };
-    const ALIASES: Record<string, string> = {
-      // canonical → list of alias keys mapped below
-    };
+    const ALIASES: Record<string, string> = {};
     const aliasTuples: Array<[string, string]> = [
       ['feitenkennis', 'feiten'],
-      ['begrijpen', 'begrip'],
-      ['toepassing', 'toepassen'],
-      ['uitleggen', 'uitleg'],
-      ['tekenen', 'schetsen'],
-      ['communicatie', 'communiceren'],
-      ['fysiotherapie', 'fysio'],
-      ['praktijk', 'praktisch']
+      ['begripsuitleg', 'begrip'],
+      ['toepassing in casus', 'toepassing'],
+      ['vaardigheid – onderzoek', 'onderzoek'],
+      ['vaardigheid – behandeling', 'behandeling'],
+      ['communicatie met patiënt', 'communicatie'],
+      ['klinisch redeneren', 'redeneren']
     ];
     aliasTuples.forEach(([canon, alias]) => { ALIASES[alias] = canon; });
 
@@ -101,7 +98,12 @@ export const useOpdrachten = (defaultFilePath: string) => {
     return json.map(row => {
       const tijdslimiet = Number(row["Tijdslimiet (sec)"]) || Number(row.Tijdslimiet);
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
-      const opdrachtType = normalizeType(row.OpdrachtType || row.opdrachtType || '');
+      const opdrachtType = normalizeType(row.Type || row.OpdrachtType || row.opdrachtType || '');
+      const tekenenRaw = row.Tekenen ?? row.tekenen ?? '';
+      const isTekenen = typeof tekenenRaw === 'string'
+        ? /^(ja|yes|true|1)$/i.test(tekenenRaw.trim())
+        : Boolean(tekenenRaw);
+      const casus = (row.Casus ?? row.casus ?? '').toString().trim();
       // Niveau kolom (1-3), tolerant voor strings
       let niveau: 1 | 2 | 3 | undefined;
       const rawNiveau = row.Niveau ?? row.niveau ?? '';
@@ -122,6 +124,8 @@ export const useOpdrachten = (defaultFilePath: string) => {
         Extra_Punten: !isNaN(extraPunten) ? extraPunten : 0,
         bron,
         opdrachtType,
+        isTekenen,
+        casus: casus || undefined,
         niveau,
       };
     });
@@ -134,16 +138,60 @@ export const useOpdrachten = (defaultFilePath: string) => {
         setError(null);
         setWarning(null);
 
-        // 1. Laad systeemopdrachten
-        const response = await fetch(defaultFilePath);
-        if (!response.ok) {
-          throw new Error(`Standaard opdrachtenbestand (${defaultFilePath}) kon niet worden geladen.`);
+        // 1. Laad systeemopdrachten (één of meerdere paden)
+        let paths = Array.isArray(defaultFilePaths) ? defaultFilePaths : [defaultFilePaths];
+        // Ondersteun een eenvoudige 'glob' syntax zoals '/opdrachten*.xlsx'
+        if (paths.length === 1 && typeof paths[0] === 'string' && /\*\.xlsx$/.test(paths[0])) {
+          const base = String(paths[0]).replace(/\*\.xlsx$/, ''); // '/opdrachten'
+          const kandidaten = new Set<string>();
+          // Basenaam
+          kandidaten.add(`${base}.xlsx`);
+          // Cijfer-varianten: zonder en met koppelteken, index 1..30
+          for (let i = 1; i <= 30; i++) {
+            kandidaten.add(`${base}${i}.xlsx`);
+            kandidaten.add(`${base}-${i}.xlsx`);
+          }
+          // Veelvoorkomende suffixen met koppelteken
+          ['oud', 'extra', 'anatomie', 'fysio', 'pathofysiologie', 'gedrag', 'communicatie', 'revalidatie']
+            .forEach(s => kandidaten.add(`${base}-${s}.xlsx`));
+          paths = Array.from(kandidaten);
         }
-        const arrayBuffer = await response.arrayBuffer();
-        const systeemOpdrachten = parseExcelData(arrayBuffer, 'systeem');
+        const resultaten = await Promise.all(
+          paths.map(async (path) => {
+            try {
+              const resp = await fetch(path);
+              if (!resp.ok) throw new Error(`Kon ${path} niet laden`);
+              const ab = await resp.arrayBuffer();
+              const parsed = parseExcelData(ab, 'systeem');
+              return { path, opdrachten: parsed, ok: true as const };
+            } catch (e) {
+              return { path, opdrachten: [] as Opdracht[], ok: false as const };
+            }
+          })
+        );
+        const systeemOpdrachten = resultaten.flatMap(r => r.opdrachten);
+        const mislukte = resultaten.filter(r => !r.ok).map(r => r.path);
 
         if (systeemOpdrachten.length === 0) {
-            throw new Error("Excel-bestand is leeg of heeft een onverwacht format.");
+          // Geen enkel standaardbestand geladen → toon waarschuwing en val terug op noodopdrachten
+          setWarning(`Standaard opdrachtenbestand(en) konden niet worden geladen (${mislukte.join(', ') || 'onbekend'}). De app gebruikt nu voorbeeldopdrachten. Upload een correct bestand via Instellingen.`);
+          setOpdrachten(NOOD_OPDRACHTEN);
+          setLoading(false);
+          return;
+        }
+
+        // Extra zachte validatie: systeembestanden met ontbrekende casus bij casus-typen
+        const systeemZonderCasus = systeemOpdrachten.filter(o =>
+          (o.opdrachtType === 'Toepassing in casus' || o.opdrachtType === 'Klinisch redeneren') && (!o.casus || o.casus.trim() === '')
+        );
+        if (systeemZonderCasus.length > 0) {
+          const voorbeelden = systeemZonderCasus.slice(0, 3).map(o => `${o.Hoofdcategorie || ''} > ${o.Categorie} — ${o.opdrachtType}: ${o.Opdracht.substring(0, 80)}${o.Opdracht.length > 80 ? '…' : ''}`);
+          const msg = `Waarschuwing: ${systeemZonderCasus.length} systeemopdracht(en) missen "Casus" terwijl het type "Toepassing in casus" of "Klinisch redeneren" is. Voorbeelden:\n- ${voorbeelden.join('\n- ')}\n(De rijen zijn wel ingeladen. Tip: vul de kolom Casus aan.)`;
+          setWarning(msg);
+          if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+            // Extra melding voor lokale ontwikkeling
+            console.warn('[Opdrachten] Ontbrekende Casus in systeembestanden:', { aantal: systeemZonderCasus.length, voorbeelden });
+          }
         }
 
         // 2. Laad gebruiker opdrachten uit localStorage
@@ -154,7 +202,7 @@ export const useOpdrachten = (defaultFilePath: string) => {
         setOpdrachten([...systeemOpdrachten, ...gebruikerOpdrachten]);
 
       } catch (err) {
-        setWarning('Standaard opdrachtenbestand niet gevonden of ongeldig. De app gebruikt nu voorbeeldopdrachten. Upload een correct bestand via Instellingen.');
+        setWarning('Standaard opdrachtenbestand(en) niet gevonden of ongeldig. De app gebruikt nu voorbeeldopdrachten. Upload een correct bestand via Instellingen.');
         setOpdrachten(NOOD_OPDRACHTEN);
       } finally {
         setLoading(false);
@@ -162,7 +210,7 @@ export const useOpdrachten = (defaultFilePath: string) => {
     };
 
     fetchInitialOpdrachten();
-  }, [defaultFilePath, parseExcelData]);
+  }, [defaultFilePaths, parseExcelData]);
 
   const laadNieuweOpdrachten = useCallback((nieuweOpdrachten: Opdracht[], vervang: boolean) => {
     // We slaan alleen 'gebruiker' opdrachten op in localStorage

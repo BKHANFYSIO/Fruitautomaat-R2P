@@ -319,6 +319,9 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     setInfoModal({ isOpen: false, title: '', content: '' });
   }, []);
 
+  // Fullscreen viewer voor grafieken
+  // Placeholder voor toekomstige fullscreen viewer; huidige implementatie gebruikt per-tab fullscreen via CSS
+
   const formatTijd = useCallback((minuten: number): string => {
     const uren = Math.floor(minuten / 60);
     const restMinuten = minuten % 60;
@@ -484,7 +487,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
           </button>
         </div>
 
-        <div className="leeranalyse-tabs">
+        <div className="leeranalyse-tabs" data-mobile-autohide>
           <button 
             className={`tab ${activeTab === 'overzicht' ? 'active' : ''}`}
             onClick={(e) => {
@@ -614,7 +617,7 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
           )}
         </div>
 
-        <div className="leeranalyse-footer">
+        <div className="leeranalyse-footer" data-non-sticky-mobile>
           <div className="export-buttons">
             <button 
               className="export-button json-export" 

@@ -33,6 +33,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   leitnerBoxHerhalingenData,
   
 }) => {
+  const [fullscreenChart, setFullscreenChart] = useState<string | null>(null);
   // State voor tijdsranges
   const [activiteitTijdsRange, setActiviteitTijdsRange] = useState<TijdsRange>('week');
   const [prestatieTijdsRange, setPrestatieTijdsRange] = useState<TijdsRange>('week');
@@ -499,7 +500,10 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           }
         </p>
         {activiteitData && activiteitData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'activiteit' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'activiteit')}>
+            {fullscreenChart === 'activiteit' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
             {activiteitGrafiekType === 'lijn' ? (
               <Line 
                 data={{
@@ -688,7 +692,10 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je leerprestaties te optimaliseren.
         </p>
         {prestatieData && prestatieData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'prestatie' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'prestatie')}>
+            {fullscreenChart === 'prestatie' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
             {prestatieGrafiekType === 'lijn' ? (
               <Line 
                 data={{
@@ -888,7 +895,10 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je focus strategieën te optimaliseren.
         </p>
         {focusData && focusData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'focus' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'focus')}>
+            {fullscreenChart === 'focus' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
             {focusGrafiekType === 'lijn' ? (
               <Line 
                 data={{

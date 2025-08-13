@@ -218,6 +218,7 @@ export const Fruitautomaat = ({
   }, [spelers, isSerieuzeLeerModusActief]);
   
   const isBonusRondeActief = gamePhase === 'bonus_round';
+  const [isCasusOpen, setIsCasusOpen] = useState(false);
 
   return (
     <div className="fruitautomaat-machine">
@@ -325,6 +326,40 @@ export const Fruitautomaat = ({
                  </div>
                </div>
              </div>
+				{/* Tekenen badge indien van toepassing */}
+				{huidigeOpdracht.opdracht.isTekenen && (
+				  <div className="tooltip-button-container"
+				    onTouchStart={(e) => {
+				      e.preventDefault();
+				      const container = e.currentTarget as HTMLElement;
+				      container.classList.add('tooltip-active');
+				    }}
+				    onClick={(e) => {
+				      const container = e.currentTarget as HTMLElement;
+				      if (container.classList.contains('tooltip-active')) {
+				        container.classList.remove('tooltip-active');
+				      }
+				    }}
+				  >
+				    <span className="info-item">✏️</span>
+				    <div className="tooltip tooltip-top">
+				      <div className="tooltip-content">
+				        <strong>Tekenen</strong>
+				        <p>Voor deze opdracht is tekenen/schetsen gewenst.</p>
+				      </div>
+				    </div>
+				  </div>
+				)}
+				{/* Casus knop indien aanwezig */}
+				{huidigeOpdracht.opdracht.casus && (
+				  <TooltipButton
+				    onClick={() => setIsCasusOpen(prev => !prev)}
+				    tooltipContent={isCasusOpen ? "Verberg casus" : "Toon extra casusgegevens"}
+				    className="pause-opdracht-footer-knop"
+				  >
+				    {isCasusOpen ? '📄 Verberg casus' : '📄 Toon casus'}
+				  </TooltipButton>
+				)}
           </div>
         )}
         
@@ -476,6 +511,12 @@ export const Fruitautomaat = ({
           </div>
         )}
       </div>
+      {huidigeOpdracht?.opdracht?.casus && (
+        <div id="casus-panel" className={`casus-panel ${isCasusOpen ? 'open' : ''}`}>
+          <div className="casus-titel">Casus</div>
+          <div className="casus-tekst">{huidigeOpdracht.opdracht.casus}</div>
+        </div>
+      )}
     </div>
   );
 }; 

@@ -235,6 +235,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  text-align: left;
 }
 
 .step-item {
@@ -242,6 +243,7 @@
   align-items: flex-start;
   gap: 10px;
   color: #e2e8f0;
+  text-align: left;
 }
 
 .step-badge {
@@ -258,6 +260,40 @@
 
 .step-content {
   flex: 1;
+  text-align: left;
+}
+
+/* Substeps styling (a/b/c) */
+.substeps-list {
+  list-style: none;
+  margin: 8px 0 0 0;
+  padding: 0 0 0 34px; /* ruimte voor badgekolom */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.substep-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #cbd5e0;
+  text-align: left;
+}
+
+.substep-badge {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: #2f855a;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  text-transform: lowercase;
+  font-size: 12px;
 }
 
 /* De .sluit-knop styling is verplaatst naar Modal.css als .modal-close-button */

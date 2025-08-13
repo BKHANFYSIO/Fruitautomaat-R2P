@@ -66,6 +66,11 @@
   flex-wrap: wrap;
 }
 
+/* Op mobiel: tabs niet sticky en auto-hide bij scroll via overlay scroll, daarom geen fixed posities. */
+[data-mobile-autohide] {
+  position: static;
+}
+
 .tab {
   background: #444;
   border: none;
@@ -93,6 +98,12 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 15px 20px 0; /* Ruimte voor scrollbar en onderkant */
+}
+
+/* Niet-sticky exportbalk op mobiel: render als normale contentsectie */
+[data-non-sticky-mobile] {
+  position: static;
+  bottom: auto;
 }
 
 /* Capture-mode: maak alles volledig zichtbaar zodat html2canvas volledige hoogte kan capteren */
@@ -991,6 +1002,33 @@
   padding: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   min-height: 350px;
+}
+
+.chart-container.fullscreen {
+  position: fixed;
+  inset: 10px;
+  z-index: 3000;
+  background: #1b1b1b;
+  border: 1px solid #666;
+  padding: 16px;
+}
+
+.chart-container.fullscreen canvas,
+.chart-container.fullscreen .achievement-chart {
+  height: calc(100vh - 80px) !important;
+  max-height: none !important;
+}
+
+.chart-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #eee;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
 .achievement-chart {

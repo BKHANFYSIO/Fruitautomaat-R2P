@@ -165,8 +165,9 @@ interface LeitnerCategorieBeheerProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
+    alleenTekenen?: boolean;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'> }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
 }
 
 interface CategorieStatistiek {
@@ -564,6 +565,8 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       // Filter op opdrachtType
         const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
         if (!typeMatch) return false;
+        // Filter op tekenen
+        if (filters.alleenTekenen && !(op as any).isTekenen) return false;
         // Filter op niveau
         const nivs = filters.niveaus || [];
         if (nivs.length === 0) return true;
@@ -1226,6 +1229,19 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                         </InfoTooltip>
                       );
                     })}
+                  </div>
+                </div>
+                <div className="filter-groep">
+                  <span className="filter-label">Tekenen:</span>
+                  <div className="filter-iconen">
+                    <InfoTooltip asChild content={`Toon alleen teken‑opdrachten (opdrachten waar tekenen/schetsen gevraagd is).`}>
+                      <span
+                        className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
+                        onClick={() => setFilters && setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                      >
+                        ✏️
+                      </span>
+                    </InfoTooltip>
                   </div>
                 </div>
                 <div className="filter-groep">

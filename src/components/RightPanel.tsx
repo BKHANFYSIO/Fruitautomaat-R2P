@@ -6,7 +6,7 @@ import { ActieDashboard } from './ActieDashboard';
 import { NotificatieBanner } from './NotificatieBanner';
 
 type Props = {
-  notificatie: { zichtbaar: boolean; type: 'succes' | 'fout'; bericht: string };
+  notificatie: { zichtbaar: boolean; type: 'succes' | 'fout'; bericht: string; cta?: { label: string; onClick: () => void } };
   warning?: string | null;
   DevPanelSlot?: React.ReactNode;
 
@@ -97,7 +97,22 @@ export const RightPanel: React.FC<Props> = ({
         cta={notificatie.cta}
       />
       {DevPanelSlot}
-      {warning && <div className="app-warning">{warning}</div>}
+      {warning && (
+        <div className="app-warning">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{warning}</div>
+            <button
+              onClick={() => {
+                // Verberg waarschuwing tijdelijk (tot herlaad) via custom event
+                window.dispatchEvent(new CustomEvent('app:clear-warning'));
+              }}
+              style={{ marginLeft: 12 }}
+            >
+              Oké
+            </button>
+          </div>
+        </div>
+      )}
 
       <Fruitautomaat
         titel={titel}

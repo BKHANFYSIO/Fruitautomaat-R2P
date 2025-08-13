@@ -77,8 +77,9 @@ interface CategorieSelectieModalProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
+    alleenTekenen?: boolean;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'> }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
 }
 
 export const CategorieSelectieModal = ({
@@ -369,14 +370,16 @@ export const CategorieSelectieModal = ({
 
   // Gefilterde opdrachten op basis van huidige filters
   const gefilterdeOpdrachten = useMemo(() => {
-    return opdrachten.filter(op => {
+      return opdrachten.filter(op => {
       // Filter op bron
       const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes(op.bron as 'systeem' | 'gebruiker');
       if (!bronMatch) return false;
 
       // Filter op opdrachtType
-      if (filters.opdrachtTypes.length === 0) return true;
-      return filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+        if (filters.opdrachtTypes.length > 0 && !filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend')) return false;
+        // Filter op tekenen
+        if (filters.alleenTekenen && !(op as any).isTekenen) return false;
+        return true;
     });
   }, [opdrachten, filters]);
 
@@ -728,6 +731,19 @@ export const CategorieSelectieModal = ({
                     </InfoTooltip>
                   );
                 })}
+              </div>
+            </div>
+            <div className="filter-groep">
+              <span className="filter-label">Tekenen:</span>
+              <div className="filter-iconen">
+                <InfoTooltip asChild content={`Toon alleen teken‑opdrachten (opdrachten waar tekenen/schetsen gevraagd is).`}>
+                  <span
+                    className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
+                    onClick={() => setFilters && setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                  >
+                    ✏️
+                  </span>
+                </InfoTooltip>
               </div>
             </div>
             <div className="filter-groep">

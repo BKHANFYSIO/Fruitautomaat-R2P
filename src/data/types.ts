@@ -9,7 +9,9 @@ export interface Opdracht {
   Tijdslimiet: number;
   Extra_Punten: number;
   bron?: 'systeem' | 'gebruiker';
-  opdrachtType?: string;
+  opdrachtType?: string; // primair type (exact één)
+  isTekenen?: boolean;   // secundair kenmerk: tekenen ja/nee
+  casus?: string;        // extra casusbeschrijving (voor Toepassing in casus / Klinisch redeneren)
   niveau?: 1 | 2 | 3; // optioneel: moeilijkheid (1=opwarmers, 2=basis, 3=uitdagend)
 }
 

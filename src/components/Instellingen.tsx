@@ -489,77 +489,35 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={() => {
                         const data = [
-                          // Basisrij — Feitenkennis met tijdslimiet
-                          { 
-                            Hoofdcategorie: 'Anatomie',
-                            Categorie: 'Schouder', 
-                            Opdracht: 'Noem 3 spieren die betrokken zijn bij abductie van de schouder.', 
-                            Antwoordsleutel: 'm. deltoideus (pars acromialis), m. supraspinatus, m. trapezius (stabiliserend) — bron: boek/college',
-                            "Tijdslimiet (sec)": 60,
-                            "Extra_Punten (max 2)": 0,
-                            OpdrachtType: 'Feitenkennis',
-                            Niveau: 1
-                          },
-                          // Begrijpen — zonder tijdslimiet
                           {
-                            Hoofdcategorie: 'Fysiologie',
-                            Categorie: 'Energievoorziening',
-                            Opdracht: 'Leg kort uit waarom intervaltraining de VO2max kan verbeteren.',
-                            Antwoordsleutel: 'Verhoogt slagvolume, perifere adaptaties (capillarisatie, mitochondriën).',
-                            "Tijdslimiet (sec)": 0,
-                            "Extra_Punten (max 2)": 1,
-                            OpdrachtType: 'Begrijpen',
-                            Niveau: 1
+                            Hoofdcategorie: 'Anatomie',
+                            Categorie: 'Schouder',
+                            Type: 'Feitenkennis',
+                            Tekenen: 'Nee',
+                            Opdracht: 'Noem 3 spieren die betrokken zijn bij abductie van de schouder.',
+                            Antwoordsleutel: 'm. deltoideus (pars acromialis), m. supraspinatus, m. trapezius (stabiliserend) — bron: boek/college',
+                            Tijdslimiet: 60,
+                            "Extra_Punten (max 2)": 0,
+                            Niveau: 1,
+                            Casus: ''
                           },
-                          // Toepassing — met YouTube link in antwoordsleutel
                           {
                             Hoofdcategorie: 'Revalidatie',
                             Categorie: 'Knie',
-                            Opdracht: 'Demonstreer 2 progressies van de squat voor vroege knie‑revalidatie.',
-                            Antwoordsleutel: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ (voorbeeldvideo) — benoem: ROM, snelheid, steunvlak.',
-                            "Tijdslimiet (sec)": 90,
+                            Type: 'Toepassing in casus',
+                            Tekenen: 'Nee',
+                            Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
+                            Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
+                            Tijdslimiet: 90,
                             "Extra_Punten (max 2)": 2,
-                            OpdrachtType: 'Toepassing',
-                            Niveau: 2
-                          },
-                          // Uitleggen — met afbeeldingslink
-                          {
-                            Hoofdcategorie: 'Neurologie',
-                            Categorie: 'Zenuwstelsel',
-                            Opdracht: 'Leg uit wat saltatoire conductie is met een schets of voorbeeld.',
-                            Antwoordsleutel: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Myelin_sheath_neuron.png (afbeelding) — myeline → sprongsgewijze geleiding via knopen van Ranvier.',
-                            "Tijdslimiet (sec)": 75,
-                            "Extra_Punten (max 2)": 1,
-                            OpdrachtType: 'Uitleggen',
-                            Niveau: 2
-                          },
-                          // Tekenen — zonder media
-                          {
-                            Hoofdcategorie: 'Anatomie',
-                            Categorie: 'Wervelkolom',
-                            Opdracht: 'Teken een wervel en label corpus, arcus, processus spinosus en foramen vertebrale.',
-                            Antwoordsleutel: 'Schets met labels. Controleer: verhoudingen en juiste benamingen.',
-                            "Tijdslimiet (sec)": 0,
-                            "Extra_Punten (max 2)": 0,
-                            OpdrachtType: 'Tekenen',
-                            Niveau: 2
-                          },
-                          // Communicatie — met externe bron
-                          {
-                            Hoofdcategorie: 'Communicatie',
-                            Categorie: 'Patiënteducatie',
-                            Opdracht: 'Leg in simpele bewoordingen uit wat tendinopathie is en wat de rol van belasting is.',
-                            Antwoordsleutel: 'Gebruik metafoor “spierpees als touw” — link: https://bsl.nl/artikel/tendinopathie (voorbeeldbron).',
-                            "Tijdslimiet (sec)": 60,
-                            "Extra_Punten (max 2)": 0,
-                            OpdrachtType: 'Communicatie',
-                            Niveau: 3
+                            Niveau: 2,
+                            Casus: 'Patiënt 45 jaar, 6 weken post‑VKB; doel: traplopen zonder pijn.'
                           }
                         ];
                         const worksheet = XLSX.utils.json_to_sheet(data);
                         const workbook = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(workbook, worksheet, "Opdrachten");
-                        XLSX.writeFile(workbook, "opdrachten_sjabloon.xlsx");
+                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Opdrachten');
+                        XLSX.writeFile(workbook, 'opdrachten_sjabloon.xlsx');
                       }}
                       className="instellingen-knop download-template-knop"
                     >
@@ -1392,9 +1350,19 @@ export const Instellingen = React.memo(({
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: 12 }}><code>OpdrachtType</code></td>
+                  <td style={{ padding: 12 }}><code>Type</code></td>
                   <td style={{ padding: 12 }}>Nee</td>
-                  <td style={{ padding: 12 }}>Vaste set: Feitenkennis, Begrijpen, Toepassing, Uitleggen, Tekenen, Communicatie, Fysiotherapie, Praktijk, Onbekend. (niet‑hoofdlettergevoelig, kleine spelfouten worden herkend)</td>
+                  <td style={{ padding: 12 }}>Vaste set: Feitenkennis, Begripsuitleg, Toepassing in casus, Vaardigheid – Onderzoek, Vaardigheid – Behandeling, Communicatie met patiënt, Klinisch redeneren, Onbekend.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Tekenen</code></td>
+                  <td style={{ padding: 12 }}>Nee</td>
+                  <td style={{ padding: 12 }}>Ja/Nee — ongeacht type; gebruik Ja wanneer de opdracht tekenen/schetsen vraagt.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: 12 }}><code>Casus</code></td>
+                  <td style={{ padding: 12 }}>Voorwaardelijk</td>
+                  <td style={{ padding: 12 }}>Verplicht als <code>Type</code> “Toepassing in casus” of “Klinisch redeneren” is; anders leeg laten.</td>
                 </tr>
               </tbody>
             </table>

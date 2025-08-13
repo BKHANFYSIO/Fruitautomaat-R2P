@@ -86,6 +86,34 @@
   flex-direction: column;
 }
 
+/* Casus panel */
+.casus-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 0 12px;
+}
+.casus-panel.open {
+  max-height: 300px;
+  padding: 12px;
+}
+.casus-titel {
+  color: #ffd166;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.casus-tekst {
+  color: #eee;
+  line-height: 1.4;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
 .welkomst-bericht {
   color: #b0b0b0;
   padding: 20px;
