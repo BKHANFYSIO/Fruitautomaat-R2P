@@ -98,7 +98,6 @@ export const SpelerInput = ({
   isSpelGestart,
   isSerieuzeLeerModusActief = false,
   setIsSerieuzeLeerModusActief,
-  leermodusType = 'normaal',
   setLeermodusType,
   onSpelReset,
   spelersCount = 0,
