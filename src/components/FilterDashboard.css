@@ -136,10 +136,15 @@
   font-size: 1.4rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  padding: 6px; /* iets groter voor rand/badge */
-  border-radius: 8px;
+  padding: 8px; /* groter voor consistente tegelmaat */
+  border-radius: 10px;
   line-height: 1;
   box-shadow: inset 0 0 0 0px transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
 }
 
 .filter-icon.inactive {
@@ -172,18 +177,18 @@
 }
 
 .filter-icon.bron.active {
-  box-shadow: inset 0 0 0 2px #63b3ed; /* blauw randje */
-  background: rgba(99, 179, 237, 0.15);
+  box-shadow: inset 0 0 0 3px #63b3ed, 0 0 10px rgba(99, 179, 237, 0.5); /* duidelijk blauw randje + glow */
+  background: rgba(99, 179, 237, 0.18);
 }
 
 .filter-icon.bron.inactive {
   /* Felle rode indicatie bij uitgeschakelde bron */
-  background: linear-gradient(180deg, rgba(231, 76, 60, 0.95), rgba(231, 76, 60, 0.85));
+  background: linear-gradient(180deg, rgba(255, 59, 48, 0.98), rgba(255, 59, 48, 0.92));
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(231, 76, 60, 0.75), inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 14px rgba(255, 59, 48, 0.85), inset 0 0 0 2px rgba(255, 255, 255, 0.18);
 }
 
 .filter-icon.bron.inactive:hover {
-  background: linear-gradient(180deg, rgba(231, 76, 60, 1), rgba(231, 76, 60, 0.95));
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.9), inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, rgba(255, 59, 48, 1), rgba(255, 59, 48, 0.98));
+  box-shadow: 0 0 16px rgba(255, 59, 48, 0.95), inset 0 0 0 2px rgba(255, 255, 255, 0.28);
 }
