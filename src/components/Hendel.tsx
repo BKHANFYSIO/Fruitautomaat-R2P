@@ -4,9 +4,10 @@ import './Hendel.css';
 interface HendelProps {
   onSpin: () => void;
   disabled: boolean;
+  attract?: boolean;
 }
 
-export const Hendel = ({ onSpin, disabled }: HendelProps) => {
+export const Hendel = ({ onSpin, disabled, attract = false }: HendelProps) => {
   const [isPulled, setIsPulled] = useState(false);
 
   const handlePull = () => {
@@ -27,7 +28,7 @@ export const Hendel = ({ onSpin, disabled }: HendelProps) => {
       title={disabled ? "Beoordeel eerst de prestatie voordat je opnieuw kunt draaien." : "Trek aan de hendel om te spinnen!"}
     >
       <div 
-        className={`hendel-grip ${isPulled ? 'pulled' : ''} ${disabled ? 'disabled' : ''}`}
+        className={`hendel-grip ${isPulled ? 'pulled' : ''} ${disabled ? 'disabled' : ''} ${attract && !disabled ? 'attract' : ''}`}
         onClick={handlePull}
       >
         <div className="hendel-knop"></div>

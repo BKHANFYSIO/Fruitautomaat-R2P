@@ -11,7 +11,7 @@ export const SYMBOLEN = [
 export const opdrachtTypeIconen: { [key: string]: string } = {
   'Feitenkennis': '📚',
   'Begripsuitleg': '💭',
-  'Toepassing in casus': '⚙️',
+  'Toepassing': '⚙️',
   'Vaardigheid – Onderzoek': '🔎',
   'Vaardigheid – Behandeling': '🛠️',
   'Communicatie met patiënt': '🗣️',
@@ -23,11 +23,11 @@ export const opdrachtTypeIconen: { [key: string]: string } = {
 export const OPDRACHT_TYPE_ORDER: string[] = [
   'Feitenkennis',
   'Begripsuitleg',
-  'Toepassing in casus',
+  'Toepassing',
+  'Klinisch redeneren',
   'Vaardigheid – Onderzoek',
   'Vaardigheid – Behandeling',
   'Communicatie met patiënt',
-  'Klinisch redeneren',
   'Onbekend'
 ];
 

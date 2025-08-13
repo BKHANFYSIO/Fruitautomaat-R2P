@@ -7,7 +7,8 @@ export interface Filters {
   bronnen: OpdrachtBron[];
   opdrachtTypes: string[];
   niveaus?: Array<1 | 2 | 3 | 'undef'>; // leeg of undefined = geen niveau-filter
-  alleenTekenen?: boolean; // nieuwe filter voor teken-opdrachten
+  // vervang boolean door tri-status filter
+  tekenen?: Array<'ja' | 'mogelijk' | 'nee'>; // leeg of undefined = geen teken-filter
 }
 
 export interface CategorieSelectieState {
@@ -25,32 +26,64 @@ export interface CategorieSelectieState {
   alleUniekeCategorieen: string[];
 }
 
-export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieState {
-  const [filters, setFilters] = useState<Filters>(() => {
-    const saved = localStorage.getItem('opdrachtFilters');
-    if (saved) {
+export type ModeKey = 'highscore' | 'multiplayer' | 'normaal' | 'leitner';
+
+export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKey = 'normaal'): CategorieSelectieState {
+  // Per-modus filters in localStorage
+  const [filtersByMode, setFiltersByMode] = useState<Record<ModeKey, Filters>>(() => {
+    // Try new structured storage first
+    const savedByMode = localStorage.getItem('opdrachtFiltersByMode');
+    if (savedByMode) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedByMode);
+        // Baseline defaults
+        const defaults: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] };
+        return {
+          highscore: { ...defaults, ...(parsed.highscore || {}) },
+          multiplayer: { ...defaults, ...(parsed.multiplayer || {}) },
+          normaal: { ...defaults, ...(parsed.normaal || {}) },
+          leitner: { ...defaults, ...(parsed.leitner || {}) },
+        } as Record<ModeKey, Filters>;
+      } catch {}
+    }
+    // Backwards compat: old single key → copy to all modes
+    const oldSaved = localStorage.getItem('opdrachtFilters');
+    let fallback: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] };
+    if (oldSaved) {
+      try {
+        const parsed = JSON.parse(oldSaved);
         if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
           if (parsed.bronnen.length === 0) parsed.bronnen = ['systeem', 'gebruiker'];
-          // Zorg voor default voor niveaus (geen filter)
           if (!Array.isArray(parsed.niveaus)) parsed.niveaus = [];
-          return parsed;
+          if (!Array.isArray(parsed.tekenen)) parsed.tekenen = [];
+          fallback = parsed as Filters;
         }
-      } catch {
-        // ignore parse errors
-      }
+      } catch {}
     }
-    return { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], alleenTekenen: false };
+    return {
+      highscore: fallback,
+      multiplayer: fallback,
+      normaal: fallback,
+      leitner: fallback,
+    } as Record<ModeKey, Filters>;
   });
 
-  // Debounced save van filters
+  const filters = filtersByMode[currentMode] || filtersByMode.normaal;
+  const setFilters: React.Dispatch<React.SetStateAction<Filters>> = (updater) => {
+    setFiltersByMode(prev => {
+      const current = prev[currentMode] || prev.normaal;
+      const nextFilters = typeof updater === 'function' ? (updater as any)(current) : updater;
+      return { ...prev, [currentMode]: nextFilters } as Record<ModeKey, Filters>;
+    });
+  };
+
+  // Debounced save van filters per modus
   useEffect(() => {
     const id = setTimeout(() => {
-      localStorage.setItem('opdrachtFilters', JSON.stringify(filters));
+      localStorage.setItem('opdrachtFiltersByMode', JSON.stringify(filtersByMode));
     }, 200);
     return () => clearTimeout(id);
-  }, [filters]);
+  }, [filtersByMode]);
 
   const opdrachtenVoorSelectie = useMemo(() => {
     return opdrachten.filter(op => {
@@ -58,8 +91,9 @@ export function useCategorieSelectie(opdrachten: Opdracht[]): CategorieSelectieS
       if (!bronMatch) return false;
       const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
       if (!typeMatch) return false;
-      if (filters.alleenTekenen) {
-        if (!(op as any).isTekenen) return false;
+      if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+        const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+        if (!filters.tekenen.includes(status)) return false;
       }
       const nivs = filters.niveaus || [];
       if (nivs.length === 0) return true; // geen niveau-filter

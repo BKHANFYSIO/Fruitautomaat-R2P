@@ -417,6 +417,38 @@ header, footer, main {
   background-color: #45a049; /* Donkerder groen bij hover */
 } 
 
+/* Nieuwe lay-out: twee-knops rijen (Instellingen/Uitleg en Leeranalyse/Certificaat) */
+.instellingen-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.instellingen-row {
+  display: flex;
+  gap: 10px;
+}
+
+.left-panel .instellingen-row > button {
+  flex: 1 1 0; /* verdel gelijk; negeer vaste width uit generieke stijl */
+  min-width: 130px;
+  width: auto !important;
+  max-width: none !important;
+  padding: 12px 5px;
+  background-color: #4CAF50; /* Groen zoals leermodus-tegels */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.left-panel .instellingen-row > button:hover {
+  background-color: #45a049;
+}
+
 .han-logo-container {
   padding: 15px 10px;
   text-align: center;
@@ -433,6 +465,17 @@ header, footer, main {
   font-size: 0.8rem;
   color: #888;
   margin: 5px 0 0 0;
+}
+
+/* Animaties voor stapkoppen 1/2/3 */
+.step-pulse {
+  animation: stepPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes stepPulse {
+  0% { transform: scale(1); color: #ecf0f1; }
+  50% { transform: scale(1.04); color: #63b3ed; }
+  100% { transform: scale(1); color: #ecf0f1; }
 }
 
 /* Leitner status indicator styling */
@@ -572,7 +615,7 @@ header, footer, main {
 .leitner-header h5 {
   margin: 0 0 10px 0;
   font-size: 1.1rem;
-  color: #e0e0e0;
+  color: #63b3ed;
 }
 
 .highscore-info-text p,

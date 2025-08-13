@@ -164,6 +164,13 @@ export const Instellingen = React.memo(({
   const [isSerieuzeModusWaarschuwingOpen, setIsSerieuzeModusWaarschuwingOpen] = useState(false);
   const [isSerieuzeModusUitschakelenOpen, setIsSerieuzeModusUitschakelenOpen] = useState(false);
 
+  // Luister naar extern event om direct de certificaatmodal te openen
+  useEffect(() => {
+    const handleOpenCertificaat = () => setIsCertificaatModalOpen(true);
+    window.addEventListener('openCertificaat' as any, handleOpenCertificaat as any);
+    return () => window.removeEventListener('openCertificaat' as any, handleOpenCertificaat as any);
+  }, []);
+
   const handleOpenLeitnerBeheer = useCallback(() => {
     onOpenCategorieBeheer();
     onClose(); // Sluit de instellingen modal
@@ -504,7 +511,7 @@ export const Instellingen = React.memo(({
                           {
                             Hoofdcategorie: 'Revalidatie',
                             Categorie: 'Knie',
-                            Type: 'Toepassing in casus',
+                            Type: 'Toepassing',
                             Tekenen: 'Nee',
                             Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
                             Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
@@ -1352,7 +1359,7 @@ export const Instellingen = React.memo(({
                 <tr>
                   <td style={{ padding: 12 }}><code>Type</code></td>
                   <td style={{ padding: 12 }}>Nee</td>
-                  <td style={{ padding: 12 }}>Vaste set: Feitenkennis, Begripsuitleg, Toepassing in casus, Vaardigheid – Onderzoek, Vaardigheid – Behandeling, Communicatie met patiënt, Klinisch redeneren, Onbekend.</td>
+                  <td style={{ padding: 12 }}>Vaste set: Feitenkennis, Begripsuitleg, Toepassing, Klinisch redeneren, Vaardigheid – Onderzoek, Vaardigheid – Behandeling, Communicatie met patiënt, Onbekend.</td>
                 </tr>
                 <tr>
                   <td style={{ padding: 12 }}><code>Tekenen</code></td>
@@ -1362,7 +1369,7 @@ export const Instellingen = React.memo(({
                 <tr>
                   <td style={{ padding: 12 }}><code>Casus</code></td>
                   <td style={{ padding: 12 }}>Voorwaardelijk</td>
-                  <td style={{ padding: 12 }}>Verplicht als <code>Type</code> “Toepassing in casus” of “Klinisch redeneren” is; anders leeg laten.</td>
+                  <td style={{ padding: 12 }}>Verplicht als <code>Type</code> “Klinisch redeneren” is; bij “Toepassing” mag de casus in de opdrachttekst zitten en is <em>optioneel</em>.</td>
                 </tr>
               </tbody>
             </table>

@@ -88,15 +88,24 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
                   className="speler-score achievement-score"
                   title={`${laatsteAchievement.naam}: ${laatsteAchievement.beschrijving}\nKlik om alle achievements te bekijken`}
                   onClick={() => {
-                    // Trigger leeranalyse openen
-                    const event = new CustomEvent('openLeeranalyse');
+                    const event = new CustomEvent('openLeeranalyse', { detail: { tab: 'achievements' } });
                     window.dispatchEvent(event);
                   }}
                 >
                   {laatsteAchievement.icon}
                 </span>
               ) : (
-                <span className="speler-score"></span>
+                <span 
+                  className="speler-score achievement-score"
+                  title="Open je leeranalyse"
+                  onClick={() => {
+                    const event = new CustomEvent('openLeeranalyse', { detail: { tab: 'achievements' } });
+                    window.dispatchEvent(event);
+                  }}
+                  aria-label="Open leeranalyse"
+                >
+                  📊
+                </span>
               )}
             </div>
           </li>

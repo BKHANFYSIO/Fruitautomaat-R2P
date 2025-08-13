@@ -3,7 +3,7 @@ import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css';
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
-import { opdrachtTypeIconen, NIVEAU_LABELS } from '../data/constants';
+import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
 
 // ... (rest van de interfaces en utility functions blijven hetzelfde)
@@ -165,9 +165,9 @@ interface LeitnerCategorieBeheerProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
-    alleenTekenen?: boolean;
+    tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'> }) => void;
 }
 
 interface CategorieStatistiek {
@@ -231,11 +231,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         niveausTelling[key] = (niveausTelling[key] || 0) + 1;
       });
 
-      const alleOpdrachtTypes = Array.from(new Set(alleOpdrachten.map(op => op.opdrachtType || 'Onbekend'))).sort((a, b) => {
-        if (a === 'Onbekend') return 1;
-        if (b === 'Onbekend') return -1;
-        return a.localeCompare(b);
-      });
+      const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
 
       return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
     }, [alleOpdrachten, geselecteerdeCategorieen]);
@@ -565,8 +561,11 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       // Filter op opdrachtType
         const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
         if (!typeMatch) return false;
-        // Filter op tekenen
-        if (filters.alleenTekenen && !(op as any).isTekenen) return false;
+        // Filter op tekenen tri-status
+        if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+          const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+          if (!filters.tekenen.includes(status)) return false;
+        }
         // Filter op niveau
         const nivs = filters.niveaus || [];
         if (nivs.length === 0) return true;
@@ -1234,33 +1233,44 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                 <div className="filter-groep">
                   <span className="filter-label">Tekenen:</span>
                   <div className="filter-iconen">
-                    <InfoTooltip asChild content={`Toon alleen teken‑opdrachten (opdrachten waar tekenen/schetsen gevraagd is).`}>
+                    <InfoTooltip asChild content={`Filter op Tekenen-status: Ja, Mogelijk of Nee (klik om te wisselen).`}>
                       <span
-                        className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
-                        onClick={() => setFilters && setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                        className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'}`}
+                        onClick={() => {
+                          if (!setFilters) return;
+                          const huidige = new Set(filters.tekenen || []);
+                          huidige.has('ja') ? huidige.delete('ja') : huidige.add('ja');
+                          setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                        }}
+                        title="Ja (expliciet tekenen)"
                       >
                         ✏️
                       </span>
                     </InfoTooltip>
-                  </div>
-                </div>
-                <div className="filter-groep">
-                  <span className="filter-label">Niveau:</span>
-                  <div className="filter-iconen">
-                    {[1,2,3].map((niv) => (
-                      <InfoTooltip asChild content={`${niv === 1 ? 'Niveau 1 – Beginner' : niv === 2 ? 'Niveau 2 – Gevorderd' : 'Niveau 3 – Expert'}: ${(niveausTelling as any)[niv] || 0} opdr.`} key={`niv-${niv}`}> 
-                        <span
-                          className={`filter-icon ${filters.niveaus?.includes(niv as any) ? 'active' : 'inactive'}`}
-                          onClick={() => handleNiveauToggle(niv as 1|2|3)}
-                        >
-                          {niv}
-                        </span>
-                      </InfoTooltip>
-                    ))}
-                    <InfoTooltip asChild content={`Niveau ∅ – Ongedefinieerd: ${(niveausTelling as any)['undef'] || 0} opdr.`}>
+                    <InfoTooltip asChild content={`Mogelijk: tekenen is optioneel/helpend.`}>
                       <span
-                        className={`filter-icon ${filters.niveaus?.includes('undef') ? 'active' : 'inactive'}`}
-                        onClick={() => handleNiveauToggle('undef')}
+                        className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'}`}
+                        onClick={() => {
+                          if (!setFilters) return;
+                          const huidige = new Set(filters.tekenen || []);
+                          huidige.has('mogelijk') ? huidige.delete('mogelijk') : huidige.add('mogelijk');
+                          setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                        }}
+                        title="Mogelijk (optioneel)"
+                      >
+                        ✏️?
+                      </span>
+                    </InfoTooltip>
+                    <InfoTooltip asChild content={`Nee: geen tekenen.`}>
+                      <span
+                        className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'}`}
+                        onClick={() => {
+                          if (!setFilters) return;
+                          const huidige = new Set(filters.tekenen || []);
+                          huidige.has('nee') ? huidige.delete('nee') : huidige.add('nee');
+                          setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                        }}
+                        title="Nee (geen tekenen)"
                       >
                         ∅
                       </span>
@@ -1289,6 +1299,19 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                       </span>
                     </InfoTooltip>
                   </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                  <button
+                    className="snelle-selectie-knop"
+                    onClick={() => {
+                      if (!setFilters) return;
+                      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                      setToastBericht('Filters hersteld naar standaard');
+                      setIsToastZichtbaar(true);
+                    }}
+                  >
+                    Reset filters
+                  </button>
                 </div>
               </div>
             </div>

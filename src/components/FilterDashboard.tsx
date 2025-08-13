@@ -9,24 +9,20 @@ interface FilterDashboardProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
-    alleenTekenen?: boolean;
+    tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
   };
-  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
+  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja' | 'mogelijk' | 'nee'> }) => void;
   opdrachten: Opdracht[];
   actieveCategorieSelectie: string[];
+  // Wanneer deze sleutel verandert, klapt het dashboard automatisch in
+  collapseKey?: string;
 }
 
-export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie }) => {
-  // State voor accordeon functionaliteit
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const saved = localStorage.getItem('filterDashboardExpanded');
-    return saved ? JSON.parse(saved) : false; // Standaard ingeklapt
-  });
-
-  // Sla de expanded state op in localStorage
-  useEffect(() => {
-    localStorage.setItem('filterDashboardExpanded', JSON.stringify(isExpanded));
-  }, [isExpanded]);
+export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie, collapseKey }) => {
+  // State voor accordeon functionaliteit (standaard ingeklapt, niet persistent)
+  const [isExpanded, setIsExpanded] = useState(false);
+  // Klap automatisch in bij wisselen van spelmodus/sessie/refresh (collapseKey wijzigt)
+  useEffect(() => { setIsExpanded(false); }, [collapseKey]);
 
   const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling } = useMemo(() => {
     // Beperk tellingen tot geselecteerde categorieën (indien aanwezig)
@@ -59,6 +55,20 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
     
     return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
   }, [opdrachten, actieveCategorieSelectie]);
+
+  // Tel aantal actieve filters voor opvallende badge in header
+  const actiefCount = useMemo(() => {
+    let count = 0;
+    // bron: afwijking van beide aan
+    if (!(filters.bronnen.includes('systeem') && filters.bronnen.includes('gebruiker'))) count++;
+    // type
+    count += filters.opdrachtTypes.length;
+    // niveaus
+    count += (filters.niveaus?.length || 0);
+    // tekenen
+    count += (filters.tekenen?.length || 0);
+    return count;
+  }, [filters]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     // Zorg dat minimaal één bron aan blijft en toggle de andere
@@ -110,6 +120,9 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
             aria-expanded={isExpanded}
           >
             <span className="filter-titel">Filters Snel Aanpassen</span>
+            {actiefCount > 0 && (
+              <span className="filter-active-badge" title="Aantal actieve filters">{actiefCount} actief</span>
+            )}
             <span className={`toggle-arrow ${isExpanded ? 'expanded' : ''}`}>
               ▼
             </span>
@@ -197,21 +210,57 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               </div>
             </div>
 
-            {/* Tekenen filter */}
+            {/* Tekenen filter tri-status */}
             <div className="filter-group">
               <div className="filter-label-container">
                 <span className="filter-label">Tekenen:</span>
               </div>
               <div className="filter-icon-group">
-                <InfoTooltip asChild content={`Toon alleen opdrachten waarbij tekenen is gevraagd.`}>
+                <InfoTooltip asChild content={`Ja: expliciet tekenen vereist.`}>
                   <span
-                    className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
-                    onClick={() => setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('ja') ? huidige.delete('ja') : huidige.add('ja');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
                   >
                     ✏️
                   </span>
                 </InfoTooltip>
+                <InfoTooltip asChild content={`Mogelijk: tekenen is optioneel/helpend.`}>
+                  <span
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('mogelijk') ? huidige.delete('mogelijk') : huidige.add('mogelijk');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
+                  >
+                    ✏️?
+                  </span>
+                </InfoTooltip>
+                <InfoTooltip asChild content={`Nee: geen tekenen.`}>
+                  <span
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('nee') ? huidige.delete('nee') : huidige.add('nee');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
+                  >
+                    ∅
+                  </span>
+                </InfoTooltip>
               </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button
+                className="snelle-selectie-knop"
+                onClick={() => setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] })}
+              >
+                Reset filters
+              </button>
             </div>
           </div>
         )}

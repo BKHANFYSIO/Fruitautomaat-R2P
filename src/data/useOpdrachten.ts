@@ -69,7 +69,8 @@ export const useOpdrachten = (defaultFilePaths: string | string[]) => {
     const aliasTuples: Array<[string, string]> = [
       ['feitenkennis', 'feiten'],
       ['begripsuitleg', 'begrip'],
-      ['toepassing in casus', 'toepassing'],
+      // accepteer oude naam en map naar 'toepassing'
+      ['toepassing', 'toepassing in casus'],
       ['vaardigheid – onderzoek', 'onderzoek'],
       ['vaardigheid – behandeling', 'behandeling'],
       ['communicatie met patiënt', 'communicatie'],
@@ -99,10 +100,19 @@ export const useOpdrachten = (defaultFilePaths: string | string[]) => {
       const tijdslimiet = Number(row["Tijdslimiet (sec)"]) || Number(row.Tijdslimiet);
       const extraPunten = Number(row["Extra_Punten (max 2)"]) || Number(row.Extra_Punten);
       const opdrachtType = normalizeType(row.Type || row.OpdrachtType || row.opdrachtType || '');
-      const tekenenRaw = row.Tekenen ?? row.tekenen ?? '';
-      const isTekenen = typeof tekenenRaw === 'string'
-        ? /^(ja|yes|true|1)$/i.test(tekenenRaw.trim())
-        : Boolean(tekenenRaw);
+      const tekenenRaw = row.Tekenen ?? row.tekenen ?? row.TEKENEN ?? '';
+      // Ondersteun tri-status: Ja / Mogelijk / Nee. Backwards compat: true/false of ja/nee
+      let tekenStatus: 'ja' | 'mogelijk' | 'nee' = 'nee';
+      if (typeof tekenenRaw === 'string') {
+        const v = String(tekenenRaw).trim().toLowerCase();
+        if (/^(ja|yes|true|1)$/.test(v)) tekenStatus = 'ja';
+        else if (/^(mogelijk|optioneel|possible|maybe)$/.test(v)) tekenStatus = 'mogelijk';
+        else if (/^(nee|no|false|0)$/.test(v)) tekenStatus = 'nee';
+        else if (v === '') tekenStatus = 'nee';
+      } else if (Boolean(tekenenRaw)) {
+        tekenStatus = 'ja';
+      }
+      const isTekenen = tekenStatus === 'ja';
       const casus = (row.Casus ?? row.casus ?? '').toString().trim();
       // Niveau kolom (1-3), tolerant voor strings
       let niveau: 1 | 2 | 3 | undefined;
@@ -124,6 +134,7 @@ export const useOpdrachten = (defaultFilePaths: string | string[]) => {
         Extra_Punten: !isNaN(extraPunten) ? extraPunten : 0,
         bron,
         opdrachtType,
+        tekenStatus,
         isTekenen,
         casus: casus || undefined,
         niveau,
@@ -180,13 +191,13 @@ export const useOpdrachten = (defaultFilePaths: string | string[]) => {
           return;
         }
 
-        // Extra zachte validatie: systeembestanden met ontbrekende casus bij casus-typen
+        // Extra zachte validatie: systeembestanden met ontbrekende casus (alleen verplicht bij Klinisch redeneren)
         const systeemZonderCasus = systeemOpdrachten.filter(o =>
-          (o.opdrachtType === 'Toepassing in casus' || o.opdrachtType === 'Klinisch redeneren') && (!o.casus || o.casus.trim() === '')
+          (o.opdrachtType === 'Klinisch redeneren' && (!o.casus || o.casus.trim() === ''))
         );
         if (systeemZonderCasus.length > 0) {
           const voorbeelden = systeemZonderCasus.slice(0, 3).map(o => `${o.Hoofdcategorie || ''} > ${o.Categorie} — ${o.opdrachtType}: ${o.Opdracht.substring(0, 80)}${o.Opdracht.length > 80 ? '…' : ''}`);
-          const msg = `Waarschuwing: ${systeemZonderCasus.length} systeemopdracht(en) missen "Casus" terwijl het type "Toepassing in casus" of "Klinisch redeneren" is. Voorbeelden:\n- ${voorbeelden.join('\n- ')}\n(De rijen zijn wel ingeladen. Tip: vul de kolom Casus aan.)`;
+          const msg = `Waarschuwing: ${systeemZonderCasus.length} systeemopdracht(en) missen "Casus" terwijl het type "Klinisch redeneren" is. Voorbeelden:\n- ${voorbeelden.join('\n- ')}\n(De rijen zijn wel ingeladen. Tip: vul de kolom Casus aan.)`;
           setWarning(msg);
           if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
             // Extra melding voor lokale ontwikkeling

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 're
 import type { Opdracht } from '../data/types';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
-import { opdrachtTypeIconen, NIVEAU_LABELS } from '../data/constants';
+import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
 
 
@@ -77,9 +77,9 @@ interface CategorieSelectieModalProps {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
-    alleenTekenen?: boolean;
+    tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; alleenTekenen?: boolean }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'> }) => void;
 }
 
 export const CategorieSelectieModal = ({
@@ -326,11 +326,7 @@ export const CategorieSelectieModal = ({
     });
     
     // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
-    const alleOpdrachtTypes = Array.from(new Set(opdrachten.map(op => op.opdrachtType || 'Onbekend'))).sort((a, b) => {
-      if (a === 'Onbekend') return 1;
-      if (b === 'Onbekend') return -1;
-      return a.localeCompare(b);
-    });
+    const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
     
     return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
   }, [opdrachten, actieveCategorieSelectie]);
@@ -377,8 +373,11 @@ export const CategorieSelectieModal = ({
 
       // Filter op opdrachtType
         if (filters.opdrachtTypes.length > 0 && !filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend')) return false;
-        // Filter op tekenen
-        if (filters.alleenTekenen && !(op as any).isTekenen) return false;
+        // Filter op tekenen tri-status
+        if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+          const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+          if (!filters.tekenen.includes(status)) return false;
+        }
         return true;
     });
   }, [opdrachten, filters]);
@@ -736,12 +735,43 @@ export const CategorieSelectieModal = ({
             <div className="filter-groep">
               <span className="filter-label">Tekenen:</span>
               <div className="filter-iconen">
-                <InfoTooltip asChild content={`Toon alleen teken‑opdrachten (opdrachten waar tekenen/schetsen gevraagd is).`}>
+                <InfoTooltip asChild content={`Ja: expliciet tekenen vereist.`}>
                   <span
-                    className={`filter-icon ${filters.alleenTekenen ? 'active' : 'inactive'}`}
-                    onClick={() => setFilters && setFilters({ ...filters, alleenTekenen: !filters.alleenTekenen })}
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      if (!setFilters) return;
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('ja') ? huidige.delete('ja') : huidige.add('ja');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
                   >
                     ✏️
+                  </span>
+                </InfoTooltip>
+                <InfoTooltip asChild content={`Mogelijk: tekenen is optioneel/helpend.`}>
+                  <span
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      if (!setFilters) return;
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('mogelijk') ? huidige.delete('mogelijk') : huidige.add('mogelijk');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
+                  >
+                    ✏️?
+                  </span>
+                </InfoTooltip>
+                <InfoTooltip asChild content={`Nee: geen tekenen.`}>
+                  <span
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'}`}
+                    onClick={() => {
+                      if (!setFilters) return;
+                      const huidige = new Set(filters.tekenen || []);
+                      huidige.has('nee') ? huidige.delete('nee') : huidige.add('nee');
+                      setFilters({ ...filters, tekenen: Array.from(huidige) as any });
+                    }}
+                  >
+                    ∅
                   </span>
                 </InfoTooltip>
               </div>
@@ -768,6 +798,20 @@ export const CategorieSelectieModal = ({
                   </span>
                 </InfoTooltip>
               </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button
+                className="snelle-selectie-knop"
+                onClick={() => {
+                  if (!setFilters) return;
+                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                  setToastBericht('Filters hersteld naar standaard');
+                  setIsToastZichtbaar(true);
+                  setTimeout(() => setIsToastZichtbaar(false), 2000);
+                }}
+              >
+                Reset filters
+              </button>
             </div>
           </div>
         </div>

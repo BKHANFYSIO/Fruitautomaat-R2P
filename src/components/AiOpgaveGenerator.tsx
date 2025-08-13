@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { CRITERIA } from '../data/criteria';
+import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';
 import './AiOpgaveGenerator.css';
 
 interface AiOpgaveGeneratorProps {
@@ -20,15 +21,27 @@ export const AiOpgaveGenerator = ({ isOpen, onClose }: AiOpgaveGeneratorProps) =
   const TYPE_BESCHRIJVINGEN: Record<string, string> = {
     'Feitenkennis': 'Eén juist, kort feit/definitie zonder context.',
     'Begripsuitleg': 'Concept/proces helder uitleggen zonder casus of patiënt.',
-    'Toepassing in casus': 'Kennis toepassen op een korte praktijksituatie met keuze/onderbouwing. Vereist casusbeschrijving.',
+    'Toepassing': 'Kennis toepassen op een korte praktijksituatie met keuze/onderbouwing. Casus kan in de opdrachttekst zitten; aparte "Casus" is optioneel.',
     'Vaardigheid – Onderzoek': 'Demonstreren/uitvoeren van lichamelijk onderzoek.',
     'Vaardigheid – Behandeling': 'Uitvoeren/demonstreren van interventie of oefenprogramma.',
     'Communicatie met patiënt': 'Patiëntgerichte uitleg/instructie/motiveren.',
     'Klinisch redeneren': 'Hypothesevorming/differentiaal/keuze op basis van argumentatie. Vereist casusbeschrijving.'
   };
-  const BESCHIKBARE_TYPES = Object.keys(TYPE_BESCHRIJVINGEN);
+  const BESCHIKBARE_TYPES = OPDRACHT_TYPE_ORDER.filter(t => TYPE_BESCHRIJVINGEN[t as keyof typeof TYPE_BESCHRIJVINGEN]);
+  const TYPE_VOORBEELDEN: Record<string, string> = {
+    'Feitenkennis': 'Noem 2 functies van de m. gluteus medius.',
+    'Begripsuitleg': 'Leg uit wat mechanotransductie is bij peesweefsel.',
+    'Toepassing': 'Kies de beste interventie bij beginnende achillespeesklachten en licht toe.',
+    'Vaardigheid – Onderzoek': 'Toon hoe je de Lachman test uitvoert (stappen).',
+    'Vaardigheid – Behandeling': 'Stel een 2‑weekse oefenprogressie op na enkelverstuiking.',
+    'Communicatie met patiënt': 'Leg uit wat de oorzaak van aspecifieke lage rugpijn kan zijn in begrijpelijke taal.',
+    'Klinisch redeneren': 'Welke hypothese past het best bij deze klachten en waarom?'
+  };
   const [geselecteerdeTypes, setGeselecteerdeTypes] = useState<string[]>([]);
-  const [isTekenen, setIsTekenen] = useState<boolean>(false);
+  // Tekenen tri-status filter voor generatie
+  const [allowTekenenJa, setAllowTekenenJa] = useState<boolean>(true);
+  const [allowTekenenMogelijk, setAllowTekenenMogelijk] = useState<boolean>(true);
+  const [allowTekenenNee, setAllowTekenenNee] = useState<boolean>(true);
 
   const updateHandmatigeSubcat = (index: number, veld: 'naam' | 'aantal', waarde: string | number) => {
     setHandmatigeSubcats(prev => {
@@ -134,6 +147,18 @@ Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak d
   "Extra_Punten": 2
 }`;
 
+    // Tekenen-instructie voor de prompt op basis van de toggles
+    // Tekenen tri-status instructies en filter
+    const toegestaneTekenenStatuses = [
+      allowTekenenJa ? 'Ja' : null,
+      allowTekenenMogelijk ? 'Mogelijk' : null,
+      allowTekenenNee ? 'Nee' : null,
+    ].filter(Boolean) as string[];
+    const effectieveTekenenStatuses = toegestaneTekenenStatuses.length > 0 ? toegestaneTekenenStatuses : ['Ja', 'Mogelijk', 'Nee'];
+
+    const tekenenStatusDefinitie = 'Bepaal per opdracht de kolom "Tekenen" als: "Ja" (tekenen expliciet verplicht), "Mogelijk" (tekenen helpt, optioneel) of "Nee" (geen tekenen).';
+    const tekenenFilterInstructie = `Neem alleen opdrachten op waarvan kolom "Tekenen" een van deze waarden heeft: ${effectieveTekenenStatuses.join(', ')}. Opdrachten met andere waarden niet teruggeven.`;
+
     return `**ROL:**
 Je bent een expert-docent en curriculumontwikkelaar op het gebied van ${onderwerpBeschrijving}. Je bent gespecialiseerd in het creëren van heldere en effectieve leeropdrachten voor fysiotherapiestudenten.
 
@@ -143,7 +168,7 @@ Je ontwikkelt opdrachten voor een educatieve fruitautomaat-game. De opdrachten w
 **DOELGROEP:**
 ${studentNiveauInstructie}
 
- **INSTRUCTIE:**
+  **INSTRUCTIE:**
  Genereer ${totaalGevraagd} nieuwe, unieke opdrachten binnen de hoofdcategorie: **${hoofdcategorie}**.
 ${subcatInstructie}
 ${typeRestrictie}
@@ -162,9 +187,10 @@ ${criteriaInstructie}
 
 **OPDRACHTTYPES EN DEFINITIES:**
 Kies per opdracht één type en vul dat in in kolom "Type". Toegestane waarden en betekenis:
-${BESCHIKBARE_TYPES.map(t => `- ${t}: ${TYPE_BESCHRIJVINGEN[t]}`).join('\n')}
-- Als je geen passend type kunt bepalen, zet "Type" op "Onbekend".
-\nZet kolom "Tekenen" op "Ja" als de opdracht tekenen/schetsen vraagt (ongeacht type), anders "Nee".
+ ${BESCHIKBARE_TYPES.map(t => `- ${t}: ${TYPE_BESCHRIJVINGEN[t]}`).join('\n')}
+ - Als je geen passend type kunt bepalen, zet "Type" op "Onbekend".
+\n${tekenenStatusDefinitie}
+${tekenenFilterInstructie}
 
 ${voorbeeldOpdrachten}
 
@@ -179,10 +205,10 @@ Hoofdcategorie | Categorie | Type | Tekenen | Opdracht | Antwoordsleutel | Tijds
 Geef de data in een formaat dat direct in Excel kan worden geplakt, met de volgende kolomnamen:
 Hoofdcategorie, Categorie, Type, Tekenen, Opdracht, Antwoordsleutel, Tijdslimiet, Extra_Punten (max 2), Niveau, Casus
 
-**KOLOMSPECIFICATIES:**
+      **KOLOMSPECIFICATIES:**
 - "Categorie": Exact overeenkomen met het opgegeven specifieke onderwerp
 - "Type": Eén waarde uit deze lijst: ${typeLijst}. Als onbekend, gebruik "Onbekend".
-- "Tekenen": "Ja" of "Nee". Gebruik "Ja" alleen wanneer de opdracht expliciet om tekenen/schetsen vraagt.
+      - "Tekenen": "Ja" (verplicht tekenen), "Mogelijk" (helpend/optioneel) of "Nee" (geen tekenen). Oude waarden Ja/Nee blijven geldig.
 - "Opdracht": De vraag of opdrachttekst
 - "Antwoordsleutel": Het modelantwoord met bronvermelding
 - "Tijdslimiet": Getal in seconden (bijv. 60 voor 1 minuut). Alleen toevoegen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering.
@@ -236,7 +262,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
       {
         Hoofdcategorie: 'Revalidatie',
         Categorie: 'Knie',
-        Type: 'Toepassing in casus',
+        Type: 'Toepassing',
         Tekenen: 'Nee',
         Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
         Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
@@ -408,28 +434,43 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               <div className="instruction-text" style={{ marginBottom: 6 }}>
                 Vink de typen aan die je wilt laten genereren. Laat alles leeg om de keuze aan de AI over te laten.
               </div>
-              <div className="radio-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+              <ul className="type-list">
                 {BESCHIKBARE_TYPES.map((t) => (
-                  <label key={t} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <input
-                      type="checkbox"
-                      checked={geselecteerdeTypes.includes(t)}
-                      onChange={() => toggleType(t)}
-                    />
-                    <span>
-                      <strong>{t}</strong>
-                      <div className="instruction-text">{TYPE_BESCHRIJVINGEN[t]}</div>
-                    </span>
-                  </label>
+                  <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`} onClick={() => toggleType(t)}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={geselecteerdeTypes.includes(t)}
+                        onChange={() => toggleType(t)}
+                      />
+                      <span className="type-title">
+                        <span className="type-icon" aria-hidden>{opdrachtTypeIconen[t] || '❓'}</span>
+                        {t}
+                      </span>
+                    </label>
+                    <div className="type-desc">{TYPE_BESCHRIJVINGEN[t]}</div>
+                    <div className="type-example">Voorbeeld: {TYPE_VOORBEELDEN[t]}</div>
+                  </li>
                 ))}
+              </ul>
+              <div className="instruction-text" style={{ marginTop: 8, marginBottom: 6 }}>
+                <strong>Tekenen‑status (filter voor generatie)</strong><br />
+                De AI labelt elke opdracht met Tekenen = Ja, Mogelijk of Nee. Selecteer hieronder welke je wilt laten genereren. Standaard: alle drie.
               </div>
-              <div className="instruction-text" style={{ marginTop: 8 }}>
-                Secundair kenmerk: zet <strong>Tekenen</strong> aan als opdrachten een schets/schetslabel vragen (ongeacht type).
+              <div className="tekenen-toggle-row">
+                <label>
+                  <input type="checkbox" checked={allowTekenenJa} onChange={(e) => setAllowTekenenJa(e.target.checked)} />
+                  Expliciet tekenen (Ja)
+                </label>
+                <label>
+                  <input type="checkbox" checked={allowTekenenMogelijk} onChange={(e) => setAllowTekenenMogelijk(e.target.checked)} />
+                  Tekenen helpt (Mogelijk)
+                </label>
+                <label>
+                  <input type="checkbox" checked={allowTekenenNee} onChange={(e) => setAllowTekenenNee(e.target.checked)} />
+                  Zonder tekenen (Nee)
+                </label>
               </div>
-              <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-                <input type="checkbox" checked={isTekenen} onChange={(e) => setIsTekenen(e.target.checked)} />
-                Tekenen gevraagd
-              </label>
             </div>
           </div>
 

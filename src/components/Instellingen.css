@@ -684,9 +684,7 @@
   font-weight: 600;
 }
 
-.tab-content {
-  /* Voor nu tonen we alle content, later conditioneel */
-}
+
 
 /* Responsive tabs */
 @media (max-width: 768px) {

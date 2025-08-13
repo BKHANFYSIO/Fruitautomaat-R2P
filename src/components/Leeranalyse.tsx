@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { LeerData, Achievement, LeitnerData, LeitnerAchievement } from '../data/types';
 import { getLeerDataManager } from '../data/leerDataManager';
 import { doughnutChartConfig } from '../utils/chartConfigs';
@@ -8,6 +8,8 @@ import TijdlijnTab from './leeranalyse/TijdlijnTab';
 import AchievementsTab from './leeranalyse/AchievementsTab';
 import LeitnerTab from './leeranalyse/LeitnerTab';
 import './Leeranalyse.css';
+import { useSwipe } from '../hooks/useSwipe';
+import { useFullscreen } from '../hooks/useFullscreen';
 
 interface LeeranalyseProps {
   isOpen: boolean;
@@ -25,6 +27,10 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   const [leitnerData, setLeitnerData] = useState<LeitnerData | null>(null);
   const [achievementDefs, setAchievementDefs] = useState<{ algemeen: Omit<Achievement, 'behaaldOp'>[], leitner: Omit<LeitnerAchievement, 'behaaldOp'>[] }>({ algemeen: [], leitner: [] });
   const [activeTab, setActiveTab] = useState<'overzicht' | 'categorieen' | 'achievements' | 'leitner' | 'tijdlijn'>(openToAchievements ? 'achievements' : 'overzicht');
+  const tabs: Array<typeof activeTab> = ['overzicht','categorieen','achievements','leitner','tijdlijn'];
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const { toggleFullscreen } = useFullscreen();
+  const [toonTabsSwipeHint, setToonTabsSwipeHint] = useState<boolean>(false);
 
   // Forceer actieve tab indien opgegeven (voor screenshots)
   useEffect(() => {
@@ -33,6 +39,29 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
     }
   }, [forceActiveTab]);
   const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; content: string }>({ isOpen: false, title: '', content: '' });
+  // Swipe tussen tabs (mobiel)
+  const goRel = (dir: 1|-1) => {
+    const idx = tabs.indexOf(activeTab);
+    const next = Math.min(tabs.length - 1, Math.max(0, idx + dir));
+    if (next !== idx) setActiveTab(tabs[next]);
+  };
+  const swipeHandlers = useSwipe({ onSwipeLeft: () => goRel(1), onSwipeRight: () => goRel(-1) }, { minSwipeDistance: 60, maxSwipeTime: 600 });
+
+  // Toon eenmalig een hint dat je tussen tabs kunt swipen
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const key = 'leeranalyse_tabs_swipe_hint_shown';
+      const wasShown = localStorage.getItem(key);
+      if (!wasShown) {
+        setToonTabsSwipeHint(true);
+        localStorage.setItem(key, '1');
+        const t = setTimeout(() => setToonTabsSwipeHint(false), 2500);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [isOpen]);
+
 
   const leerDataManager = useMemo(() => getLeerDataManager(), [isOpen]);
 
@@ -428,20 +457,23 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
   if (!leerData || Object.keys(leerData.opdrachten).length === 0) {
     return (
       <div className="leeranalyse-overlay" onClick={onClose}>
-        <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()} {...swipeHandlers} ref={containerRef}>
           <div className="leeranalyse-header">
             <h2>📊 Leeranalyse</h2>
-            <button 
-              className="modal-close"
-              aria-label="Sluiten"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-            >
-              ×
-            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button className="oefen-knop vrije-leermodus" onClick={toggleFullscreen} title="Volledig scherm">⛶</button>
+              <button 
+                className="modal-close"
+                aria-label="Sluiten"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+              >
+                ×
+              </button>
+            </div>
           </div>
           <div className="leeranalyse-body">
             <div className="geen-data-melding">
@@ -471,21 +503,28 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
 
   return (
     <div className="leeranalyse-overlay" onClick={captureMode ? undefined : onClose} data-capture-mode={captureMode ? '1' : undefined}>
-      <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="leeranalyse-modal" onClick={(e) => e.stopPropagation()} {...swipeHandlers} ref={containerRef}>
         <div className="leeranalyse-header">
           <h2>📊 Leeranalyse (Leer Modus)</h2>
-          <button 
-            className="modal-close"
-            aria-label="Sluiten"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
-          >
-            &times;
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button className="oefen-knop vrije-leermodus" onClick={toggleFullscreen} title="Volledig scherm">⛶</button>
+            <button 
+              className="modal-close"
+              aria-label="Sluiten"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+            >
+              &times;
+            </button>
+          </div>
         </div>
+
+        {toonTabsSwipeHint && (
+          <div className="tabs-swipe-hint">⬅️ Swipe tussen tabs ➡️</div>
+        )}
 
         <div className="leeranalyse-tabs" data-mobile-autohide>
           <button 

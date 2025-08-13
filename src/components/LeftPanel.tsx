@@ -40,6 +40,7 @@ type Props = {
   aantalNieuweLeitnerOpdrachten: number;
   isBox0OverrideActief: boolean;
   vandaagBeschikbaar: number;
+  isModeSelectedThisSession?: boolean;
 
   // Handlers (navigatie/acties)
   onSpelerToevoegen: (naam: string) => void;
@@ -91,6 +92,7 @@ export const LeftPanel: React.FC<Props> = ({
   aantalNieuweLeitnerOpdrachten,
   isBox0OverrideActief,
   vandaagBeschikbaar,
+  isModeSelectedThisSession = false,
   onSpelerToevoegen,
   setGameMode,
   isSpelerInputDisabled,
@@ -124,6 +126,7 @@ export const LeftPanel: React.FC<Props> = ({
           leermodusType={leermodusType}
           setLeermodusType={setLeermodusType}
           onSpelReset={onSpelReset}
+          spelersCount={spelers.length}
         />
       )}
 
@@ -141,7 +144,9 @@ export const LeftPanel: React.FC<Props> = ({
       />
 
       {gameMode === 'single' && !isSerieuzeLeerModusActief && (
-        <div className="highscore-sectie">
+        <>
+          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          <div className="highscore-sectie">
           <div className="highscore-header">
             <h5>🏆 Highscore Modus</h5>
           </div>
@@ -161,11 +166,14 @@ export const LeftPanel: React.FC<Props> = ({
               <p>Probeer je beste score te behalen met de geselecteerde categorieën!</p>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {gameMode === 'multi' && (
-        <div className="multiplayer-sectie">
+        <>
+          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          <div className="multiplayer-sectie">
           <div className="multiplayer-header">
             <h5>🎮 Multiplayer Modus</h5>
           </div>
@@ -185,17 +193,22 @@ export const LeftPanel: React.FC<Props> = ({
               <p>Speel samen met vrienden en familie!</p>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {gameMode === 'single' && isSerieuzeLeerModusActief && (
-        <div className="serieuze-leermodus-uitleg">
-          {leermodusType === 'leitner' && (
-            <div className="leitner-sectie">
-              <div className="leitner-header">
+        <>
+          {!isSpelGestart && (
+            <h3 className={`mode-selector-title ${isModeSelectedThisSession ? 'step-pulse' : ''}`}>2. Categorieën & filters</h3>
+          )}
+          <div className="serieuze-leermodus-uitleg">
+            {leermodusType === 'leitner' && (
+              <div className="leitner-sectie">
+                <div className="leitner-header">
                 <h5>🔄 Leitner</h5>
-              </div>
-              <div className="leitner-stats">
+                </div>
+                <div className="leitner-stats">
                 <button onClick={onOpenLeitnerCategorieBeheer} className="categorie-beheer-knop">
                   <span className="knop-titel">Categorieën Aanpassen</span>
                   <span className="knop-details">
@@ -212,28 +225,29 @@ export const LeftPanel: React.FC<Props> = ({
                 {vandaagBeschikbaar > 0 && (
                   <p className="leitner-priority">⭐ Herhalingen komen eerst, nieuwe opdrachten daarna.</p>
                 )}
-              </div>
-            </div>
-          )}
-          {leermodusType === 'normaal' && (
-            <div className="vrije-leermodus-sectie">
-              <div className="vrije-leermodus-header">
-                <h5>📚 Vrije Leermodus</h5>
-              </div>
-              <div className="vrije-leermodus-info">
-                <button onClick={onOpenNormaleLeermodusCategorieSelectie} className="categorie-beheer-knop">
-                  <span className="knop-titel">Categorieën Aanpassen</span>
-                  <span className="knop-details">
-                    {gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.
-                  </span>
-                </button>
-                <div className="vrije-leermodus-info-text">
-                  <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+            {leermodusType === 'normaal' && (
+              <div className="vrije-leermodus-sectie">
+                <div className="vrije-leermodus-header">
+                  <h5>📚 Vrije Leermodus</h5>
+                </div>
+                <div className="vrije-leermodus-info">
+                  <button onClick={onOpenNormaleLeermodusCategorieSelectie} className="categorie-beheer-knop">
+                    <span className="knop-titel">Categorieën Aanpassen</span>
+                    <span className="knop-details">
+                      {gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.
+                    </span>
+                  </button>
+                  <div className="vrije-leermodus-info-text">
+                    <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       <FilterDashboard
@@ -241,6 +255,7 @@ export const LeftPanel: React.FC<Props> = ({
         setFilters={setFilters}
         opdrachten={opdrachten}
         actieveCategorieSelectie={actieveCategorieSelectie}
+        collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
       />
 
       {isSpelGestart && gameMode === 'single' && isSerieuzeLeerModusActief && (
@@ -257,9 +272,33 @@ export const LeftPanel: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="instellingen-knoppen">
-        <button className="instellingen-knop" onClick={onOpenInstellingen}>⚙️ Instellingen</button>
-        <button className="instellingen-knop" onClick={onOpenUitleg}>📖 Uitleg</button>
+      <div className="instellingen-knoppen instellingen-grid">
+        <div className="instellingen-row">
+          <button className="instellingen-knop" onClick={onOpenInstellingen}>⚙️ Instellingen</button>
+          <button className="instellingen-knop" onClick={onOpenUitleg}>📖 Uitleg</button>
+        </div>
+        <div className="instellingen-row">
+          <button
+            className="instellingen-knop"
+            onClick={() => window.dispatchEvent(new CustomEvent('openLeeranalyse', { detail: { tab: 'overzicht' } }))}
+            title="Leeranalyse & Certificaat"
+          >
+            📊 Leeranalyse
+          </button>
+          <button
+            className="instellingen-knop"
+            onClick={() => {
+              // Open Instellingen en vraag daarna om de certificaatmodal te tonen
+              onOpenInstellingen();
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('openCertificaat'));
+              }, 0);
+            }}
+            title="Certificaat"
+          >
+            🎓 Certificaat
+          </button>
+        </div>
       </div>
 
       <div className="han-logo-container">

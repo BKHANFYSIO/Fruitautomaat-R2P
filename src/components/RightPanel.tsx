@@ -47,6 +47,8 @@ type Props = {
   onBonusRondeVoltooid: (geslaagd: boolean) => void;
   onKopOfMuntVoltooid: () => void;
   aantalBeurtenGespeeld: number;
+  canStart?: boolean;
+  onEindigSessie: () => void;
 };
 
 export const RightPanel: React.FC<Props> = ({
@@ -87,6 +89,8 @@ export const RightPanel: React.FC<Props> = ({
   onBonusRondeVoltooid,
   onKopOfMuntVoltooid,
   aantalBeurtenGespeeld,
+  canStart = false,
+  onEindigSessie,
 }) => {
   return (
     <main className="right-panel">
@@ -135,6 +139,8 @@ export const RightPanel: React.FC<Props> = ({
         isBeoordelingDirect={isBeoordelingDirect}
         isKaleModusActief={isKaleModusActief}
         welcomeMessage={welcomeMessage}
+        canStart={canStart}
+        onEindigSessie={onEindigSessie}
       >
         {gamePhase !== 'idle' && gamePhase !== 'spinning' && huidigeOpdracht && (
           <ActieDashboard

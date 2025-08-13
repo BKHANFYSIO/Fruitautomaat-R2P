@@ -36,6 +36,7 @@ import { useLeitnerStats } from './hooks/useLeitnerStats';
 import { useGameEngine } from './hooks/useGameEngine';
 import { useSettings } from './context/SettingsContext';
 import { useCategorieSelectie } from './hooks/useCategorieSelectie';
+import type { ModeKey } from './hooks/useCategorieSelectie';
 import { useNotificatie } from './hooks/useNotificatie';
 import { useSessie } from './hooks/useSessie';
 import { useFullscreen } from './hooks/useFullscreen';
@@ -81,21 +82,7 @@ function App() {
     }
   }, [opdrachten]);
 
-  // Categorie selectie en filters (uitgelicht in aparte hook)
-  const {
-    filters,
-    setFilters,
-    geselecteerdeCategorieen,
-    setGeselecteerdeCategorieen,
-    geselecteerdeLeitnerCategorieen,
-    setGeselecteerdeLeitnerCategorieen,
-    geselecteerdeMultiplayerCategorieen,
-    setGeselecteerdeMultiplayerCategorieen,
-    geselecteerdeHighscoreCategorieen,
-    setGeselecteerdeHighscoreCategorieen,
-    opdrachtenVoorSelectie,
-    alleUniekeCategorieen,
-  } = useCategorieSelectie(opdrachten);
+  
 
 
 
@@ -146,6 +133,29 @@ function App() {
     selectieOpNiveauVrije,
     ongedefinieerdGedragVrije,
   } = useSettings();
+
+  // Bepaal mode-key voor filters per modus
+  const activeModeKey: ModeKey = useMemo(() => {
+    if (gameMode === 'multi') return 'multiplayer';
+    if (isSerieuzeLeerModusActief) return leermodusType === 'leitner' ? 'leitner' : 'normaal';
+    return 'highscore';
+  }, [gameMode, isSerieuzeLeerModusActief, leermodusType]);
+
+  // Categorie selectie en filters (uitgelicht in aparte hook)
+  const {
+    filters,
+    setFilters,
+    geselecteerdeCategorieen,
+    setGeselecteerdeCategorieen,
+    geselecteerdeLeitnerCategorieen,
+    setGeselecteerdeLeitnerCategorieen,
+    geselecteerdeMultiplayerCategorieen,
+    setGeselecteerdeMultiplayerCategorieen,
+    geselecteerdeHighscoreCategorieen,
+    setGeselecteerdeHighscoreCategorieen,
+    opdrachtenVoorSelectie,
+    alleUniekeCategorieen,
+  } = useCategorieSelectie(opdrachten, activeModeKey);
 
   // Game engine hook
   const {
@@ -204,6 +214,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isUitlegOpen, setIsUitlegOpen] = useState(false);
   const [isLeerstrategienOpen, setIsLeerstrategienOpen] = useState(false);
   const [isScoreLadeOpen, setIsScoreLadeOpen] = useState(false);
+  const [isModeSelectedThisSession, setIsModeSelectedThisSession] = useState(false);
   const { toggleFullscreen } = useFullscreen();
   const { notificatie, showNotificatie, hideNotificatie } = useNotificatie();
   const [isAntwoordVergrendeld, setIsAntwoordVergrendeld] = useState(false);
@@ -235,6 +246,13 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     window.addEventListener('app:notify', handler as EventListener);
     return () => window.removeEventListener('app:notify', handler as EventListener);
   }, [showNotificatie]);
+
+  // Luister naar modus-selectie in deze sessie (voor stap-animaties)
+  useEffect(() => {
+    const markSelected = () => setIsModeSelectedThisSession(true);
+    window.addEventListener('modeSelectedThisSession', markSelected as EventListener);
+    return () => window.removeEventListener('modeSelectedThisSession', markSelected as EventListener);
+  }, []);
 
   // Globale event listener om leerstrategieën modal te openen
   useEffect(() => {
@@ -583,13 +601,15 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   // Effect om leeranalyse te openen via custom event
   useEffect(() => {
-    const handleOpenLeeranalyse = () => {
+    const handleOpenLeeranalyse = (e: Event) => {
+      const ce = e as CustomEvent<{ tab?: 'overzicht'|'categorieen'|'achievements'|'leitner'|'tijdlijn' }>;
       setIsScoreLadeOpen(false);
+      setOpenLeeranalyseToAchievements(Boolean(ce?.detail?.tab && ce.detail.tab === 'achievements'));
       setIsLeeranalyseOpen(true);
     };
 
-    window.addEventListener('openLeeranalyse', handleOpenLeeranalyse);
-    return () => window.removeEventListener('openLeeranalyse', handleOpenLeeranalyse);
+    window.addEventListener('openLeeranalyse', handleOpenLeeranalyse as EventListener);
+    return () => window.removeEventListener('openLeeranalyse', handleOpenLeeranalyse as EventListener);
   }, []);
 
   // Effect om LeitnerCategorieBeheer te openen via custom event
@@ -891,6 +911,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
     if (!isSpelGestart) {
       setIsSpelGestart(true);
+      // Scroll direct naar boven zodat scorebord/leer-dashboard zichtbaar is
+      scrollToTop();
       
       // Toon sessie start melding bij eerste spin in serieuze leer-modus
       if (isSerieuzeLeerModusActief && gameMode === 'single') {
@@ -903,6 +925,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       const nieuwe = startSessie(leermodusType);
       if (nieuwe) {
         showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 6000);
+        // Scroll naar boven bij start van een sessie
+        scrollToTop();
         // Reset tip-ritme bij start van een nieuwe sessie
         setTipsShownThisSession(0);
         setEligibleWinsSinceLastTip(0);
@@ -1483,6 +1507,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
+    mainContentRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   };
 
   const handleOpenMultiplayerCategorieSelectie = () => {
@@ -1490,6 +1516,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
+    // Scroll helemaal naar boven zodat dashboard meteen in beeld is
+    mainContentRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   };
 
   const handleOpenNormaleLeermodusCategorieSelectie = () => {
@@ -1497,6 +1526,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
+    mainContentRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   };
 
   // full screen toggle is now provided by useFullscreen
@@ -1524,6 +1555,9 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setLeermodusType(leermodusType);
 
     setIsLeeranalyseOpen(false);
+    // Scroll naar boven bij start sessie
+    mainContentRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
     // Optioneel: toon een notificatie (via hook)
     const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
     showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 7000);
@@ -1663,6 +1697,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           aantalNieuweLeitnerOpdrachten={aantalNieuweLeitnerOpdrachten}
           isBox0OverrideActief={isBox0OverrideActief}
           vandaagBeschikbaar={leitnerStats.vandaagBeschikbaar}
+          isModeSelectedThisSession={isModeSelectedThisSession}
           onSpelerToevoegen={handleSpelerToevoegen}
           setGameMode={setGameMode}
           isSpelerInputDisabled={isSpelerInputDisabled}
@@ -1706,6 +1741,19 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             isBeoordelingDirect={isBeoordelingDirect}
             isKaleModusActief={isKaleModusActiefGlobal}
             aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+            canStart={(() => {
+              if (isSerieuzeLeerModusActief && gameMode === 'single') {
+                return gefilterdeOpdrachten.length > 0;
+              }
+              if (gameMode === 'single' && !isSerieuzeLeerModusActief) {
+                return spelers.length >= 1 && gefilterdeOpdrachten.length >= 10;
+              }
+              if (gameMode === 'multi') {
+                return spelers.length >= 2 && gefilterdeOpdrachten.length > 0;
+              }
+              return false;
+            })()}
+            onEindigSessie={handleEindigSessie}
           welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() ? (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>

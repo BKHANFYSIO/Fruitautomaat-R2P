@@ -10,8 +10,10 @@ export interface Opdracht {
   Extra_Punten: number;
   bron?: 'systeem' | 'gebruiker';
   opdrachtType?: string; // primair type (exact één)
-  isTekenen?: boolean;   // secundair kenmerk: tekenen ja/nee
-  casus?: string;        // extra casusbeschrijving (voor Toepassing in casus / Klinisch redeneren)
+  // Nieuw: tri-status voor tekenen. Backwards compat: isTekenen blijft ondersteund en wordt afgeleid van tekenStatus === 'ja'
+  tekenStatus?: 'ja' | 'mogelijk' | 'nee';
+  isTekenen?: boolean;   // verouderd: alleen voor compatibiliteit
+  casus?: string;        // extra casusbeschrijving (voor Toepassing / Klinisch redeneren)
   niveau?: 1 | 2 | 3; // optioneel: moeilijkheid (1=opwarmers, 2=basis, 3=uitdagend)
 }
 

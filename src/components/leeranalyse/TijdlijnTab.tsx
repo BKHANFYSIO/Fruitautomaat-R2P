@@ -35,6 +35,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   
 }) => {
   const [fullscreenChart, setFullscreenChart] = useState<string | null>(null);
+  const [toonSwipeHint, setToonSwipeHint] = useState<boolean>(false);
   // Sluit op Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreenChart(null); };
@@ -43,7 +44,7 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   }, []);
 
   // Swipe tussen grafieken als fullscreen actief is
-  const chartOrder = ['activiteit','prestatie','focus'] as const;
+  const chartOrder = ['activiteit','prestatie','focus','sessie','topcat','leerpatronen','sessiepatronen','leitnerbox'] as const;
   const swipe = useSwipe({
     onSwipeLeft: () => {
       if (!fullscreenChart) return;
@@ -58,6 +59,31 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
       setFullscreenChart(prev);
     }
   }, { minSwipeDistance: 40, maxSwipeTime: 600 });
+
+  // Zorg dat swipes binnen fullscreen niet bubbelen naar de buitenste tab-swipe
+  const swipeHandlersFullscreen = fullscreenChart ? {
+    onTouchStart: (e: React.TouchEvent) => { e.stopPropagation(); (swipe as any).onTouchStart(e); },
+    onTouchMove: (e: React.TouchEvent) => { e.stopPropagation(); (swipe as any).onTouchMove(e); },
+    onTouchEnd: (e: React.TouchEvent) => { e.stopPropagation(); (swipe as any).onTouchEnd(e); }
+  } : {} as any;
+
+  // Toon eenmalig swipe-hint bij eerste fullscreen-ervaring
+  useEffect(() => {
+    if (fullscreenChart) {
+      try {
+        const key = 'tijdlijn_swipe_hint_shown';
+        const wasShown = localStorage.getItem(key);
+        if (!wasShown) {
+          setToonSwipeHint(true);
+          localStorage.setItem(key, '1');
+          const t = setTimeout(() => setToonSwipeHint(false), 2500);
+          return () => clearTimeout(t);
+        }
+      } catch {}
+    } else {
+      setToonSwipeHint(false);
+    }
+  }, [fullscreenChart]);
   // State voor tijdsranges
   const [activiteitTijdsRange, setActiviteitTijdsRange] = useState<TijdsRange>('week');
   const [prestatieTijdsRange, setPrestatieTijdsRange] = useState<TijdsRange>('week');
@@ -524,9 +550,12 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           }
         </p>
         {activiteitData && activiteitData.length > 0 ? (
-          <div className={`chart-container ${fullscreenChart === 'activiteit' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'activiteit')} {...(fullscreenChart ? swipe : {})}>
+          <div className={`chart-container ${fullscreenChart === 'activiteit' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'activiteit')} {...swipeHandlersFullscreen}>
             {fullscreenChart === 'activiteit' && (
               <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'activiteit' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
             )}
             {activiteitGrafiekType === 'lijn' ? (
               <Line 
@@ -716,9 +745,12 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je leerprestaties te optimaliseren.
         </p>
         {prestatieData && prestatieData.length > 0 ? (
-          <div className={`chart-container ${fullscreenChart === 'prestatie' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'prestatie')} {...(fullscreenChart ? swipe : {})}>
+          <div className={`chart-container ${fullscreenChart === 'prestatie' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'prestatie')} {...swipeHandlersFullscreen}>
             {fullscreenChart === 'prestatie' && (
               <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'prestatie' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
             )}
             {prestatieGrafiekType === 'lijn' ? (
               <Line 
@@ -919,9 +951,12 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je focus strategieën te optimaliseren.
         </p>
         {focusData && focusData.length > 0 ? (
-          <div className={`chart-container ${fullscreenChart === 'focus' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'focus')} {...(fullscreenChart ? swipe : {})}>
+          <div className={`chart-container ${fullscreenChart === 'focus' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'focus')} {...swipeHandlersFullscreen}>
             {fullscreenChart === 'focus' && (
               <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'focus' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
             )}
             {focusGrafiekType === 'lijn' ? (
               <Line 
@@ -1101,7 +1136,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je sessie strategieën te optimaliseren.
         </p>
         {sessieKwaliteitData && sessieKwaliteitData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'sessie' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'sessie')} {...swipeHandlersFullscreen}>
+            {fullscreenChart === 'sessie' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'sessie' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
+            )}
             {sessieKwaliteitGrafiekType === 'lijn' ? (
               <Line 
                 data={{
@@ -1280,7 +1321,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je focus te optimaliseren.
         </p>
         {topCategorieData && topCategorieData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'topcat' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'topcat')} {...swipeHandlersFullscreen}>
+            {fullscreenChart === 'topcat' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'topcat' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
+            )}
             {topCategorieGrafiekType === 'lijn' ? (
               <Line 
                 data={{
@@ -1413,7 +1460,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je leerstrategieën te optimaliseren.
         </p>
         {leerpatronenData && leerpatronenData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'leerpatronen' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'leerpatronen')} {...swipeHandlersFullscreen}>
+            {fullscreenChart === 'leerpatronen' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'leerpatronen' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
+            )}
             {leerpatronenGrafiekType === 'lijn' ? (
               <Line 
                 data={{
@@ -1642,7 +1695,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je optimale leertijden te identificeren.
         </p>
         {sessiePatronenData && sessiePatronenData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'sessiepatronen' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'sessiepatronen')} {...swipeHandlersFullscreen}>
+            {fullscreenChart === 'sessiepatronen' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'sessiepatronen' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
+            )}
             <Bar 
               data={{
                 labels: sessiePatronenData.map((d: any) => `${d.uur}:00`),
@@ -1742,7 +1801,13 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
           Dit helpt je om je Leitner strategie te optimaliseren.
         </p>
         {leitnerBoxHerhalingenData && leitnerBoxHerhalingenData.length > 0 ? (
-          <div className="chart-container">
+          <div className={`chart-container ${fullscreenChart === 'leitnerbox' ? 'fullscreen' : ''}`} onClick={() => setFullscreenChart(fullscreenChart ? null : 'leitnerbox')} {...swipeHandlersFullscreen}>
+            {fullscreenChart === 'leitnerbox' && (
+              <button className="chart-close" onClick={(e) => { e.stopPropagation(); setFullscreenChart(null); }}>✕</button>
+            )}
+            {fullscreenChart === 'leitnerbox' && toonSwipeHint && (
+              <div className="swipe-hint">⬅️ Swipe tussen grafieken ➡️</div>
+            )}
             {leitnerBoxHerhalingenGrafiekType === 'lijn' ? (
               <Line 
                 data={{

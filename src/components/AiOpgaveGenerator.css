@@ -178,6 +178,89 @@
   line-height: 1.5;
 }
 
+/* Type lijst met vinkjes en iconen */
+.type-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.type-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 6px 10px;
+  padding: 10px;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  background: #2d3748;
+}
+
+.type-item.selected {
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.15);
+}
+
+.type-item label {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.type-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.type-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+.type-icon {
+  font-size: 1.1rem;
+}
+
+.type-desc {
+  grid-column: 1 / -1;
+  color: #cbd5e0;
+}
+
+.type-example {
+  grid-column: 1 / -1;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.tekenen-toggle-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tekenen-toggle-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #4a5568;
+  color: #e2e8f0;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.tekenen-toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
 .kopieer-knop,
 .download-knop {
   background-color: #4CAF50; /* groen zoals menu knoppen */

@@ -1040,6 +1040,35 @@
   }
 }
 
+/* Eenmalige swipe-hints */
+.swipe-hint,
+.tabs-swipe-hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 24px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 3500;
+  animation: fadeSlide 2.5s ease forwards;
+}
+
+.tabs-swipe-hint {
+  bottom: auto;
+  top: 64px;
+}
+
+@keyframes fadeSlide {
+  0% { opacity: 0; transform: translate(-50%, 8px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -8px); }
+}
+
 .achievement-chart {
   height: 300px;
   min-height: 300px;
@@ -1689,6 +1718,7 @@
     width: 98vw;
     padding: 12px;
     max-height: 96vh;
+    overflow-y: auto; /* Maak de hele modal scrollbaar op mobiel */
   }
   
   .leeranalyse-header {
@@ -1697,6 +1727,10 @@
     flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 8px;
+    position: sticky; /* Header blijft, tabs scrollen mee naar boven */
+    top: 0;
+    z-index: 5;
+    background: #2c2c2c;
   }
   
   .leeranalyse-header h2 {
@@ -1711,6 +1745,10 @@
   
   .leeranalyse-tabs {
     gap: 5px;
+  }
+  /* Tabs laten mee‑scrollen: haal eigen scroll uit content */
+  .leeranalyse-content {
+    overflow: visible;
   }
   
   .tab { padding: 6px 10px; font-size: 0.8rem; }

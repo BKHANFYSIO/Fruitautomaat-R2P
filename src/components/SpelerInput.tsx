@@ -12,6 +12,7 @@ interface SpelerInputProps {
   leermodusType?: 'normaal' | 'leitner';
   setLeermodusType?: (type: 'normaal' | 'leitner') => void;
   onSpelReset?: () => void;
+  spelersCount?: number;
 }
 
 // Hulpcomponent voor de knoppen met tooltip functionaliteit
@@ -100,6 +101,7 @@ export const SpelerInput = ({
   leermodusType = 'normaal',
   setLeermodusType,
   onSpelReset,
+  spelersCount = 0,
 }: SpelerInputProps) => {
   const [naam, setNaam] = useState('');
   const [showSerieuzeModusWaarschuwing, setShowSerieuzeModusWaarschuwing] = useState(false);
@@ -119,6 +121,7 @@ export const SpelerInput = ({
   // Nieuwe functies voor directe modus selectie
   const handleHighscoreSelect = () => {
     setLocalActiveMode('highscore'); // Direct feedback
+    window.dispatchEvent(new CustomEvent('modeSelectedThisSession'));
     if (isSpelGestart && isSerieuzeLeerModusActief) {
       setShowSerieuzeModusUitschakelen(true);
     } else {
@@ -130,12 +133,14 @@ export const SpelerInput = ({
 
   const handleMultiplayerSelect = () => {
     setLocalActiveMode('multiplayer'); // Direct feedback
+    window.dispatchEvent(new CustomEvent('modeSelectedThisSession'));
     setGameMode('multi');
     if (onSpelReset) onSpelReset();
   };
 
   const handleVrijeLeermodusSelect = () => {
     setLocalActiveMode('vrije-leermodus'); // Direct feedback
+    window.dispatchEvent(new CustomEvent('modeSelectedThisSession'));
     if (isSpelGestart && !isSerieuzeLeerModusActief) {
       setShowSerieuzeModusWaarschuwing(true);
     } else {
@@ -148,6 +153,7 @@ export const SpelerInput = ({
 
   const handleLeitnerSelect = () => {
     setLocalActiveMode('leitner'); // Direct feedback
+    window.dispatchEvent(new CustomEvent('modeSelectedThisSession'));
     if (isSpelGestart && !isSerieuzeLeerModusActief) {
       setShowSerieuzeModusWaarschuwing(true);
     } else {
@@ -178,11 +184,8 @@ export const SpelerInput = ({
 
   // Bepaal welke modus actief is - gebruik lokale state als die bestaat, anders bereken
   const getActiveMode = () => {
-    if (localActiveMode) return localActiveMode;
-    if (gameMode === 'multi') return 'multiplayer';
-    if (!isSerieuzeLeerModusActief) return 'highscore';
-    if (leermodusType === 'leitner') return 'leitner';
-    return 'vrije-leermodus';
+    // Toon geen vooraf geselecteerde modus; pas highlight na expliciete keuze in deze sessie
+    return localActiveMode;
   };
 
   const activeMode = getActiveMode();
@@ -196,7 +199,7 @@ export const SpelerInput = ({
 
   return (
     <div className="speler-input-form">
-      <h3 className="mode-selector-title">Kies je spelmodus</h3>
+      <h3 className={`mode-selector-title ${!activeMode ? 'step-pulse' : ''}`}>1. Kies je spelmodus</h3>
       
       <div className="mode-selector-grid">
         <TooltipButton
@@ -265,20 +268,28 @@ export const SpelerInput = ({
         />
       </div>
 
-      {/* Speler input form - alleen voor multiplayer en highscore */}
-      {(gameMode === 'multi' || (gameMode === 'single' && !isSerieuzeLeerModusActief)) ? (
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={naam}
-            onChange={(e) => setNaam(e.target.value)}
-            placeholder="Naam van nieuwe speler"
-            disabled={isInputVolledigUitgeschakeld}
-          />
-          <button type="submit" disabled={isInputVolledigUitgeschakeld}>
-            {isSpelerInputDisabled ? 'Eén speler maximaal' : isSpelGestart ? 'Spel is bezig' : 'Voeg speler toe'}
-          </button>
-        </form>
+      {/* Speler input form - alleen tonen nadat een modus is gekozen die spelers vereist */}
+      {(activeMode === 'multiplayer' || activeMode === 'highscore') ? (
+        <>
+          {(() => {
+            const spelersVoldoende = activeMode === 'multiplayer' ? (spelersCount >= 2) : (spelersCount >= 1);
+            return (
+              <h3 className={`mode-selector-title ${!spelersVoldoende ? 'step-pulse' : ''}`}>2. Voeg speler(s) toe</h3>
+            );
+          })()}
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              value={naam}
+              onChange={(e) => setNaam(e.target.value)}
+              placeholder="Naam van nieuwe speler"
+              disabled={isInputVolledigUitgeschakeld}
+            />
+            <button type="submit" disabled={isInputVolledigUitgeschakeld}>
+              {isSpelerInputDisabled ? 'Eén speler maximaal' : isSpelGestart ? 'Spel is bezig' : 'Voeg speler toe'}
+            </button>
+          </form>
+        </>
       ) : null}
 
       {/* Waarschuwing modals */}

@@ -126,6 +126,8 @@ interface FruitautomaatProps {
   isBeoordelingDirect?: boolean;
   // Kale modus prop
   isKaleModusActief?: boolean;
+  canStart?: boolean;
+  onEindigSessie?: () => void;
 }
 
 export const Fruitautomaat = ({ 
@@ -148,7 +150,9 @@ export const Fruitautomaat = ({
   leermodusType,
   onPauseOpdracht,
   isBeoordelingDirect = false,
-  isKaleModusActief = false
+  isKaleModusActief = false,
+  canStart = false,
+  onEindigSessie
 }: FruitautomaatProps) => {
   const { isRolTijdVerkort } = useSettings();
   
@@ -248,7 +252,7 @@ export const Fruitautomaat = ({
             </div>
           </div>
         </div>
-        <Hendel onSpin={onSpin} disabled={isSpinButtonDisabled} />
+        <Hendel onSpin={onSpin} disabled={isSpinButtonDisabled} attract={Boolean(canStart)} />
       </div>
       <div className="fruitautomaat-footer">
         {isSpinButtonDisabled && !children && (
@@ -327,7 +331,7 @@ export const Fruitautomaat = ({
                </div>
              </div>
 				{/* Tekenen badge indien van toepassing */}
-				{huidigeOpdracht.opdracht.isTekenen && (
+				{(huidigeOpdracht.opdracht.isTekenen || huidigeOpdracht.opdracht.tekenStatus === 'ja' || huidigeOpdracht.opdracht.tekenStatus === 'mogelijk') && (
 				  <div className="tooltip-button-container"
 				    onTouchStart={(e) => {
 				      e.preventDefault();
@@ -341,11 +345,12 @@ export const Fruitautomaat = ({
 				      }
 				    }}
 				  >
-				    <span className="info-item">✏️</span>
+				    <span className="info-item">{huidigeOpdracht.opdracht.tekenStatus === 'mogelijk' && !huidigeOpdracht.opdracht.isTekenen ? '✏️?' : '✏️'}</span>
 				    <div className="tooltip tooltip-top">
 				      <div className="tooltip-content">
 				        <strong>Tekenen</strong>
-				        <p>Voor deze opdracht is tekenen/schetsen gewenst.</p>
+				        <p>{huidigeOpdracht.opdracht.tekenStatus === 'ja' || huidigeOpdracht.opdracht.isTekenen ? 'Voor deze opdracht is tekenen/schetsen vereist.' : 'Voor deze opdracht kan tekenen helpen (optioneel).'}
+				        </p>
 				      </div>
 				    </div>
 				  </div>
@@ -363,19 +368,31 @@ export const Fruitautomaat = ({
           </div>
         )}
         
-        {/* Pauze knop - alleen tonen na beoordeling in Leitner modus */}
-        {(gamePhase === 'ended' || gamePhase === 'idle') && (huidigeOpdracht || laatsteBeoordeeldeOpdracht) && isSerieuzeLeerModusActief && leermodusType === 'leitner' && onPauseOpdracht && (
-          <div className="pause-opdracht-footer">
-            <TooltipButton
-              onClick={onPauseOpdracht}
-              tooltipContent="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt"
-              className="pause-opdracht-footer-knop"
-            >
-              ⏸️ Pauzeer deze opdracht
-            </TooltipButton>
+        {/* Footer-acties: Sessie beëindigen en Pauze (Leitner) */}
+        {(gamePhase === 'ended' || gamePhase === 'idle') && isSerieuzeLeerModusActief && (
+          <div className="pause-opdracht-footer" style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {onEindigSessie && (
+              <TooltipButton
+                onClick={onEindigSessie}
+                tooltipContent="Beëindig je sessie en bekijk de samenvatting"
+                className="pause-opdracht-footer-knop"
+              >
+                🏁 Sessie beëindigen
+              </TooltipButton>
+            )}
+
+            {(huidigeOpdracht || laatsteBeoordeeldeOpdracht) && leermodusType === 'leitner' && onPauseOpdracht && (
+              <TooltipButton
+                onClick={onPauseOpdracht}
+                tooltipContent="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt"
+                className="pause-opdracht-footer-knop"
+              >
+                ⏸️ Pauzeer deze opdracht
+              </TooltipButton>
+            )}
 
             {/* Leitner context & acties */}
-            {(() => {
+            {leermodusType === 'leitner' && (() => {
               const mgr = getLeerDataManager();
               const op = (huidigeOpdracht || laatsteBeoordeeldeOpdracht)?.opdracht;
               if (!op) return null;
