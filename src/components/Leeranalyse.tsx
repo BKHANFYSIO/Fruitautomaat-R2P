@@ -613,33 +613,33 @@ export const Leeranalyse = React.memo(({ isOpen, onClose, onStartFocusSessie, op
                   achievementDefs={achievementDefs}
                 />
               )}
+              {/* Exportknoppen: binnen de scrollbare content zodat ze NIET sticky zijn op mobiel */}
+              <div className="leeranalyse-footer" data-non-sticky-mobile>
+                <div className="export-buttons">
+                  <button 
+                    className="export-button json-export" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      exportData();
+                    }}
+                  >
+                    📄 Export JSON
+                  </button>
+                  <button 
+                    className="export-button excel-export" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      exportToExcel();
+                    }}
+                  >
+                    📊 Export Excel
+                  </button>
+                </div>
+              </div>
             </>
           )}
-        </div>
-
-        <div className="leeranalyse-footer" data-non-sticky-mobile>
-          <div className="export-buttons">
-            <button 
-              className="export-button json-export" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                exportData();
-              }}
-            >
-              📄 Export JSON
-            </button>
-            <button 
-              className="export-button excel-export" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                exportToExcel();
-              }}
-            >
-              📊 Export Excel
-            </button>
-          </div>
         </div>
       </div>
 

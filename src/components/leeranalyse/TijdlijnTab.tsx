@@ -34,6 +34,12 @@ const TijdlijnTab: React.FC<TijdlijnTabProps> = ({
   
 }) => {
   const [fullscreenChart, setFullscreenChart] = useState<string | null>(null);
+  // Sluit op Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreenChart(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   // State voor tijdsranges
   const [activiteitTijdsRange, setActiviteitTijdsRange] = useState<TijdsRange>('week');
   const [prestatieTijdsRange, setPrestatieTijdsRange] = useState<TijdsRange>('week');
