@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { CRITERIA } from '../data/criteria';
 import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';

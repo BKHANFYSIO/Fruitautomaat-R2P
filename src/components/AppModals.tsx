@@ -28,7 +28,6 @@ type Props = {
   currentGameMode: 'highscore' | 'multiplayer' | 'vrijeleermodus' | 'leitnerleermodus';
   hoofdcategorieen?: string[];
   subcategorieenPerHoofdcategorie?: Record<string, string[]>;
-  hoofdcategorieen?: string[];
 
   // BestandsUploader
   onFileSelected: (file: File) => void;
