@@ -31,18 +31,25 @@ export type ModeKey = 'highscore' | 'multiplayer' | 'normaal' | 'leitner';
 export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKey = 'normaal'): CategorieSelectieState {
   // Per-modus filters in localStorage
   const [filtersByMode, setFiltersByMode] = useState<Record<ModeKey, Filters>>(() => {
+    const normalize = (f: Partial<Filters> | undefined): Filters => {
+      const base: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] };
+      if (!f) return base;
+      const bronnen = Array.isArray(f.bronnen) && f.bronnen.length === 2 ? (f.bronnen as any) : ['systeem', 'gebruiker'];
+      const opdrachtTypes = Array.isArray(f.opdrachtTypes) ? f.opdrachtTypes : [];
+      const niveaus = Array.isArray(f.niveaus) ? f.niveaus : [];
+      const tekenen = Array.isArray(f.tekenen) ? f.tekenen : [];
+      return { bronnen, opdrachtTypes, niveaus, tekenen };
+    };
     // Try new structured storage first
     const savedByMode = localStorage.getItem('opdrachtFiltersByMode');
     if (savedByMode) {
       try {
         const parsed = JSON.parse(savedByMode);
-        // Baseline defaults
-        const defaults: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] };
         return {
-          highscore: { ...defaults, ...(parsed.highscore || {}) },
-          multiplayer: { ...defaults, ...(parsed.multiplayer || {}) },
-          normaal: { ...defaults, ...(parsed.normaal || {}) },
-          leitner: { ...defaults, ...(parsed.leitner || {}) },
+          highscore: normalize(parsed.highscore),
+          multiplayer: normalize(parsed.multiplayer),
+          normaal: normalize(parsed.normaal),
+          leitner: normalize(parsed.leitner),
         } as Record<ModeKey, Filters>;
       } catch {}
     }
@@ -52,12 +59,7 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
     if (oldSaved) {
       try {
         const parsed = JSON.parse(oldSaved);
-        if (parsed && Array.isArray(parsed.bronnen) && Array.isArray(parsed.opdrachtTypes)) {
-          if (parsed.bronnen.length === 0) parsed.bronnen = ['systeem', 'gebruiker'];
-          if (!Array.isArray(parsed.niveaus)) parsed.niveaus = [];
-          if (!Array.isArray(parsed.tekenen)) parsed.tekenen = [];
-          fallback = parsed as Filters;
-        }
+        fallback = normalize(parsed);
       } catch {}
     }
     return {

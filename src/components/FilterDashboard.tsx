@@ -59,8 +59,10 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   // Tel aantal actieve filters voor opvallende badge in header
   const actiefCount = useMemo(() => {
     let count = 0;
-    // bron: afwijking van beide aan
-    if (!(filters.bronnen.includes('systeem') && filters.bronnen.includes('gebruiker'))) count++;
+    // Bron: tel alleen als exact één bron actief is (dus afwijking van default én niet leeg)
+    const hasSystem = filters.bronnen.includes('systeem');
+    const hasUser = filters.bronnen.includes('gebruiker');
+    if ((hasSystem && !hasUser) || (!hasSystem && hasUser)) count++;
     // type
     count += filters.opdrachtTypes.length;
     // niveaus
