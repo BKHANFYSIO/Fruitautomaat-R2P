@@ -280,7 +280,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const { width } = useWindowSize();
   const isMobieleWeergave = forceerMobieleWeergave || width <= 1280;
-  const { scrollToTop } = useScrollToTop(mainContentRef as unknown as React.RefObject<HTMLElement | null>);
+  const { scrollToTop, scrollToDashboard } = useScrollToTop(mainContentRef as unknown as React.RefObject<HTMLElement | null>);
 
   // Handlers voor kop-of-munt, partnerkeuze en bonus worden na state-declaraties geïnitialiseerd
 
@@ -872,6 +872,15 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsAntwoordVergrendeld(false);
   };
 
+  // Reset fruitautomaat state voor schone start
+  const resetFruitautomaatState = () => {
+    setHuidigeOpdracht(null);
+    setLaatsteBeoordeeldeOpdracht(null);
+    setHuidigeSpinAnalyse(null);
+    setGamePhase('idle');
+    setIsAntwoordVergrendeld(false);
+  };
+
   const handleOpenLeeranalyse = (openToAchievements = false) => {
     setIsScoreLadeOpen(false);
     setIsLeeranalyseOpen(true);
@@ -911,8 +920,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
     if (!isSpelGestart) {
       setIsSpelGestart(true);
-      // Scroll direct naar boven zodat scorebord/leer-dashboard zichtbaar is
-      scrollToTop();
+      // Scroll naar het dashboard zodat scorebord/leer-dashboard zichtbaar is
+      scrollToDashboard();
       
       // Toon sessie start melding bij eerste spin in serieuze leer-modus
       if (isSerieuzeLeerModusActief && gameMode === 'single') {
@@ -925,8 +934,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       const nieuwe = startSessie(leermodusType);
       if (nieuwe) {
         showNotificatie('📚 Nieuwe sessie gestart!', 'succes', 6000);
-        // Scroll naar boven bij start van een sessie
-        scrollToTop();
+        // Scroll naar het dashboard bij start van een sessie
+        scrollToDashboard();
         // Reset tip-ritme bij start van een nieuwe sessie
         setTipsShownThisSession(0);
         setEligibleWinsSinceLastTip(0);
@@ -982,10 +991,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setHuidigeSpeler(bijgewerkteHuidigeSpeler);
       voerSpinUit(bijgewerkteHuidigeSpeler);
       
-      // Scroll naar boven voor mobiele weergave
-      if (isMobieleWeergave) {
-        scrollToTop();
-      }
+      // Scroll naar het dashboard zodat dashboard zichtbaar is
+      scrollToDashboard();
     }
   };
 
@@ -1507,8 +1514,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
-    mainContentRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
+    scrollToDashboard();
   };
 
   const handleOpenMultiplayerCategorieSelectie = () => {
@@ -1516,9 +1522,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
-    // Scroll helemaal naar boven zodat dashboard meteen in beeld is
-    mainContentRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   const handleOpenNormaleLeermodusCategorieSelectie = () => {
@@ -1526,8 +1530,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
-    mainContentRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
+    scrollToDashboard();
   };
 
   // full screen toggle is now provided by useFullscreen
@@ -1555,9 +1558,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     setLeermodusType(leermodusType);
 
     setIsLeeranalyseOpen(false);
-    // Scroll naar boven bij start sessie
-    mainContentRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
+    // Scroll naar het dashboard bij start sessie
+    scrollToDashboard();
     // Optioneel: toon een notificatie (via hook)
     const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
     showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 7000);
@@ -1623,7 +1625,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         isLeerstrategienOpen={isLeerstrategienOpen}
         onCloseLeerstrategien={() => setIsLeerstrategienOpen(false)}
         isSessieSamenvattingOpen={isSessieSamenvattingOpen}
-        onCloseSessieSamenvatting={() => setIsSessieSamenvattingOpen(false)}
+        onCloseSessieSamenvatting={() => {
+          setIsSessieSamenvattingOpen(false);
+          resetFruitautomaatState(); // Reset fruitautomaat voor schone start
+        }}
         eindigdeSessieData={eindigdeSessieData}
         onOpenLeeranalyse={handleOpenLeeranalyse}
         isLeeranalyseOpen={isLeeranalyseOpen}

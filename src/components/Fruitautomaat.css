@@ -86,33 +86,7 @@
   flex-direction: column;
 }
 
-/* Casus panel */
-.casus-panel {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  width: 100%;
-  margin-top: 8px;
-  padding: 0 12px;
-}
-.casus-panel.open {
-  max-height: 300px;
-  padding: 12px;
-}
-.casus-titel {
-  color: #ffd166;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.casus-tekst {
-  color: #eee;
-  line-height: 1.4;
-  font-size: 0.95rem;
-  white-space: pre-wrap;
-}
+
 
 .welkomst-bericht {
   color: #b0b0b0;
@@ -154,6 +128,14 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 220px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Footer variant van de eindig-knop */
+.eindig-knop-footer {
+  min-width: auto;
+  padding: 12px 20px;
 }
 
 .eindig-knop:hover {
@@ -215,12 +197,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   padding: 15px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   margin-top: 10px;
+}
+
+/* Eerste rij knoppen (Sessie beëindigen + Pauzeer) */
+.pause-opdracht-footer-eerste-rij {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Tweede rij knoppen (Box acties) */
+.pause-opdracht-footer-tweede-rij {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .pause-opdracht-footer-knop {

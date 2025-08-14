@@ -486,63 +486,81 @@ export const Instellingen = React.memo(({
                 {/* --- Groep: Opdrachtenbeheer --- */}
                 <div className="settings-group">
                   <h4>Opdrachtenbeheer</h4>
-                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-                    <strong>Handmatig:</strong> Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
-                    Kies vervolgens of je wilt aanvullen of overschrijven.
-                  </p>
                   
-                  <div className="opdracht-knoppen-container">
-                    <button 
-                      onClick={() => {
-                        const data = [
-                          {
-                            Hoofdcategorie: 'Anatomie',
-                            Categorie: 'Schouder',
-                            Type: 'Feitenkennis',
-                            Tekenen: 'Nee',
-                            Opdracht: 'Noem 3 spieren die betrokken zijn bij abductie van de schouder.',
-                            Antwoordsleutel: 'm. deltoideus (pars acromialis), m. supraspinatus, m. trapezius (stabiliserend) — bron: boek/college',
-                            Tijdslimiet: 60,
-                            "Extra_Punten (max 2)": 0,
-                            Niveau: 1,
-                            Casus: ''
-                          },
-                          {
-                            Hoofdcategorie: 'Revalidatie',
-                            Categorie: 'Knie',
-                            Type: 'Toepassing',
-                            Tekenen: 'Nee',
-                            Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
-                            Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
-                            Tijdslimiet: 90,
-                            "Extra_Punten (max 2)": 2,
-                            Niveau: 2,
-                            Casus: 'Patiënt 45 jaar, 6 weken post‑VKB; doel: traplopen zonder pijn.'
-                          }
-                        ];
-                        const worksheet = XLSX.utils.json_to_sheet(data);
-                        const workbook = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Opdrachten');
-                        XLSX.writeFile(workbook, 'opdrachten_sjabloon.xlsx');
-                      }}
-                      className="instellingen-knop download-template-knop"
-                    >
-                      📥 Download Excel Sjabloon
-                    </button>
+                  {/* Handmatig sectie */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>📝 Handmatig opdrachten maken</h5>
+                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      Download het Excel-sjabloon, vul je opdrachten in en upload het bestand via "Kies bestand". 
+                      Kies vervolgens of je wilt aanvullen of overschrijven.
+                      <strong>Bekijk eerst de "Instructie Excel‑sjabloon" hieronder om het bestand correct in te vullen.</strong>
+                    </p>
+                    
+                    <div className="opdracht-knoppen-container">
+                      <button 
+                        onClick={() => {
+                          const data = [
+                            {
+                              Hoofdcategorie: 'Anatomie',
+                              Categorie: 'Schouder',
+                              Type: 'Feitenkennis',
+                              Tekenen: 'Nee',
+                              Opdracht: 'Noem 3 spieren die betrokken zijn bij abductie van de schouder.',
+                              Antwoordsleutel: 'm. deltoideus (pars acromialis), m. supraspinatus, m. trapezius (stabiliserend) — bron: boek/college',
+                              Tijdslimiet: 60,
+                              "Extra_Punten (max 2)": 0,
+                              Niveau: 1,
+                              Casus: ''
+                            },
+                            {
+                              Hoofdcategorie: 'Revalidatie',
+                              Categorie: 'Knie',
+                              Type: 'Toepassing',
+                              Tekenen: 'Nee',
+                              Opdracht: 'Stel een progressieplan op voor een patiënt die herstelt van een knieoperatie.',
+                              Antwoordsleutel: 'Criteria‑gebaseerde progressie; monitor pijn/zwelling; bron: richtlijn revalidatie.',
+                              Tijdslimiet: 90,
+                              "Extra_Punten (max 2)": 2,
+                              Niveau: 2,
+                              Casus: 'Patiënt 45 jaar, 6 weken post‑VKB; doel: traplopen zonder pijn.'
+                            }
+                          ];
+                          const worksheet = XLSX.utils.json_to_sheet(data);
+                          const workbook = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(workbook, worksheet, 'Opdrachten');
+                          XLSX.writeFile(workbook, 'opdrachten_sjabloon.xlsx');
+                        }}
+                        className="instellingen-knop download-template-knop"
+                      >
+                        📥 Download Excel Sjabloon
+                      </button>
                       {/* Instructie-knop direct onder de downloadknop */}
                       <div>
                         <button 
                           className="instellingen-knop"
                           onClick={() => setIsSjabloonUitlegOpen(true)}
                           title="Uitleg over kolommen, filters en links in Excel"
-                          style={{ marginTop: 8 }}
+                          style={{ 
+                            marginTop: 8, 
+                            width: '100%', 
+                            maxWidth: '350px',
+                            display: 'block',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
                         >
                           ℹ️ Instructie Excel‑sjabloon
                         </button>
                       </div>
+                    </div>
+                  </div>
 
-                      <p className="setting-description" style={{ marginLeft: 0, marginTop: '10px', marginBottom: '15px' }}>
-                      <strong>Met AI:</strong> Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
+                  {/* AI sectie */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>🤖 Opdrachten genereren met AI</h5>
+                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
                       Dit is een snelle manier om veel opdrachten te maken.
                     </p>
                     
@@ -553,13 +571,26 @@ export const Instellingen = React.memo(({
                       🚀 Genereer Nieuwe Opdrachten met AI
                     </button>
                   </div>
-                  
-                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
-                    <strong>Opdrachten toevoegen:</strong> Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
-                    Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
-                  </p>
-                  
-                  {children}
+
+                  {/* Upload sectie */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>📤 Opdrachten toevoegen</h5>
+                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      Klik op "Kies een bestand" en selecteer je handmatig gemaakte Excel-bestand of het bestand dat je met AI hebt gegenereerd. 
+                      Kies vervolgens of je wilt aanvullen of alle bestaande opdrachten wilt overschrijven.
+                    </p>
+                    
+                    {children}
+                  </div>
+
+                  {/* Categorieën selectie sectie */}
+                  <div style={{ marginBottom: '15px' }}>
+                    <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>🎯 Categorieën selectie</h5>
+                    <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
+                      <strong>Belangrijk:</strong> Na het uploaden van opdrachten kun je via de categorieën selectie (in het hoofdmenu) bepalen welke opdrachten je wilt gebruiken tijdens het spelen. 
+                      Dit geldt voor alle spellen en leermodi. Je kunt hier filteren op hoofdcategorie, subcategorie, opdrachttype en andere criteria.
+                    </p>
+                  </div>
                 </div>
 
                 {/* --- Groep: Data Beheer --- */}

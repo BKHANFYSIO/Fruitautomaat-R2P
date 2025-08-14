@@ -32,19 +32,21 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
   };
   const BESCHIKBARE_TYPES = OPDRACHT_TYPE_ORDER.filter(t => TYPE_BESCHRIJVINGEN[t as keyof typeof TYPE_BESCHRIJVINGEN]);
   const TYPE_VOORBEELDEN: Record<string, string> = {
-    'Feitenkennis': 'Noem 2 functies van de m. gluteus medius.',
-    'Begripsuitleg': 'Leg uit wat mechanotransductie is bij peesweefsel.',
-    'Toepassing': 'Kies de beste interventie bij beginnende achillespeesklachten en licht toe.',
-    'Vaardigheid – Onderzoek': 'Toon hoe je de Lachman test uitvoert (stappen).',
-    'Vaardigheid – Behandeling': 'Stel een 2‑weekse oefenprogressie op na enkelverstuiking.',
-    'Communicatie met patiënt': 'Leg uit wat de oorzaak van aspecifieke lage rugpijn kan zijn in begrijpelijke taal.',
-    'Klinisch redeneren': 'Welke hypothese past het best bij deze klachten en waarom?'
+    'Feitenkennis': 'Benoem de drie belangrijkste ligamenten die passieve stabiliteit geven aan het kniegewricht.',
+    'Begripsuitleg': 'Leg uit hoe de menisci bijdragen aan schokabsorptie en stabiliteit in de knie.',
+    'Toepassing': '**Casus:** Een 20-jarige voetballer heeft een mediaal collateraal bandletsel. **Opdracht:** Geef twee oefeningen die passen bij de subacute fase en onderbouw kort.',
+    'Vaardigheid – Onderzoek': 'Demonstreer de Lachman-test en benoem de structuren die getest worden.',
+    'Vaardigheid – Behandeling': 'Demonstreer een mobilisatietechniek voor het kniekapsel met als doel extensieverbetering.',
+    'Communicatie met patiënt': 'Leg aan een patiënt uit waarom de voorste kruisband belangrijk is voor voorwaartse stabiliteit.',
+    'Klinisch redeneren': '**Casus:** 30-jarige loper met pijn aan de mediale knie, slotklachten, positief McMurray. **Opdracht:** Bepaal twee mogelijke diagnoses en geef aan welk aanvullend onderzoek je kiest.'
   };
   const [geselecteerdeTypes, setGeselecteerdeTypes] = useState<string[]>([]);
   // Tekenen tri-status filter voor generatie
   const [allowTekenenJa, setAllowTekenenJa] = useState<boolean>(true);
   const [allowTekenenMogelijk, setAllowTekenenMogelijk] = useState<boolean>(true);
   const [allowTekenenNee, setAllowTekenenNee] = useState<boolean>(true);
+  const [isTekenenUitlegOpen, setIsTekenenUitlegOpen] = useState(false);
+  const [openTypeUitleg, setOpenTypeUitleg] = useState<string | null>(null);
 
   const updateHandmatigeSubcat = (index: number, veld: 'naam' | 'aantal', waarde: string | number) => {
     setHandmatigeSubcats(prev => {
@@ -54,7 +56,7 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
         item.naam = String(waarde);
       } else {
         const parsed = Number(waarde);
-        item.aantal = Number.isFinite(parsed) && parsed > 0 ? Math.min(20, Math.max(1, parsed)) : 1;
+        item.aantal = Number.isFinite(parsed) && parsed > 0 ? Math.min(99, Math.max(1, parsed)) : 1;
       }
       kopie[index] = item;
       return kopie;
@@ -182,15 +184,71 @@ ${typeRestrictie}
 Als aantallen per subcategorie zijn opgegeven, gebruik precies de som daarvan (negeer dan het algemene aantal).
 
 **STAPPENPLAN VOOR DE AI:**
-1. Analyseer de kernconcepten van het opgegeven specifieke onderwerp.
+1. Analyseer de kernconcepten van het opgegeven specifieke onderwerp. Neem mee dat eventuele bronnen die als bijlage zijn toegevoegd de basis voor de te maken opdrachten vormen.
 2. Formuleer voor verschillende kernconcepten een heldere vraag, een kleine casus, of een praktische opdracht.
-3. Zorg voor variatie in vraagstelling en moeilijkheidsgraad.
+3. Zorg voor variatie in vraagstelling en maak een mix van vraagtypes volgens de opgegeven vraagtypes. Het aantal van elk type moet passend zijn bij het onderwerp. Bijvoorbeeld: als het onderwerp weinig te maken heeft met communicatie met patiënten, maak dan ook geen of weinig opdrachten van dat type. Of als er geen vaardigheden aan te koppelen zijn, maak dan ook geen vaardigheidsopdrachten.
 4. ${niveauInstructie}
-5. Stel voor elke opdracht een moeilijkheidsniveau vast (1=basis, 2=gemiddeld, 3=gevorderd).
-6. Formuleer voor elke opdracht een beknopt en correct modelantwoord met bronvermelding.
+5. Stel voor elke opdracht een moeilijkheidsniveau vast: 1 (opwarmers/basis), 2 (standaard), 3 (uitdagend).
+6. Bepaal per opdracht of tekenen nodig is: "Ja" (verplicht), "Mogelijk" (helpend/optioneel) of "Nee" (geen tekenen).
+7. Bepaal per opdracht of een tijdslimiet nodig is (alleen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering).
+8. Bepaal per opdracht of extra punten gerechtvaardigd zijn (0-2, alleen voor moeilijke of complexe opdrachten die meer inspanning vereisen).
+9. Formuleer voor elke opdracht een passend modelantwoord met bronvermelding. Het antwoord moet passend zijn bij het type vraag: een feit kan kort zijn, maar bij begrip en toepassing mag een uitgebreider antwoord gegeven worden.
+
+**LINKS EN MEDIA IN ANTWOORDSLEUTELS:**
+Je kunt links naar websites, afbeeldingen en video's toevoegen in de antwoordsleutel. De app herkent deze automatisch en toont ze op de juiste manier:
+
+- **🔗 Websites**: Normale klikbare links (bijv. "Meer info: https://example.com")
+- **🖼️ Afbeeldingen**: Automatisch ingebed voor bestanden met extensies .png, .jpg, .jpeg, .gif, .webp, .svg
+  - **🎬 YouTube**: Automatisch ingebed met ondersteuning voor starttijden:
+    - ?t=363 (363 seconden)
+    - ?t=6m3s (6 minuten 3 seconden) 
+    - ?start=363 (363 seconden)
+- **🎬 Vimeo**: Automatisch ingebed
+- **📄 Overige media**: Normale klikbare links
+
+**Voorbeelden:**
+- "Zie de anatomie: https://example.com/anatomy.jpg"
+- "Bekijk de techniek: https://youtube.com/watch?v=abc123?t=2m30s"
+- "Lees meer: https://richtlijn.nl/fysiotherapie"
 
 **BEOORDELINGSCRITERIA:**
 ${criteriaInstructie}
+
+**NIVEAU BEPALING:**
+Bepaal het niveau op basis van de cognitieve complexiteit en vaardigheden die vereist zijn:
+
+- **Niveau 1 (Opwarmers/Basis)**: Eenvoudige feiten, basis definities, herkenning, reproductie van kennis
+  - Voorbeelden: Spiernamen benoemen, basis definities, eenvoudige anatomie
+  - Tijdslimiet: 30-60 seconden
+  - Extra punten: 0 (standaard)
+
+- **Niveau 2 (Standaard)**: Begrip, eenvoudige toepassing, basis vaardigheden, interpretatie
+  - Voorbeelden: Processen uitleggen, eenvoudige toepassing, basis onderzoekstechnieken
+  - Tijdslimiet: 60-120 seconden
+  - Extra punten: 0-1 (afhankelijk van complexiteit)
+
+- **Niveau 3 (Uitdagend)**: Complexe toepassing, analyse, evaluatie, creatie, synthese
+  - Voorbeelden: Klinisch redeneren, complexe casussen, meerdere vaardigheden combineren
+  - Tijdslimiet: 120-300 seconden
+  - Extra punten: 1-2 (afhankelijk van complexiteit)
+
+**TIJDSLIMIET BEPALING:**
+Bepaal realistische tijdslimieten op basis van het opdrachttype en complexiteit:
+
+- **Feitenkennis**: 30-60 seconden (korte, directe antwoorden)
+- **Begripsuitleg**: 60-120 seconden (uitleg vereist)
+- **Toepassing**: 90-180 seconden (toepassing van kennis)
+- **Vaardigheid – Onderzoek**: 120-240 seconden (demonstratie + uitleg)
+- **Vaardigheid – Behandeling**: 120-300 seconden (techniek + uitleg)
+- **Communicatie met patiënt**: 90-180 seconden (patiëntgerichte uitleg)
+- **Klinisch redeneren**: 180-360 seconden (analyse + onderbouwing)
+
+**EXTRA PUNTEN BEPALING:**
+Bepaal extra punten op basis van de complexiteit en inspanning:
+
+- **0 punten**: Standaard opdracht, eenvoudige vraag, direct antwoord
+- **1 punt**: Complexe opdracht, meerdere stappen, uitgebreide uitleg vereist
+- **2 punten**: Zeer complexe opdracht, meerdere vaardigheden combineren, hoge cognitieve belasting, of creatieve oplossing vereist
 
 **OPDRACHTTYPES EN DEFINITIES:**
 Kies per opdracht één type en vul dat in in kolom "Type". Toegestane waarden en betekenis:
@@ -217,22 +275,22 @@ Hoofdcategorie, Categorie, Type, Tekenen, Opdracht, Antwoordsleutel, Tijdslimiet
 - "Type": Eén waarde uit deze lijst: ${typeLijst}. Als onbekend, gebruik "Onbekend".
       - "Tekenen": "Ja" (verplicht tekenen), "Mogelijk" (helpend/optioneel) of "Nee" (geen tekenen). Oude waarden Ja/Nee blijven geldig.
 - "Opdracht": De vraag of opdrachttekst
-- "Antwoordsleutel": Het modelantwoord met bronvermelding
+- "Antwoordsleutel": Het modelantwoord met bronvermelding. Je kunt links toevoegen naar websites, afbeeldingen (.png, .jpg, .gif, .webp, .svg) en video's (YouTube, Vimeo). YouTube ondersteunt starttijden: ?t=2m30s of ?start=150. De app herkent en toont media automatisch.
 - "Tijdslimiet": Getal in seconden (bijv. 60 voor 1 minuut). Alleen toevoegen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering.
 - "Extra_Punten (max 2)": Getal tussen 0 en 2. Alleen extra punten geven voor moeilijke of complexe opdrachten die meer inspanning vereisen.
-- "Niveau": 1 (opwarmers/basis), 2 (basis/standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
+- "Niveau": 1 (opwarmers/basis), 2 (standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
 
 **VOORBEELD TABEL FORMAAT:**
 
 | Hoofdcategorie | Categorie | Type | Tekenen | Opdracht | Antwoordsleutel | Tijdslimiet | Extra_Punten (max 2) | Niveau | Casus |
 |----------------|-----------|------|---------|----------|-----------------|-------------|---------------------|--------|-------|
-| ${hoofdcategorie} | ${subcategorieen[0] || 'Subcategorie 1'} | Begripsuitleg | Nee | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). | 120 | 1 | 2 |  |
-| ${hoofdcategorie} | ${subcategorieen[1] || 'Subcategorie 2'} | Feitenkennis | Ja | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015). | 0 | 0 | 1 |  |
+| ${hoofdcategorie} | ${subcategorieen[0] || 'Subcategorie 1'} | Begripsuitleg | Nee | Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld. | Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). Meer info: https://www.kngf.nl/richtlijnen | 120 | 1 | 2 |  |
+| ${hoofdcategorie} | ${subcategorieen[1] || 'Subcategorie 2'} | Feitenkennis | Ja | Benoem de belangrijkste spieren van de rotator cuff. | De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Zie anatomie: https://example.com/rotator-cuff.jpg Bron: Gray's Anatomy (2015). | 45 | 0 | 1 |  |
 
 **VOORBEELD EXCEL FORMAAT:**
 Hoofdcategorie,Categorie,Type,Tekenen,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau,Casus
-${hoofdcategorie},${subcategorieen[0] || 'Subcategorie 1'},Begripsuitleg,Nee,"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017).",120,1,2,
-${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Bron: Gray's Anatomy (2015).",0,0,1,${fileContext}`;
+${hoofdcategorie},${subcategorieen[0] || 'Subcategorie 1'},Begripsuitleg,Nee,"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). Meer info: https://www.kngf.nl/richtlijnen",120,1,2,
+${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Zie anatomie: https://example.com/rotator-cuff.jpg Bron: Gray's Anatomy (2015).",45,0,1,${fileContext}`;
   };
 
   const handleCopyPrompt = async () => {
@@ -309,266 +367,528 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               De waarden hieronder (hoofdcategorie, onderwerp-beschrijving, aantal, studentniveau en eventuele subcategorieën) worden automatisch verwerkt in de prompt die je in stap 5 kunt kopiëren.
             </p>
             <div className="form-group">
-              <label htmlFor="onderwerpBeschrijving">Beschrijving van het onderwerp (verplicht):</label>
-              <input
-                id="onderwerpBeschrijving"
-                type="text"
-                value={onderwerpBeschrijving}
-                onChange={(e) => setOnderwerpBeschrijving(e.target.value)}
-                placeholder="Bijv.: Revalidatie na voorste kruisband reconstructie binnen de sportfysiotherapie"
-                required
-              />
-              {!onderwerpBeschrijving.trim() && (
-                <div className="instruction-text" style={{ color: '#fca5a5', marginTop: 6 }}>Vul een korte beschrijving van het onderwerp in.</div>
-              )}
-            </div>
-            <div className="form-group">
-              <label htmlFor="hoofdcategorie-select">Hoofdcategorie:</label>
-              <select
-                id="hoofdcategorie-select"
-                value={gekozenBestaandeHoofdcategorie}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setGekozenBestaandeHoofdcategorie(value);
-                  if (value) {
-                    setHoofdcategorie(value);
-                  } else {
-                    // Laat vrije invoer veld actief wanneer leeg
-                    setHoofdcategorie(prev => prev);
-                  }
-                }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
-              >
-                <option value="">Kies bestaande hoofdcategorie (optioneel)</option>
-                {hoofdcategorieen.map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
-              {/* Vrije invoer blijft beschikbaar zolang niets uit de lijst gekozen is */}
-              {gekozenBestaandeHoofdcategorie === '' && (
-                <>
-                  <input
-                    id="hoofdcategorie"
-                    type="text"
-                    value={hoofdcategorie}
-                    onChange={(e) => setHoofdcategorie(e.target.value)}
-                    placeholder="of typ een nieuwe hoofdcategorie (bijv. Anatomie, Pathofysiologie)"
-                    style={{ marginTop: 8 }}
-                  />
-                </>
-              )}
-              <div className="instruction-text" style={{ marginTop: 6 }}>
-                Kies een bestaande hoofdcategorie uit de app of laat de selectie leeg en vul je eigen hoofdcategorie in. Nieuwe categorieën worden toegevoegd.
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Subcategorieën:</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name="subcatMode"
-                    value="ai"
-                    checked={subcatMode === 'ai'}
-                    onChange={() => setSubcatMode('ai')}
-                  />
-                  Laat de AI subcategorieën bepalen
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="subcatMode"
-                    value="handmatig"
-                    checked={subcatMode === 'handmatig'}
-                    onChange={() => setSubcatMode('handmatig')}
-                  />
-                  Ik geef zelf subcategorieën op
-                </label>
-              </div>
-              {subcatMode === 'handmatig' && (
-                <div style={{ marginTop: 8 }}>
-                  {(() => {
-                    const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
-                    const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
-                    return suggesties.length > 0 ? (
-                      <div className="instruction-text" style={{ marginBottom: 8 }}>
-                        Suggesties op basis van hoofdcategorie: {key ? <strong>{key}</strong> : '—'}
-                      </div>
-                    ) : null;
-                  })()}
-                  {handmatigeSubcats.map((row, index) => (
-                    <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                      <input
-                        type="text"
-                        value={row.naam}
-                        onChange={(e) => updateHandmatigeSubcat(index, 'naam', e.target.value)}
-                        placeholder="Bijv.: Schouder, Knie, Wervelkolom"
-                        style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
-                      />
-                      {(() => {
-                        const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
-                        const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
-                        return suggesties.length > 0 ? (
-                          <select
-                            value={''}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v) updateHandmatigeSubcat(index, 'naam', v);
-                            }}
-                            style={{ minWidth: 180, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
-                            aria-label="Kies bestaande subcategorie"
-                          >
-                            <option value="">Kies bestaande…</option>
-                            {suggesties.map((s) => (
-                              <option key={`${key}-${s}`} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        ) : null;
-                      })()}
-                      <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={row.aantal}
-                        onChange={(e) => updateHandmatigeSubcat(index, 'aantal', Number(e.target.value))}
-                        style={{ width: 90, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#2d3748', color: '#e2e8f0' }}
-                        aria-label="Aantal opdrachten"
-                        title="Aantal opdrachten voor deze subcategorie"
-                      />
-                      <button
-                        className="download-knop"
-                        onClick={() => removeSubcatRow(index)}
-                        aria-label="Verwijder rij"
-                        disabled={handmatigeSubcats.length <= 1}
-                        title={handmatigeSubcats.length <= 1 ? 'Minimaal één rij vereist' : 'Verwijder rij'}
-                      >
-                        −
-                      </button>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      className="download-knop"
-                      onClick={addSubcatRow}
-                      disabled={!hoofdcategorie && !gekozenBestaandeHoofdcategorie}
-                      title={!hoofdcategorie && !gekozenBestaandeHoofdcategorie ? 'Kies eerst een hoofdcategorie' : 'Voeg subcategorie toe'}
-                    >
-                      + Subcategorie
-                    </button>
-                  </div>
-                  <div className="instruction-text" style={{ marginTop: 6 }}>
-                    Je kunt bestaande subcategorieën uit de app kiezen of zelf nieuwe bedenken. De opgegeven aantallen worden exact aangehouden.
-                  </div>
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label htmlFor="onderwerpBeschrijving" style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Beschrijving van het onderwerp (verplicht):
+                  </label>
                 </div>
-              )}
-            </div>
-            
-            <div className="form-group">
-              {subcatMode === 'ai' ? (
-                <>
-                  <label htmlFor="aantal">Aantal opdrachten:</label>
+                
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> Geef een korte maar duidelijke beschrijving van het onderwerp waar je opdrachten over wilt genereren. Dit helpt de AI om relevante en passende opdrachten te maken.
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
                   <input
-                    id="aantal"
-                    type="number"
-                    value={aantalOpdrachten}
-                    onChange={(e) => setAantalOpdrachten(Number(e.target.value))}
-                    min="1"
-                    max="100"
+                    id="onderwerpBeschrijving"
+                    type="text"
+                    value={onderwerpBeschrijving}
+                    onChange={(e) => setOnderwerpBeschrijving(e.target.value)}
+                    placeholder="Bijv.: Revalidatie na voorste kruisband reconstructie binnen de sportfysiotherapie"
+                    required
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      borderRadius: 4, 
+                      border: '1px solid #4a5568', 
+                      background: '#1a202c', 
+                      color: '#e2e8f0' 
+                    }}
                   />
-                  <div className="instruction-text" style={{ marginTop: 6 }}>AI bepaalt zelf subcategorieën; dit is het totale aantal opdrachten.</div>
-                </>
-              ) : (
-                <>
-                  <label>Totaal aantal (op basis van subcategorieën):</label>
-                  <input
-                    type="number"
-                    value={totaalHandmatig}
-                    readOnly
-                    style={{ opacity: 0.8 }}
-                    min={0}
-                  />
-                  <div className="instruction-text" style={{ marginTop: 6 }}>Dit totaal wordt berekend uit de aantallen per opgegeven subcategorie.</div>
-                </>
-              )}
-            </div>
-            
-            <div className="form-group">
-              <label>Student niveau:</label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name="studentNiveau"
-                    value="1e jaar"
-                    checked={studentNiveau === '1e jaar'}
-                    onChange={() => setStudentNiveau('1e jaar')}
-                  />
-                  1e jaar
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="studentNiveau"
-                    value="2e jaar"
-                    checked={studentNiveau === '2e jaar'}
-                    onChange={() => setStudentNiveau('2e jaar')}
-                  />
-                  2e jaar
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="studentNiveau"
-                    value="3e/4e jaar"
-                    checked={studentNiveau === '3e/4e jaar'}
-                    onChange={() => setStudentNiveau('3e/4e jaar')}
-                  />
-                  3e/4e jaar
-                </label>
+                  {!onderwerpBeschrijving.trim() && (
+                    <div className="instruction-text" style={{ color: '#fca5a5', marginTop: 6 }}>Vul een korte beschrijving van het onderwerp in.</div>
+                  )}
+                </div>
               </div>
             </div>
-            
             <div className="form-group">
-              <label>Opdracht types (meerdere mogelijk):</label>
-              <div className="instruction-text" style={{ marginBottom: 6 }}>
-                Vink de typen aan die je wilt laten genereren. Laat alles leeg om de keuze aan de AI over te laten.
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label htmlFor="hoofdcategorie-select" style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Hoofdcategorie:
+                  </label>
+                </div>
+                
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> Kies een bestaande hoofdcategorie uit de app of laat de selectie leeg en vul je eigen hoofdcategorie in. Nieuwe categorieën worden toegevoegd.
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <select
+                    id="hoofdcategorie-select"
+                    value={gekozenBestaandeHoofdcategorie}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setGekozenBestaandeHoofdcategorie(value);
+                      if (value) {
+                        setHoofdcategorie(value);
+                      } else {
+                        // Laat vrije invoer veld actief wanneer leeg
+                        setHoofdcategorie(prev => prev);
+                      }
+                    }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#1a202c', color: '#e2e8f0', marginBottom: '8px' }}
+                  >
+                    <option value="">Kies bestaande hoofdcategorie (optioneel)</option>
+                    {hoofdcategorieen.map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  
+                  {/* Vrije invoer blijft beschikbaar zolang niets uit de lijst gekozen is */}
+                  {gekozenBestaandeHoofdcategorie === '' && (
+                    <input
+                      id="hoofdcategorie"
+                      type="text"
+                      value={hoofdcategorie}
+                      onChange={(e) => setHoofdcategorie(e.target.value)}
+                      placeholder="of typ een nieuwe hoofdcategorie (bijv. Anatomie, Pathofysiologie)"
+                      style={{ 
+                        width: '100%', 
+                        padding: '8px 12px', 
+                        borderRadius: 4, 
+                        border: '1px solid #4a5568', 
+                        background: '#1a202c', 
+                        color: '#e2e8f0' 
+                      }}
+                    />
+                  )}
+                </div>
               </div>
-              <ul className="type-list">
-                {BESCHIKBARE_TYPES.map((t) => (
-                  <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`} onClick={() => toggleType(t)}>
+            </div>
+            <div className="form-group">
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>Subcategorieën:</label>
+                  <div className="radio-group">
                     <label>
                       <input
-                        type="checkbox"
-                        checked={geselecteerdeTypes.includes(t)}
-                        onChange={() => toggleType(t)}
+                        type="radio"
+                        name="subcatMode"
+                        value="ai"
+                        checked={subcatMode === 'ai'}
+                        onChange={() => setSubcatMode('ai')}
                       />
-                      <span className="type-title">
-                        <span className="type-icon" aria-hidden>{opdrachtTypeIconen[t] || '❓'}</span>
-                        {t}
-                      </span>
+                      Laat de AI subcategorieën bepalen
                     </label>
-                    <div className="type-desc">{TYPE_BESCHRIJVINGEN[t]}</div>
-                    <div className="type-example">Voorbeeld: {TYPE_VOORBEELDEN[t]}</div>
-                  </li>
-                ))}
-              </ul>
-              <div className="instruction-text" style={{ marginTop: 8, marginBottom: 6 }}>
-                <strong>Tekenen‑status (filter voor generatie)</strong><br />
-                De AI labelt elke opdracht met Tekenen = Ja, Mogelijk of Nee. Selecteer hieronder welke je wilt laten genereren. Standaard: alle drie.
+                    <label>
+                      <input
+                        type="radio"
+                        name="subcatMode"
+                        value="handmatig"
+                        checked={subcatMode === 'handmatig'}
+                        onChange={() => setSubcatMode('handmatig')}
+                      />
+                      Ik geef zelf subcategorieën op
+                    </label>
+                  </div>
+                </div>
+
+                {subcatMode === 'ai' ? (
+                  <div className="instruction-text" style={{ marginBottom: 12 }}>
+                    <strong>Uitleg:</strong> De AI bepaalt zelf welke subcategorieën het beste passen bij je onderwerp. Je geeft alleen het totale aantal opdrachten op.
+                  </div>
+                ) : (
+                  <>
+                    <div className="instruction-text" style={{ marginBottom: 12 }}>
+                      <strong>Uitleg:</strong> Je kunt bestaande subcategorieën uit de app kiezen (indien beschikbaar voor "{hoofdcategorie || gekozenBestaandeHoofdcategorie}") of zelf nieuwe bedenken. De opgegeven aantallen worden exact aangehouden.
+                    </div>
+                    
+                    {(() => {
+                      const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
+                      const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+                      return suggesties.length > 0 ? (
+                        <div className="instruction-text" style={{ marginBottom: 12, padding: '8px 12px', backgroundColor: '#1a202c', borderRadius: '4px', border: '1px solid #2d3748' }}>
+                          <strong>💡 Suggesties:</strong> Bestaande subcategorieën voor {key ? <strong>{key}</strong> : '—'} (klik op dropdown om te selecteren)
+                        </div>
+                      ) : null;
+                    })()}
+                    
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '14px', color: '#a0aec0', fontWeight: 'bold' }}>Subcategorieën:</span>
+                      </div>
+                      {handmatigeSubcats.map((row, index) => (
+                        <div key={index} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                          <input
+                            type="text"
+                            value={row.naam}
+                            onChange={(e) => updateHandmatigeSubcat(index, 'naam', e.target.value)}
+                            placeholder="Bijv.: Schouder, Knie, Wervelkolom"
+                            style={{ flex: 1, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#1a202c', color: '#e2e8f0' }}
+                          />
+                          {(() => {
+                            const key = gekozenBestaandeHoofdcategorie || hoofdcategorie;
+                            const suggesties = Array.from(new Set((subcategorieenPerHoofdcategorie[key] || []).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+                            return suggesties.length > 0 ? (
+                              <select
+                                value={''}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v) updateHandmatigeSubcat(index, 'naam', v);
+                                }}
+                                style={{ minWidth: 180, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#1a202c', color: '#e2e8f0' }}
+                                aria-label="Kies bestaande subcategorie"
+                              >
+                                <option value="">Kies bestaande…</option>
+                                {suggesties.map((s) => (
+                                  <option key={`${key}-${s}`} value={s}>{s}</option>
+                                ))}
+                              </select>
+                            ) : null;
+                          })()}
+                          <input
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={row.aantal}
+                            onChange={(e) => updateHandmatigeSubcat(index, 'aantal', Number(e.target.value))}
+                            style={{ width: 90, padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#1a202c', color: '#e2e8f0' }}
+                            aria-label="Aantal opdrachten"
+                            title="Aantal opdrachten voor deze subcategorie"
+                          />
+                          <button
+                            className="download-knop"
+                            onClick={() => removeSubcatRow(index)}
+                            aria-label="Verwijder rij"
+                            disabled={handmatigeSubcats.length <= 1}
+                            title={handmatigeSubcats.length <= 1 ? 'Minimaal één rij vereist' : 'Verwijder rij'}
+                            style={{ padding: '8px 12px', minWidth: '40px' }}
+                          >
+                            −
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        className="download-knop"
+                        onClick={addSubcatRow}
+                        disabled={!hoofdcategorie && !gekozenBestaandeHoofdcategorie}
+                        title={!hoofdcategorie && !gekozenBestaandeHoofdcategorie ? 'Kies eerst een hoofdcategorie' : 'Voeg subcategorie toe'}
+                        style={{ marginTop: '4px' }}
+                      >
+                        + Subcategorie
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                <div style={{ borderTop: '1px solid #4a5568', paddingTop: '16px' }}>
+                  <div className="instruction-text" style={{ marginBottom: 12 }}>
+                    <strong>Uitleg:</strong> {subcatMode === 'ai' 
+                      ? 'De AI bepaalt zelf welke subcategorieën het beste passen bij je onderwerp. Je geeft alleen het totale aantal opdrachten op.'
+                      : 'Het totaal aantal opdrachten wordt automatisch berekend op basis van de aantallen die je per subcategorie hebt opgegeven.'
+                    }
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <label htmlFor="aantal" style={{ fontWeight: 'bold', color: '#e2e8f0' }}>
+                      {subcatMode === 'ai' ? 'Aantal opdrachten:' : 'Totaal aantal:'}
+                    </label>
+                    <input
+                      id="aantal"
+                      type="number"
+                      value={subcatMode === 'ai' ? aantalOpdrachten : totaalHandmatig}
+                      onChange={subcatMode === 'ai' ? (e) => setAantalOpdrachten(Number(e.target.value)) : undefined}
+                      readOnly={subcatMode !== 'ai'}
+                      min="1"
+                      max="100"
+                      style={{ 
+                        padding: '8px 12px', 
+                        borderRadius: 4, 
+                        border: '1px solid #4a5568', 
+                        background: '#1a202c', 
+                        color: '#e2e8f0', 
+                        width: '100px',
+                        opacity: subcatMode === 'ai' ? 1 : 0.8
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="tekenen-toggle-row">
-                <label>
-                  <input type="checkbox" checked={allowTekenenJa} onChange={(e) => setAllowTekenenJa(e.target.checked)} />
-                  Expliciet tekenen (Ja)
-                </label>
-                <label>
-                  <input type="checkbox" checked={allowTekenenMogelijk} onChange={(e) => setAllowTekenenMogelijk(e.target.checked)} />
-                  Tekenen helpt (Mogelijk)
-                </label>
-                <label>
-                  <input type="checkbox" checked={allowTekenenNee} onChange={(e) => setAllowTekenenNee(e.target.checked)} />
-                  Zonder tekenen (Nee)
-                </label>
+            </div>
+            
+            <div className="form-group">
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Student niveau:
+                  </label>
+                </div>
+                
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> Kies het studiejaar van de studenten waarvoor je opdrachten wilt genereren. Dit helpt de AI om de complexiteit en diepgang van de opdrachten aan te passen aan het kennisniveau.
+                </div>
+                
+                <div className="radio-group">
+                  <label>
+                    <input
+                      type="radio"
+                      name="studentNiveau"
+                      value="1e jaar"
+                      checked={studentNiveau === '1e jaar'}
+                      onChange={() => setStudentNiveau('1e jaar')}
+                    />
+                    1e jaar
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="studentNiveau"
+                      value="2e jaar"
+                      checked={studentNiveau === '2e jaar'}
+                      onChange={() => setStudentNiveau('2e jaar')}
+                    />
+                    2e jaar
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="studentNiveau"
+                      value="3e/4e jaar"
+                      checked={studentNiveau === '3e/4e jaar'}
+                      onChange={() => setStudentNiveau('3e/4e jaar')}
+                    />
+                    3e/4e jaar
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Opdracht types (meerdere mogelijk):
+                  </label>
+                </div>
+                
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> Vink de typen aan die je wilt laten genereren. Laat alles leeg om de keuze aan de AI over te laten.
+                </div>
+                
+                <ul className="type-list">
+                  {BESCHIKBARE_TYPES.map((t) => (
+                    <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <label style={{ flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={geselecteerdeTypes.includes(t)}
+                            onChange={() => toggleType(t)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span className="type-title" style={{ cursor: 'pointer' }} onClick={() => toggleType(t)}>
+                            <span className="type-icon" aria-hidden>{opdrachtTypeIconen[t] || '❓'}</span>
+                            {t}
+                          </span>
+                        </label>
+                        <div 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: openTypeUitleg === t ? '#4a5568' : 'transparent',
+                            transition: 'background-color 0.2s'
+                          }} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenTypeUitleg(openTypeUitleg === t ? null : t);
+                          }}
+                          title="Klik voor uitleg en voorbeelden"
+                        >
+                          <span style={{ 
+                            fontSize: '12px', 
+                            transition: 'transform 0.2s', 
+                            transform: openTypeUitleg === t ? 'rotate(90deg)' : 'rotate(0deg)',
+                            color: '#a0aec0'
+                          }}>
+                            ▶
+                          </span>
+                        </div>
+                      </div>
+                      {openTypeUitleg === t && (
+                        <div style={{ 
+                          marginTop: '8px', 
+                          padding: '12px', 
+                          backgroundColor: '#1a202c', 
+                          borderRadius: '6px', 
+                          border: '1px solid #2d3748',
+                          marginLeft: '24px'
+                        }}>
+                          <div style={{ color: '#cbd5e0', fontSize: '13px', marginBottom: '12px', lineHeight: '1.4' }}>
+                            {TYPE_BESCHRIJVINGEN[t]}
+                          </div>
+                          <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.4' }}>
+                            <strong style={{ color: '#e2e8f0' }}>Voorbeelden:</strong>
+                            <div style={{ marginTop: '8px' }}>
+                              {(() => {
+                                const voorbeelden = {
+                                  'Feitenkennis': [
+                                    'Benoem de drie belangrijkste ligamenten die passieve stabiliteit geven aan het kniegewricht.',
+                                    'Noem de vier hoofdfasen van supercompensatie.',
+                                    'Noem twee klinische tekenen die passen bij een inversietrauma van de enkel in de acute fase.'
+                                  ],
+                                  'Begripsuitleg': [
+                                    'Leg uit hoe de menisci bijdragen aan schokabsorptie en stabiliteit in de knie.',
+                                    'Beschrijf hoe het overload-principe invloed heeft op bindweefseladaptatie.',
+                                    'Leg uit waarom vroege mobilisatie na een lateraal enkelbandletsel het herstel kan bevorderen.'
+                                  ],
+                                  'Toepassing': [
+                                    '**Casus:** Een 20-jarige voetballer heeft een mediaal collateraal bandletsel. **Opdracht:** Geef twee oefeningen die passen bij de subacute fase en onderbouw kort.',
+                                    '**Opdracht:** Pas het principe van specificiteit toe bij het opstellen van een oefenprogramma voor herstel van een verzwikte pols.',
+                                    '**Casus:** Patiënt, 25 jaar, lateraal enkelbandletsel 4 dagen geleden, wil lopen zonder krukken. **Opdracht:** Stel een oefenadvies op volgens de KNGF-richtlijn.'
+                                  ],
+                                  'Vaardigheid – Onderzoek': [
+                                    'Demonstreer de Lachman-test en benoem de structuren die getest worden.',
+                                    'Voer een hand-held dynamometertest uit voor de quadriceps en noteer de meetwaarden. Indien geen dynamometer beschikbaar: leg uit hoe je de test zou uitvoeren.',
+                                    'Meet de dorsaalflexie van de enkel met een goniometer en noteer het eindgevoel. Indien geen goniometer beschikbaar: leg uit hoe je de meting zou uitvoeren.'
+                                  ],
+                                  'Vaardigheid – Behandeling': [
+                                    'Demonstreer een mobilisatietechniek voor het kniekapsel met als doel extensieverbetering.',
+                                    'Voer een excentrische oefening uit voor de hamstrings en benoem de dosering.',
+                                    'Laat een enkelbalansoefening zien op een instabiele ondergrond voor een patiënt in de herstelfase.'
+                                  ],
+                                  'Communicatie met patiënt': [
+                                    'Leg aan een patiënt uit waarom de voorste kruisband belangrijk is voor voorwaartse stabiliteit.',
+                                    'Motiveer een patiënt om een progressief krachttrainingsprogramma vol te houden door het herstelproces van bindweefsel uit te leggen.',
+                                    'Leg in begrijpelijke taal uit waarom het belangrijk is om de enkel te blijven bewegen ondanks lichte pijn.'
+                                  ],
+                                  'Klinisch redeneren': [
+                                    '**Casus:** 30-jarige loper met pijn aan de mediale knie, slotklachten, positief McMurray. **Opdracht:** Bepaal twee mogelijke diagnoses en geef aan welk aanvullend onderzoek je kiest.',
+                                    '**Casus:** 22-jarige sporter met recidiverende kuitblessures, klachten na intensieve intervaltraining, onregelmatig herstelschema. **Opdracht:** Leg uit hoe je trainingsbelasting zou aanpassen om herhaling te voorkomen.',
+                                    '**Casus:** 19-jarige met inversietrauma 1 week geleden. Lichte zwelling rond de laterale malleolus, kan steunen maar niet rennen, pijnscore 4/10 bij dorsaalflexie, figure-of-eight omtrek +1,2 cm t.o.v. andere enkel. **Opdracht:** Beschrijf je behandelplan volgens de KNGF-richtlijn, inclusief criteria voor opbouw.'
+                                  ]
+                                };
+                                
+                                return voorbeelden[t as keyof typeof voorbeelden]?.map((voorbeeld, index) => (
+                                  <div key={index} style={{ 
+                                    marginBottom: '8px', 
+                                    padding: '8px', 
+                                    backgroundColor: '#2d3748', 
+                                    borderRadius: '4px',
+                                    borderLeft: '3px solid #4a5568'
+                                  }}>
+                                    <span style={{ 
+                                      color: '#a0aec0', 
+                                      fontSize: '11px', 
+                                      fontWeight: 'bold',
+                                      marginRight: '6px'
+                                    }}>
+                                      {index + 1}.
+                                    </span>
+                                    <span style={{ color: '#cbd5e0' }}>
+                                      {voorbeeld}
+                                    </span>
+                                  </div>
+                                )) || [TYPE_VOORBEELDEN[t]];
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <div style={{ 
+                marginTop: 12, 
+                padding: '16px', 
+                backgroundColor: '#2d3748', 
+                borderRadius: '8px', 
+                border: '1px solid #4a5568' 
+              }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Tekenen‑status (filter voor generatie):
+                  </label>
+                </div>
+                
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> De AI labelt elke opdracht met Tekenen = Ja, Mogelijk of Nee. Selecteer hieronder welke categorieën je wilt laten genereren.
+                </div>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setIsTekenenUitlegOpen(!isTekenenUitlegOpen)}>
+                    <strong>📝 Uitgebreide uitleg en voorbeelden</strong>
+                    <span style={{ fontSize: '12px', transition: 'transform 0.2s', transform: isTekenenUitlegOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                  </div>
+                  {isTekenenUitlegOpen && (
+                    <div style={{ marginTop: '10px', padding: '12px', backgroundColor: '#1a202c', borderRadius: '6px', border: '1px solid #2d3748' }}>
+                      <p style={{ margin: '0 0 8px 0', color: '#e2e8f0' }}>
+                        <strong>Standaardinstelling:</strong> alle drie categorieën.
+                      </p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
+                        <strong>Als alle drie zijn geselecteerd:</strong> genereert de AI opdrachten uit alle categorieën.
+                      </p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
+                        <strong>Als alleen Ja is geselecteerd:</strong> genereert de AI uitsluitend opdrachten waarbij tekenen verplicht is.<br />
+                        <em>Voorbeeld:</em> "Teken een grafiek van de fasen van bindweefselherstel en leg deze uit aan de hand van je tekening."
+                      </p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
+                        <strong>Als alleen Mogelijk is geselecteerd:</strong> genereert de AI opdrachten waar tekenen optioneel is.<br />
+                        <em>Voorbeeld:</em> "Leg uit hoe een gewricht werkt (tekenen mag, maar is niet verplicht)."
+                      </p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
+                        <strong>Als alleen Nee is geselecteerd:</strong> genereert de AI opdrachten zonder tekenen.<br />
+                        <em>Voorbeeld:</em> "Noem 3 spieren die betrokken zijn bij schouderabductie."
+                      </p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
+                        <strong>De AI houdt bij het genereren rekening met het onderwerp.</strong><br />
+                        Als tekenen minder passend is bij het onderwerp, worden er automatisch minder tekenopdrachten gegenereerd.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="tekenen-toggle-row">
+                  <label>
+                    <input type="checkbox" checked={allowTekenenJa} onChange={(e) => setAllowTekenenJa(e.target.checked)} />
+                    Expliciet tekenen (Ja)
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={allowTekenenMogelijk} onChange={(e) => setAllowTekenenMogelijk(e.target.checked)} />
+                    Tekenen helpt (Mogelijk)
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={allowTekenenNee} onChange={(e) => setAllowTekenenNee(e.target.checked)} />
+                    Zonder tekenen (Nee)
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -578,11 +898,104 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
             <p className="instruction-text">
               Zoek en verzamel zelf bronmateriaal waarop je de opdrachten wilt baseren. Denk aan:
             </p>
-            <ul className="instruction-steps">
-              <li>YouTube/kennisclips (tip: met tijdstempel – de app ondersteunt <code>?t=…</code> of <code>?start=…</code>)</li>
-              <li>Artikelen en (kursus)boeken</li>
-              <li>Transcripties, hoorcolleges, slides</li>
-              <li>Websites en richtlijnen</li>
+            <ul style={{ 
+              listStyle: 'none', 
+              padding: 0, 
+              margin: '12px 0',
+              color: '#cbd5e0'
+            }}>
+              <li style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                marginBottom: '8px', 
+                lineHeight: '1.4',
+                gap: '8px'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#4a5568', 
+                  color: '#e2e8f0', 
+                  borderRadius: '50%', 
+                  width: '20px', 
+                  height: '20px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}>•</span>
+                <span>YouTube/kennisclips (tip: met tijdstempel – de app ondersteunt <code>?t=…</code> of <code>?start=…</code> waardoor de video exact start waar het relevant is voor de opdracht)</span>
+              </li>
+              <li style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                marginBottom: '8px', 
+                lineHeight: '1.4',
+                gap: '8px'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#4a5568', 
+                  color: '#e2e8f0', 
+                  borderRadius: '50%', 
+                  width: '20px', 
+                  height: '20px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}>•</span>
+                <span>Artikelen en (kursus)boeken</span>
+              </li>
+              <li style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                marginBottom: '8px', 
+                lineHeight: '1.4',
+                gap: '8px'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#4a5568', 
+                  color: '#e2e8f0', 
+                  borderRadius: '50%', 
+                  width: '20px', 
+                  height: '20px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}>•</span>
+                <span>Transcripties, hoorcolleges, slides</span>
+              </li>
+              <li style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                marginBottom: '8px', 
+                lineHeight: '1.4',
+                gap: '8px'
+              }}>
+                <span style={{ 
+                  backgroundColor: '#4a5568', 
+                  color: '#e2e8f0', 
+                  borderRadius: '50%', 
+                  width: '20px', 
+                  height: '20px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}>•</span>
+                <span>Websites en richtlijnen</span>
+              </li>
             </ul>
             <p className="instruction-text">
               Dit is optioneel. Zonder bronnen zal het taalmodel zijn eigen kennis gebruiken.
@@ -593,7 +1006,10 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
 
           <div className="ai-generator-section">
             <h4>Stap 3: Download sjabloon</h4>
-            <p className="instruction-text">Download het Excel/CSV‑sjabloon waarin je de AI‑output kunt plakken.</p>
+            <p className="instruction-text">
+              Download het Excel/CSV‑sjabloon om mee te geven als bijlage bij de prompt. Dit helpt de AI om de juiste kolomstructuur te begrijpen. 
+              Gebruik het sjabloon ook als de AI de opdrachten niet zelf in een downloadbaar Excel-bestand kan teruggeven - dan kun je de gegenereerde opdrachten handmatig in het sjabloon plakken.
+            </p>
             <button className="download-knop" onClick={handleDownloadTemplate}>
               Download Sjabloon
             </button>
@@ -681,14 +1097,64 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 </div>
               </li>
             </ol>
-            <p className="instruction-text" style={{ marginTop: 10 }}>
-              Tip: valt het resultaat tegen? Probeer minder bronnen te gebruiken of maak het onderwerp concreter (subthema).
-            </p>
+            <div style={{ 
+              marginTop: 16, 
+              padding: '16px', 
+              backgroundColor: '#2d3748', 
+              borderRadius: '8px', 
+              border: '1px solid #4a5568',
+              borderLeft: '4px solid #f6ad55'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                marginBottom: '8px' 
+              }}>
+                <span style={{ 
+                  fontSize: '16px', 
+                  color: '#f6ad55'
+                }}>💡</span>
+                <strong style={{ 
+                  color: '#e2e8f0', 
+                  fontSize: '14px'
+                }}>Tip voor betere resultaten</strong>
+              </div>
+              <p style={{ 
+                margin: 0, 
+                color: '#cbd5e0', 
+                lineHeight: '1.5',
+                fontSize: '13px'
+              }}>
+                Valt het resultaat tegen? Maak het onderwerp concreter (subthema) en gebruik gerichte bronnen over hetzelfde onderwerp. 
+                Hoe concreter, afgebakender en met toevoeging van relevante bronnen, hoe beter de output zal zijn. 
+                Vage, heel uitgebreide onderwerpen zonder bronnen leveren vaak minder bruikbare of minder kwalitatieve output op.
+              </p>
+            </div>
           </div>
 
           <div className="ai-generator-section">
             <h4>Stap 7: Voeg opdrachten toe</h4>
-            <p className="instruction-text">Upload het bestand in de app via Instellingen → Opdrachtenbeheer.</p>
+            <p className="instruction-text">
+              Upload het Excel-bestand met de door AI gegenereerde en door jou gecontroleerde/aangepaste opdrachten in de app via Instellingen → Opdrachtenbeheer.
+            </p>
+            <button 
+              onClick={onClose}
+              className="ai-generator-knop"
+              style={{ 
+                marginTop: '12px',
+                backgroundColor: '#4ea3ff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 16px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              🎯 Sluit deze instructie en klik in instellingen op de 'Kies een bestand' knop
+            </button>
           </div>
 
           <div className="ai-generator-section">

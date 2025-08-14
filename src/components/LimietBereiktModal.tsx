@@ -26,7 +26,7 @@ export const LimietBereiktModal: React.FC<LimietBereiktModalProps> = ({ isOpen, 
             Je hebt de dagelijkse limiet van <strong>{maxVragen}</strong> nieuwe vragen voor het Leitner-systeem bereikt.
           </p>
           <p className="uitleg-tekst">
-            Het wordt aangeraden om niet te veel nieuwe onderwerpen op één dag te introduceren. Dit helpt om de hoeveelheid herhalingen beheersbaar te houden en bevordert een beter leereffect op de lange termijn.
+            Het wordt aangeraden om niet te veel nieuwe onderwerpen op één dag te introduceren. Dit helpt om de hoeveelheid herhalingen beheersbaar te houden en bevordert een beter leereffect op de lange termijn. Het moet geen 'blok aan je been' worden. Is het op dit moment beheersbaar, ga dan vooral door met nieuwe vragen.
           </p>
           {onOpenInstellingen && (
             <div className="instellingen-verwijzing">

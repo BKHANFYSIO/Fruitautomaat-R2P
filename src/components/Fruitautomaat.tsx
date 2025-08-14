@@ -6,6 +6,7 @@ import { Hendel } from './Hendel'; // Importeer Hendel
 import { useAudio } from '../hooks/useAudio';
 import { useSettings } from '../context/SettingsContext';
 import { opdrachtTypeIconen } from '../data/constants';
+import { Modal } from './Modal';
 import './Fruitautomaat.css';
 
 type RolItem = { symbool?: string; img?: string };
@@ -224,6 +225,18 @@ export const Fruitautomaat = ({
   const isBonusRondeActief = gamePhase === 'bonus_round';
   const [isCasusOpen, setIsCasusOpen] = useState(false);
 
+  // Functie om naar boven te scrollen bij start van sessie
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Effect om naar boven te scrollen wanneer een sessie start
+  useEffect(() => {
+    if (gamePhase === 'assessment' && huidigeOpdracht) {
+      scrollToTop();
+    }
+  }, [gamePhase, huidigeOpdracht]);
+
   return (
     <div className="fruitautomaat-machine">
       <header className="fruitautomaat-header">
@@ -358,38 +371,38 @@ export const Fruitautomaat = ({
 				{/* Casus knop indien aanwezig */}
 				{huidigeOpdracht.opdracht.casus && (
 				  <TooltipButton
-				    onClick={() => setIsCasusOpen(prev => !prev)}
-				    tooltipContent={isCasusOpen ? "Verberg casus" : "Toon extra casusgegevens"}
+				    onClick={() => setIsCasusOpen(true)}
+				    tooltipContent="Toon extra casusgegevens"
 				    className="pause-opdracht-footer-knop"
 				  >
-				    {isCasusOpen ? '📄 Verberg casus' : '📄 Toon casus'}
+				    📄 Toon casus
 				  </TooltipButton>
 				)}
           </div>
         )}
         
-        {/* Footer-acties: Sessie beëindigen en Pauze (Leitner) */}
-        {(gamePhase === 'ended' || gamePhase === 'idle') && isSerieuzeLeerModusActief && (
-          <div className="pause-opdracht-footer" style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {onEindigSessie && (
+        {/* Footer-acties: Sessie beëindigen en Pauze (Leitner) - alleen tonen na beoordeling van een opdracht */}
+        {(gamePhase === 'ended' || gamePhase === 'idle') && isSerieuzeLeerModusActief && onEindigSessie && (huidigeOpdracht || laatsteBeoordeeldeOpdracht) && (
+          <div className="pause-opdracht-footer">
+            <div className="pause-opdracht-footer-eerste-rij">
               <TooltipButton
                 onClick={onEindigSessie}
                 tooltipContent="Beëindig je sessie en bekijk de samenvatting"
-                className="pause-opdracht-footer-knop"
+                className="eindig-knop eindig-knop-footer"
               >
                 🏁 Sessie beëindigen
               </TooltipButton>
-            )}
 
-            {(huidigeOpdracht || laatsteBeoordeeldeOpdracht) && leermodusType === 'leitner' && onPauseOpdracht && (
-              <TooltipButton
-                onClick={onPauseOpdracht}
-                tooltipContent="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt"
-                className="pause-opdracht-footer-knop"
-              >
-                ⏸️ Pauzeer deze opdracht
-              </TooltipButton>
-            )}
+              {leermodusType === 'leitner' && onPauseOpdracht && (
+                <TooltipButton
+                  onClick={onPauseOpdracht}
+                  tooltipContent="Pauzeer deze opdracht — deze komt niet terug tot de pauze wordt gestopt"
+                  className="pause-opdracht-footer-knop"
+                >
+                  ⏸️ Pauzeer deze opdracht
+                </TooltipButton>
+              )}
+            </div>
 
             {/* Leitner context & acties */}
             {leermodusType === 'leitner' && (() => {
@@ -413,7 +426,7 @@ export const Fruitautomaat = ({
                   <div className="leitner-footer-meta">
                     Box: B{boxId} • Volgende herhaling: {volgende}
                   </div>
-                  <div className="leitner-footer-actions">
+                  <div className="pause-opdracht-footer-tweede-rij">
                     {kanNaarB0 && (
                       <>
                         <TooltipButton
@@ -528,12 +541,41 @@ export const Fruitautomaat = ({
           </div>
         )}
       </div>
-      {huidigeOpdracht?.opdracht?.casus && (
-        <div id="casus-panel" className={`casus-panel ${isCasusOpen ? 'open' : ''}`}>
-          <div className="casus-titel">Casus</div>
-          <div className="casus-tekst">{huidigeOpdracht.opdracht.casus}</div>
+
+      {/* Casus Modal */}
+      <Modal
+        isOpen={isCasusOpen}
+        onClose={() => setIsCasusOpen(false)}
+        title="Casus"
+        size="lg"
+        variant="info"
+      >
+        <div style={{ 
+          padding: '16px', 
+          backgroundColor: '#1a202c', 
+          borderRadius: '8px', 
+          border: '1px solid #2d3748',
+          color: '#e2e8f0',
+          lineHeight: '1.6'
+        }}>
+          <div style={{ 
+            color: '#ffd166', 
+            fontWeight: '700', 
+            marginBottom: '12px',
+            fontSize: '1.1rem'
+          }}>
+            Casus
+          </div>
+          <div style={{ 
+            color: '#e2e8f0', 
+            lineHeight: '1.6', 
+            fontSize: '1rem', 
+            whiteSpace: 'pre-wrap' 
+          }}>
+            {huidigeOpdracht?.opdracht?.casus}
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }; 

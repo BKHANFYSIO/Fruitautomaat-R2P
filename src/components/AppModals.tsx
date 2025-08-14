@@ -157,10 +157,7 @@ export const AppModals: React.FC<Props> = (props) => {
             onVerwerk={onVerwerkBestand}
             geselecteerdBestand={geselecteerdBestand}
           />
-          <p className="setting-description" style={{ marginLeft: 0, marginTop: '20px', marginBottom: '15px' }}>
-            <strong>Categorieën selectie:</strong> Categorieën kunnen nu worden aangepast via de knoppen in het linker menu.
-            Elke spelmodus heeft zijn eigen categorie selectie.
-          </p>
+
         </Instellingen>
       )}
 
