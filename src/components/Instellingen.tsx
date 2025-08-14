@@ -3,12 +3,9 @@ import { lazy, Suspense } from 'react';
 import { BonusOpdrachtBeheer } from './BonusOpdrachtBeheer';
 const AiOpgaveGeneratorLazy = lazy(() => import('./AiOpgaveGenerator').then(m => ({ default: m.AiOpgaveGenerator })));
 const LeeranalyseLazy = lazy(() => import('./Leeranalyse').then(m => ({ default: m.Leeranalyse })));
-const CertificaatModalLazy = lazy(() => import('./CertificaatModal').then(m => ({ default: m.CertificaatModal })));
 import * as XLSX from 'xlsx';
 import { Modal as SimpleModal } from './Modal';
 import './Instellingen.css';
-import { generateCertificaat } from '../utils/certificaatGenerator';
-import { getLeerDataManager } from '../data/leerDataManager';
 import { useSettings } from '../context/SettingsContext';
 
 type BonusOpdracht = { opdracht: string; punten: number[] };
@@ -166,7 +163,6 @@ export const Instellingen = React.memo(({
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [isSjabloonUitlegOpen, setIsSjabloonUitlegOpen] = useState(false);
   const [isLeeranalyseOpen, setIsLeeranalyseOpen] = useState(false);
-  const [isCertificaatModalOpen, setIsCertificaatModalOpen] = useState(false);
   const [isSerieuzeModusWaarschuwingOpen, setIsSerieuzeModusWaarschuwingOpen] = useState(false);
   const [isSerieuzeModusUitschakelenOpen, setIsSerieuzeModusUitschakelenOpen] = useState(false);
 
@@ -181,6 +177,8 @@ export const Instellingen = React.memo(({
       setIsJokerSpinActief(false);
     }
   }, [isSpinVergrendelingActief, setIsJokerSpinActief]);
+
+
 
   // Helper functie om modus naam te bepalen (niet meer gebruikt)
   // const getModusNaam = () => {
@@ -361,31 +359,7 @@ export const Instellingen = React.memo(({
     setIsSerieuzeModusUitschakelenOpen(false);
   };
 
-  const handleCertificaatGenereren = async (studentName: string) => {
-    try {
-      const leerDataManager = getLeerDataManager();
-      const leerData = leerDataManager.loadLeerData();
-      const achievements = leerDataManager.loadAchievements();
 
-      if (!leerData) {
-        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.', type: 'fout', timeoutMs: 7000 } }));
-        return;
-      }
-
-      const certificaatData = {
-        studentName,
-        leerData,
-        achievements,
-        datum: new Date().toISOString()
-      };
-
-      await generateCertificaat(certificaatData);
-      setIsCertificaatModalOpen(false);
-    } catch (error) {
-      console.error('Fout bij certificaat generatie:', error);
-      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.', type: 'fout', timeoutMs: 7000 } }));
-    }
-  };
 
   return (
     <div className="instellingen-overlay" onClick={onClose}>
@@ -1084,7 +1058,7 @@ export const Instellingen = React.memo(({
                     </button>
                     <button 
                       className="certificaat-knop" 
-                      onClick={() => setIsCertificaatModalOpen(true)}
+                      onClick={() => window.dispatchEvent(new CustomEvent('openCertificaat'))}
                     >
                       🏆 Certificaat genereren
                     </button>
@@ -1279,7 +1253,7 @@ export const Instellingen = React.memo(({
                     </button>
                     <button 
                       className="certificaat-knop" 
-                      onClick={() => setIsCertificaatModalOpen(true)}
+                      onClick={() => window.dispatchEvent(new CustomEvent('openCertificaat'))}
                     >
                       🏆 Certificaat genereren
                     </button>
@@ -1329,13 +1303,7 @@ export const Instellingen = React.memo(({
         />
       </Suspense>
       
-      <Suspense fallback={null}>
-        <CertificaatModalLazy
-          isOpen={isCertificaatModalOpen}
-          onClose={() => setIsCertificaatModalOpen(false)}
-          onGenerate={handleCertificaatGenereren}
-        />
-      </Suspense>
+
 
       {/* Instructie Excel-sjabloon (gestileerd) */}
       <SimpleModal isOpen={isSjabloonUitlegOpen} onClose={() => setIsSjabloonUitlegOpen(false)} title={<span style={{ color: '#61dafb' }}>Instructie – Excel sjabloon</span>}>

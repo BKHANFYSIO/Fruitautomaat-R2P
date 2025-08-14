@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import type { Opdracht } from '../data/types';
 import type { HighScoreLibrary } from '../data/highScoreManager';
 import { Instellingen } from './Instellingen';
@@ -10,8 +10,11 @@ import { LimietBereiktModal } from './LimietBereiktModal';
 import { OpdrachtenVoltooidModal } from './OpdrachtenVoltooidModal';
 import { LeerstrategienModal } from './LeerstrategienModal';
 import { BestandsUploader } from './BestandsUploader';
+import { generateCertificaat } from '../utils/certificaatGenerator';
+import { getLeerDataManager } from '../data/leerDataManager';
 
 const LeeranalyseLazy = lazy(() => import('./Leeranalyse').then(m => ({ default: m.Leeranalyse })));
+const CertificaatModalLazy = lazy(() => import('./CertificaatModal').then(m => ({ default: m.CertificaatModal })));
 
 type Props = {
   // Instellingen
@@ -92,6 +95,47 @@ type Props = {
 };
 
 export const AppModals: React.FC<Props> = (props) => {
+  const [isCertificaatModalOpen, setIsCertificaatModalOpen] = useState(false);
+
+  const handleCertificaatGenereren = async (studentName: string) => {
+    try {
+      const leerDataManager = getLeerDataManager();
+      const leerData = leerDataManager.loadLeerData();
+      const achievements = leerDataManager.loadAchievements();
+
+      if (!leerData) {
+        window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Geen leerdata beschikbaar. Start eerst een sessie in serieuze leer-modus.', type: 'fout', timeoutMs: 7000 } }));
+        return;
+      }
+
+      const certificaatData = {
+        studentName,
+        leerData,
+        achievements,
+        datum: new Date().toISOString()
+      };
+
+      await generateCertificaat(certificaatData);
+      setIsCertificaatModalOpen(false);
+    } catch (error) {
+      console.error('Fout bij certificaat generatie:', error);
+      window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Er is een fout opgetreden bij het genereren van het certificaat. Probeer het opnieuw.', type: 'fout', timeoutMs: 7000 } }));
+    }
+  };
+
+  // Event listener voor het openen van de certificaat modal
+  useEffect(() => {
+    const handleOpenCertificaat = () => {
+      setIsCertificaatModalOpen(true);
+    };
+
+    window.addEventListener('openCertificaat', handleOpenCertificaat);
+    
+    return () => {
+      window.removeEventListener('openCertificaat', handleOpenCertificaat);
+    };
+  }, []);
+
   const {
     // Instellingen
     isInstellingenOpen, onCloseInstellingen, onVerwijderGebruikerOpdrachten,
@@ -231,6 +275,14 @@ export const AppModals: React.FC<Props> = (props) => {
         onClose={onCloseOpdrachtenVoltooid}
         onOpenCategorieSelectie={onOpenCategorieSelectieFromVoltooid}
       />
+
+      <Suspense fallback={null}>
+        <CertificaatModalLazy
+          isOpen={isCertificaatModalOpen}
+          onClose={() => setIsCertificaatModalOpen(false)}
+          onGenerate={handleCertificaatGenereren}
+        />
+      </Suspense>
     </>
   );
 };

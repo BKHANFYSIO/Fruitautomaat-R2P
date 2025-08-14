@@ -287,13 +287,7 @@ export const LeftPanel: React.FC<Props> = ({
           </button>
           <button
             className="instellingen-knop"
-            onClick={() => {
-              // Open Instellingen en vraag daarna om de certificaatmodal te tonen
-              onOpenInstellingen();
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('openCertificaat'));
-              }, 0);
-            }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openCertificaat'))}
             title="Certificaat"
           >
             🎓 Certificaat
