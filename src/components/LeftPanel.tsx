@@ -181,13 +181,7 @@ export const LeftPanel: React.FC<Props> = ({
             </div>
           </div>
           
-          <FilterDashboard
-            filters={filters}
-            setFilters={setFilters}
-            opdrachten={opdrachten}
-            actieveCategorieSelectie={actieveCategorieSelectie}
-            collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
-          />
+          {/* FilterDashboard verborgen voor highscore modus - filters staan op standaard waarden */}
           </div>
         </>
       )}

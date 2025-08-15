@@ -299,8 +299,9 @@ export const SpelerInput = ({
         <>
           {(() => {
             const spelersVoldoende = activeMode === 'multiplayer' ? (spelersCount >= 2) : (spelersCount >= 1);
+            const spelerTekst = activeMode === 'multiplayer' ? 'spelers' : 'speler';
             return (
-              <h3 className={`mode-selector-title ${!spelersVoldoende ? 'step-pulse' : ''}`}>2. Voeg speler(s) toe</h3>
+              <h3 className={`mode-selector-title ${!spelersVoldoende ? 'step-pulse' : ''}`}>2. Voeg {spelerTekst} toe</h3>
             );
           })()}
           <form onSubmit={handleSubmit}>

@@ -201,6 +201,20 @@ export const CategorieSelectieModal = ({
     });
   }, [isOpen, activeTab]);
 
+  // Zorg ervoor dat filters tab niet actief is bij highscore modus
+  useEffect(() => {
+    if (activeTab === 'highscore' && innerTab === 'filters') {
+      setInnerTab('categories');
+    }
+  }, [activeTab, innerTab]);
+
+  // Zorg ervoor dat filters altijd op standaard waarden staan bij highscore modus
+  useEffect(() => {
+    if (activeTab === 'highscore' && setFilters) {
+      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+    }
+  }, [activeTab, setFilters]);
+
   // Bepaal welke categorie selectie actief is voor de huidige tab
   const getActieveCategorieSelectie = () => {
     switch (activeTab) {
@@ -334,6 +348,13 @@ export const CategorieSelectieModal = ({
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     if (!setFilters) return;
     
+    // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+    if (activeTab === 'highscore') {
+      setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+      setIsToastZichtbaar(true);
+      return;
+    }
+    
     // Voorkom dat beide bronnen worden uitgeschakeld
     if (filters.bronnen.includes(bron) && filters.bronnen.length === 1) {
       setToastBericht('Er moet minimaal één bron geselecteerd zijn');
@@ -349,6 +370,14 @@ export const CategorieSelectieModal = ({
 
   const handleTypeToggle = (type: string) => {
     if (!setFilters) return;
+    
+    // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+    if (activeTab === 'highscore') {
+      setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+      setIsToastZichtbaar(true);
+      return;
+    }
+    
     const nieuweTypes = filters.opdrachtTypes.includes(type)
       ? filters.opdrachtTypes.filter(t => t !== type)
       : [...filters.opdrachtTypes, type];
@@ -357,6 +386,14 @@ export const CategorieSelectieModal = ({
 
   const handleNiveauToggle = (niv: 1 | 2 | 3 | 'undef') => {
     if (!setFilters) return;
+    
+    // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+    if (activeTab === 'highscore') {
+      setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+      setIsToastZichtbaar(true);
+      return;
+    }
+    
     const huidige = filters.niveaus || [];
     const nieuw = huidige.includes(niv)
       ? huidige.filter(n => n !== niv)
@@ -614,11 +651,15 @@ export const CategorieSelectieModal = ({
     <div className="categorie-selectie-container">
       {/* Subtabs: Categorieën / Filters / Opgeslagen */}
       <div className={`tab-navigatie sticky-subtabs ${isSubtabHidden ? 'hidden' : ''}`} style={{ marginBottom: 8 }}>
-        {(['categories','filters','saved'] as const).map(t => (
-          <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t)}>
-            {t === 'categories' ? '📂 Categorieën' : t === 'filters' ? '🔍 Filters' : '💾 Opgeslagen'}
-          </button>
-        ))}
+        {(() => {
+          // Verberg filters tab bij highscore modus
+          const tabs = activeTab === 'highscore' ? ['categories', 'saved'] : ['categories', 'filters', 'saved'];
+          return tabs.map(t => (
+            <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t)}>
+              {t === 'categories' ? '📂 Categorieën' : t === 'filters' ? '🔍 Filters' : '💾 Opgeslagen'}
+            </button>
+          ));
+        })()}
       </div>
 
       {(innerTab === 'saved') && (activeTab === 'multiplayer' || activeTab === 'normaal') && (
@@ -740,6 +781,14 @@ export const CategorieSelectieModal = ({
                     className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'}`}
                     onClick={() => {
                       if (!setFilters) return;
+                      
+                      // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+                      if (activeTab === 'highscore') {
+                        setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+                        setIsToastZichtbaar(true);
+                        return;
+                      }
+                      
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('ja') ? huidige.delete('ja') : huidige.add('ja');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -753,6 +802,14 @@ export const CategorieSelectieModal = ({
                     className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'}`}
                     onClick={() => {
                       if (!setFilters) return;
+                      
+                      // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+                      if (activeTab === 'highscore') {
+                        setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+                        setIsToastZichtbaar(true);
+                        return;
+                      }
+                      
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('mogelijk') ? huidige.delete('mogelijk') : huidige.add('mogelijk');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -766,6 +823,14 @@ export const CategorieSelectieModal = ({
                     className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'}`}
                     onClick={() => {
                       if (!setFilters) return;
+                      
+                      // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+                      if (activeTab === 'highscore') {
+                        setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+                        setIsToastZichtbaar(true);
+                        return;
+                      }
+                      
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('nee') ? huidige.delete('nee') : huidige.add('nee');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -804,6 +869,14 @@ export const CategorieSelectieModal = ({
                 className="snelle-selectie-knop"
                 onClick={() => {
                   if (!setFilters) return;
+                  
+                  // Bij highscore modus: filters niet aanpassen, altijd op standaard waarden
+                  if (activeTab === 'highscore') {
+                    setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+                    setIsToastZichtbaar(true);
+                    return;
+                  }
+                  
                   setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
                   setToastBericht('Filters hersteld naar standaard');
                   setIsToastZichtbaar(true);
