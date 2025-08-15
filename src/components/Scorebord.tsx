@@ -136,14 +136,30 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
         <div className="highscore-display">
           <h3>🏆 Highscore Modus</h3>
           {highScore && (
-            <p>
-              <span className="record-label">Record:</span> {highScore.score.toFixed(1)} pnt (door {highScore.spelerNaam})
-            </p>
+            <div>
+              <p>
+                <span className="record-label">Record:</span> {highScore.score.toFixed(1)} pnt (door {highScore.spelerNaam})
+              </p>
+              {/* Toon custom naam als die is ingesteld */}
+              {highScore.customNaam && (
+                <p>
+                  <span className="record-label">Naam:</span> {highScore.customNaam}
+                </p>
+              )}
+            </div>
           )}
           {personalBest && (
-            <p>
-              <span className="record-label">Jouw Record:</span> {personalBest.score.toFixed(1)} pnt
-            </p>
+            <div>
+              <p>
+                <span className="record-label">Jouw Record:</span> {personalBest.score.toFixed(1)} pnt
+              </p>
+              {/* Toon custom naam als die is ingesteld */}
+              {personalBest.customNaam && (
+                <p>
+                  <span className="record-label">Naam:</span> {personalBest.customNaam}
+                </p>
+              )}
+            </div>
           )}
           {(!highScore && !personalBest) && <p>Zet de eerste score neer!</p>}
           {onOpenHighscoreSaved && hasAnyHighscoreRecords && (

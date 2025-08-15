@@ -1,5 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import type { Opdracht } from '../data/types';
+import type { SortOption } from '../data/highScoreManager';
+import { getSortedHighScores } from '../data/highScoreManager';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
@@ -58,7 +60,7 @@ interface CategorieSelectieModalProps {
   geselecteerdeCategorieen: string[];
   onCategorieSelectie: (categorie: string) => void;
   onBulkCategorieSelectie: (categorieen: string[], type: 'select' | 'deselect') => void;
-  highScoreLibrary?: { [key: string]: { score: number; spelerNaam: string } };
+  highScoreLibrary?: { [key: string]: { score: number; spelerNaam: string; timestamp: string; isVerbetering?: boolean; origineleSpelerNaam?: string; aantalPogingen?: number } };
   onHighScoreSelect?: (categories: string[]) => void;
   onOpenLeitnerBeheer: () => void;
   // Nieuwe props voor Leitner
@@ -121,6 +123,8 @@ export const CategorieSelectieModal = ({
   const [editingHighscoreKey, setEditingHighscoreKey] = useState<string | null>(null);
   const [editingHighscoreName, setEditingHighscoreName] = useState('');
   
+  // State voor het sorteren van highscores
+  const [highscoreSortBy, setHighscoreSortBy] = useState<SortOption>('laatstBehaald');
 
   
   // Sticky subtabbalk: verberg bij naar beneden scrollen, toon bij klein stukje omhoog
@@ -813,190 +817,312 @@ export const CategorieSelectieModal = ({
           </div>
 
           {highScoreLibrary && Object.keys(highScoreLibrary).length > 0 ? (
-            <div className="opgeslagen-selecties-lijst">
-              {Object.entries(highScoreLibrary).map(([categories, data]) => {
-              const categoryArray = categories.split(',');
-              const hoofdCategorieen = [...new Set(categoryArray.map(cat => cat.split(' - ')[0]))];
-              const hoofdCategorieenString = hoofdCategorieen.slice(0, 3).join(', ') + (hoofdCategorieen.length > 3 ? '...' : '');
-                const datum = new Date((data as any).timestamp).toLocaleDateString('nl-NL');
+            <>
+              {/* Sorteeropties voor highscores - professionele layout */}
+              <div style={{
+                marginBottom: '20px',
+                padding: '12px 16px',
+                backgroundColor: '#1a1a1a',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+                width: '100%'
+              }}>
+                <span style={{ 
+                  color: '#e0e0e0', 
+                  fontSize: '0.95rem', 
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  📊 Sorteer op:
+                </span>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-end',
+                  flex: 1
+                }}>
+                  {(['laatstBehaald', 'alfabetisch', 'scoreHoogLaag', 'scoreLaagHoog'] as SortOption[]).map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setHighscoreSortBy(option)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: highscoreSortBy === option ? '#4CAF50' : '#2a2a2a',
+                        color: 'white',
+                        border: highscoreSortBy === option ? '1px solid #4CAF50' : '1px solid #444',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: highscoreSortBy === option ? '600' : '400',
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap',
+                        minWidth: 'fit-content'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (highscoreSortBy !== option) {
+                          e.currentTarget.style.backgroundColor = '#3a3a3a';
+                          e.currentTarget.style.borderColor = '#555';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (highscoreSortBy !== option) {
+                          e.currentTarget.style.backgroundColor = '#2a2a2a';
+                          e.currentTarget.style.borderColor = '#444';
+                        }
+                      }}
+                    >
+                      {option === 'laatstBehaald' && '🕒 Laatst behaald'}
+                      {option === 'alfabetisch' && '🔤 Alfabetisch'}
+                      {option === 'scoreHoogLaag' && '📈 Score hoog-laag'}
+                      {option === 'scoreLaagHoog' && '📉 Score laag-hoog'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               
-              return (
-                  <div key={categories} className="opgeslagen-selectie-item" style={{
-                    backgroundColor: '#1a1a1a',
-                    padding: '16px',
-                    borderRadius: '8px',
-                    marginBottom: '12px',
-                    border: '1px solid #333'
-                  }}>
-                    <div className="selectie-info">
-                      {/* Eigen naam of standaard naam */}
-                      <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {editingHighscoreKey === categories ? (
-                          // Bewerkingsmodus
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                            <input
-                              type="text"
-                              value={editingHighscoreName}
-                              onChange={(e) => setEditingHighscoreName(e.target.value)}
-                              placeholder="Geef een naam aan je record..."
-                              style={{
-                                flex: 1,
-                                padding: '6px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid #555',
-                                backgroundColor: '#2a2a2a',
-                                color: '#fff',
-                                fontSize: '0.9rem'
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveHighscoreName();
-                                } else if (e.key === 'Escape') {
-                                  handleCancelEditHighscoreName();
-                                }
-                              }}
-                              autoFocus
-                            />
-                            <button
-                              onClick={handleSaveHighscoreName}
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: '#4CAF50',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem'
-                              }}
-                            >
-                              ✅
-                            </button>
-                            <button
-                              onClick={handleCancelEditHighscoreName}
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: '#f44336',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem'
-                              }}
-                            >
-                              ❌
-                            </button>
-                          </div>
-                        ) : (
-                          // Weergavemodus
-                          <>
-                            <span className="selectie-naam" style={{ 
-                              fontSize: '1.1rem', 
-                              fontWeight: 'bold',
-                              color: '#4CAF50',
-                              flex: 1
-                            }}>
-                              🏆 {(data as any).customNaam || `${hoofdCategorieenString} Record`}
-                            </span>
-                            <button
-                              onClick={() => handleStartEditHighscoreName(categories, (data as any).customNaam || '')}
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: 'transparent',
-                                color: '#888',
-                                border: '1px solid #555',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem'
-                              }}
-                              title="Bewerk naam"
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={() => handleDeleteHighscore(categories)}
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: 'transparent',
-                                color: '#f44336',
-                                border: '1px solid #f44336',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem'
-                              }}
-                              title="Verwijder record"
-                            >
-                              🗑️
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      
-                      {/* Alle categorieën zichtbaar */}
-                      <div style={{ 
-                        marginBottom: '8px',
-                        fontSize: '0.85rem',
-                        color: '#b0b0b0',
-                        backgroundColor: '#252525',
-                        padding: '8px',
-                        borderRadius: '4px',
-                        border: '1px solid #404040'
-                      }}>
-                        <strong>Categorieën:</strong> {categoryArray.join(', ')}
-                      </div>
-                      
-                      {/* Score en datum info */}
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        fontSize: '0.9rem',
-                        color: '#d0d0d0'
-                      }}>
-                        <span>
-                          <strong>Score:</strong> {(data as any).score.toFixed(1)} punten
-                        </span>
-                        <span>
-                          <strong>Datum:</strong> {datum}
-                        </span>
-                        <span>
-                          <strong>Speler:</strong> {(data as any).spelerNaam}
-                        </span>
-                      </div>
-                    </div>
+              <div className="opgeslagen-selecties-lijst">
+                {/* Gesorteerde highscores - professionele tegelweergave */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {(() => {
+                    const sortedHighscores = getSortedHighScores(highscoreSortBy);
+                    return sortedHighscores.map(([categories, data]) => {
+                      const categoryArray = categories.split(',');
+                      const hoofdCategorieen = [...new Set(categoryArray.map(cat => cat.split(' - ')[0]))];
+                      const hoofdCategorieenString = hoofdCategorieen.slice(0, 3).join(', ') + (hoofdCategorieen.length > 3 ? '...' : '');
+                      const datum = new Date(data.timestamp).toLocaleDateString('nl-NL');
+                      const tijd = new Date(data.timestamp).toLocaleTimeString('nl-NL', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      });
                     
-                    <div className="selectie-acties" style={{ marginTop: '12px', textAlign: 'center' }}>
-                      <button 
-                        onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)}
-                        className="laad-selectie-knop" 
-                        title="Selecteer deze categorieën en probeer je record te verbeteren"
-                        style={{
-                          backgroundColor: '#4CAF50',
-                          color: 'white',
-                          border: 'none',
-                          padding: '10px 16px',
-                          borderRadius: '6px',
-                          fontSize: '0.9rem',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
+                    return (
+                        <div key={categories} className="opgeslagen-selectie-item" style={{
+                          backgroundColor: '#1a1a1a',
+                          padding: '18px',
+                          borderRadius: '12px',
+                          border: '1px solid #333',
+                          boxShadow: '0 4px 6px rgba(0,0,0,.25)',
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          margin: '0 auto'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#45a049';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#4CAF50';
-                        }}
-                      >
-                        🎯 Probeer te verbeteren
-                      </button>
-                    </div>
-                  </div>
-              );
-            })}
-            </div>
+                          flexDirection: 'column',
+                          gap: '12px',
+                          width: '100%',
+                          minWidth: 0, // Belangrijk voor flexbox overflow
+                          overflow: 'hidden' // Zorgt ervoor dat overflow werkt
+                        }}>
+                          {/* Header */}
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            width: '100%',
+                            minWidth: 0 // Belangrijk voor flexbox overflow
+                          }}>
+                            {/* Titel op eigen regel met volledige breedte */}
+                            <div style={{ 
+                              width: '100%',
+                              minWidth: 0, // Belangrijk voor flexbox overflow
+                              overflow: 'hidden' // Zorgt ervoor dat overflow werkt
+                            }}>
+                              <h4 style={{ 
+                                fontSize: '1.05rem', 
+                                fontWeight: 700,
+                                color: '#4CAF50',
+                                margin: 0,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                width: '100%',
+                                maxWidth: '100%', // Zorgt ervoor dat de titel niet breder wordt dan de container
+                                display: 'block' // Zorgt ervoor dat de h4 zich gedraagt als een block element
+                              }}>
+                                🏆 {data.customNaam || `${hoofdCategorieenString} Record`}
+                              </h4>
+                            </div>
+                            
+                            {/* Badges en knoppen op aparte regel */}
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              flexWrap: 'wrap'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{
+                                  backgroundColor: '#2a2a2a',
+                                  color: '#b0b0b0',
+                                  border: '1px solid #444',
+                                  borderRadius: '999px',
+                                  padding: '2px 8px',
+                                  fontSize: '0.75rem'
+                                }}>{categoryArray.length} categorieën</span>
+                                
+                                {/* Aantal pogingen badge */}
+                                <span style={{
+                                  backgroundColor: '#1a1a3a',
+                                  color: '#90caf9',
+                                  border: '1px solid #3a3a5a',
+                                  borderRadius: '999px',
+                                  padding: '2px 8px',
+                                  fontSize: '0.75rem'
+                                }}>🎯 {data.aantalPogingen || 1} poging{(data.aantalPogingen || 1) !== 1 ? 'en' : ''}</span>
+                                
+                                {data.isVerbetering && data.origineleSpelerNaam && (
+                                  <span style={{
+                                    backgroundColor: '#1a3a1a',
+                                    color: '#90EE90',
+                                    border: '1px solid #2d5a2d',
+                                    borderRadius: '999px',
+                                    padding: '2px 8px',
+                                    fontSize: '0.75rem'
+                                  }}>🔄 Verbetering van {data.origineleSpelerNaam}</span>
+                                )}
+                              </div>
+                              
+                              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                <button
+                                  onClick={() => handleStartEditHighscoreName(categories, data.customNaam || '')}
+                                  title="Bewerk naam"
+                                  style={{
+                                    padding: '6px 8px',
+                                    backgroundColor: 'transparent',
+                                    color: '#888',
+                                    border: '1px solid #555',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                  }}
+                                >✏️</button>
+                                <button
+                                  onClick={() => handleDeleteHighscore(categories)}
+                                  title="Verwijder record"
+                                  style={{
+                                    padding: '6px 8px',
+                                    backgroundColor: 'transparent',
+                                    color: '#f44336',
+                                    border: '1px solid #f44336',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                  }}
+                                >🗑️</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Naam bewerken inline */}
+                          {editingHighscoreKey === categories && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <input
+                                type="text"
+                                value={editingHighscoreName}
+                                onChange={(e) => setEditingHighscoreName(e.target.value)}
+                                placeholder="Geef een naam aan je record..."
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #555',
+                                  backgroundColor: '#2a2a2a',
+                                  color: '#fff',
+                                  fontSize: '0.95rem'
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveHighscoreName();
+                                  if (e.key === 'Escape') handleCancelEditHighscoreName();
+                                }}
+                                autoFocus
+                              />
+                              <button onClick={handleSaveHighscoreName} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: '#4CAF50', color: '#fff' }}>✅</button>
+                              <button onClick={handleCancelEditHighscoreName} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: '#f44336', color: '#fff' }}>❌</button>
+                            </div>
+                          )}
+
+                          {/* Categorieën: chips + uitklap */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <strong style={{ color: '#e0e0e0' }}>📚 Categorieën</strong>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {hoofdCategorieen.slice(0, 4).map((cat, i) => (
+                                <span key={i} style={{
+                                  backgroundColor: '#2a2a2a', color: '#b0b0b0', border: '1px solid #444', borderRadius: '999px', padding: '4px 10px', fontSize: '.8rem'
+                                }}>{cat}</span>
+                              ))}
+                              {hoofdCategorieen.length > 4 && (
+                                <span style={{ backgroundColor: '#1a1a1a', color: '#777', border: '1px solid #333', borderRadius: '999px', padding: '4px 10px', fontSize: '.8rem' }}>+{hoofdCategorieen.length - 4} meer</span>
+                              )}
+                            </div>
+                            {categoryArray.length > 0 && (
+                              <details>
+                                <summary style={{ cursor: 'pointer', color: '#4CAF50', fontSize: '.85rem' }}>📋 Bekijk alle categorieën</summary>
+                                <div style={{
+                                  marginTop: 8,
+                                  padding: 8,
+                                  backgroundColor: '#252525',
+                                  border: '1px solid #404040',
+                                  borderRadius: 6,
+                                  maxHeight: 140,
+                                  overflowY: 'auto'
+                                }}>
+                                  <div style={{ columnCount: 2, columnGap: 16 }}>
+                                    {categoryArray.map((cat, idx) => (
+                                      <div key={idx} style={{ breakInside: 'avoid', fontSize: '.8rem', padding: '2px 0', color: '#cfcfcf' }}>{cat}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </details>
+                            )}
+                          </div>
+
+                          {/* Meta gegevens */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0,1fr))',
+                            gap: '8px',
+                            fontSize: '.9rem',
+                            color: '#d0d0d0'
+                          }}>
+                            <div><strong style={{ color: '#4CAF50' }}>Score:</strong> {data.score.toFixed(1)} pnt</div>
+                            <div><strong style={{ color: '#4CAF50' }}>Speler:</strong> {data.spelerNaam}</div>
+                            <div><strong style={{ color: '#4CAF50' }}>Datum:</strong> {datum}</div>
+                            <div><strong style={{ color: '#4CAF50' }}>Tijd:</strong> {tijd}</div>
+                          </div>
+
+                          {/* Actieknop */}
+                          <button 
+                            onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)}
+                            title="Selecteer deze categorieën en probeer je record te verbeteren"
+                            style={{
+                              backgroundColor: '#4CAF50',
+                              color: 'white',
+                              border: 'none',
+                              padding: '12px 16px',
+                              borderRadius: 8,
+                              fontSize: '.95rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🎯 Probeer te verbeteren
+                          </button>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            </>
           ) : (
             <div className="geen-selecties-melding" style={{
               textAlign: 'center',

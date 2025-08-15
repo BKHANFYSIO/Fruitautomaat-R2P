@@ -86,7 +86,6 @@ function App() {
 
 
 
-
   
   // Settings context
   const {
@@ -1234,7 +1233,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
               const count = Number(sessionStorage.getItem(key) || '0') + 1;
               sessionStorage.setItem(key, String(count));
               if (count === 3) {
-                window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Meer weten over leerstrategieën? Klik hieronder op “Leerstrategieën”.', type: 'succes', timeoutMs: 6000 } }));
+                window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Meer weten over leerstrategieën? Klik hieronder op "Leerstrategieën".', type: 'succes', timeoutMs: 6000 } }));
               }
             }
             setTipsShownThisSession(prev => prev + 1);
@@ -1320,11 +1319,17 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             }
           }
         } else {
-          categoriesToUse = geselecteerdeCategorieen;
+          // Voor normale highscore modus, gebruik altijd geselecteerdeHighscoreCategorieen
+          categoriesToUse = geselecteerdeHighscoreCategorieen;
         }
         
-        const wasNieuwRecord = saveHighScore(categoriesToUse, speler.score, speler.naam);
-        const wasNieuwPb = savePersonalBest(categoriesToUse, speler.score, speler.naam);
+        // Haal bestaande custom naam op om te behouden bij verbeteringen
+        const existingHighScore = getHighScore(categoriesToUse);
+        const existingPersonalBest = getPersonalBest(categoriesToUse, speler.naam);
+        const customNaamToKeep = existingHighScore?.customNaam || existingPersonalBest?.customNaam;
+        
+        const wasNieuwRecord = saveHighScore(categoriesToUse, speler.score, speler.naam, customNaamToKeep);
+        const wasNieuwPb = savePersonalBest(categoriesToUse, speler.score, speler.naam, customNaamToKeep);
         setIsNieuwRecord(wasNieuwRecord);
         setIsNieuwPersoonlijkRecord(wasNieuwPb);
         
@@ -1336,6 +1341,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           setHighScoreLibrary(newLibrary);
         }
         
+        // Update personal best state als er een nieuwe personal best is opgeslagen
+        if (wasNieuwPb) {
+          setCurrentPersonalBest(getPersonalBest(categoriesToUse, speler.naam));
+        }
+        
         // Als categoriesToUse leeg is maar er wel categorieën in localStorage staan, gebruik die
         if (categoriesToUse.length === 0) {
           try {
@@ -1343,9 +1353,14 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
             if (saved) {
               const parsedCategories = JSON.parse(saved);
               if (parsedCategories.length > 0) {
+                // Haal bestaande custom naam op voor deze categorieën
+                const existingHighScoreRetry = getHighScore(parsedCategories);
+                const existingPersonalBestRetry = getPersonalBest(parsedCategories, speler.naam);
+                const customNaamToKeepRetry = existingHighScoreRetry?.customNaam || existingPersonalBestRetry?.customNaam;
+                
                 // Probeer de highscore opnieuw op te slaan met de geladen categorieën
-                const wasNieuwRecordRetry = saveHighScore(parsedCategories, speler.score, speler.naam);
-                const wasNieuwPbRetry = savePersonalBest(parsedCategories, speler.score, speler.naam);
+                const wasNieuwRecordRetry = saveHighScore(parsedCategories, speler.score, speler.naam, customNaamToKeepRetry);
+                const wasNieuwPbRetry = savePersonalBest(parsedCategories, speler.score, speler.naam, customNaamToKeepRetry);
                 setIsNieuwRecord(wasNieuwRecordRetry);
                 setIsNieuwPersoonlijkRecord(wasNieuwPbRetry);
                 
@@ -1353,6 +1368,11 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
                 if (wasNieuwRecordRetry) {
                   const newLibrary = getHighScoreLibrary();
                   setHighScoreLibrary(newLibrary);
+                }
+                
+                // Update ook de personal best state
+                if (wasNieuwPbRetry) {
+                  setCurrentPersonalBest(getPersonalBest(parsedCategories, speler.naam));
                 }
               }
             }

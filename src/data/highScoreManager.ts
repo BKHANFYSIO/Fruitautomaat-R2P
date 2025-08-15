@@ -3,6 +3,10 @@ export type HighScore = {
   timestamp: number;
   spelerNaam: string;
   customNaam?: string; // Optionele eigen naam voor de highscore
+  verbeteringVan?: string; // ID van de oorspronkelijke highscore die verbeterd wordt
+  origineleSpelerNaam?: string; // Naam van de speler die de oorspronkelijke highscore had
+  isVerbetering?: boolean; // Boolean om aan te geven of dit een verbetering is
+  aantalPogingen?: number; // Aantal keer dat deze categorie combinatie is geprobeerd
 };
 
 export type HighScoreLibrary = {
@@ -48,14 +52,21 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
 
   const library = getHighScoreLibrary();
   const key = createCategoryKey(categories);
-  const existingScore = library[key]?.score || 0;
+  const existingScore = library[key];
 
-  if (newScore > existingScore) {
+  if (newScore > (existingScore?.score || 0)) {
+    // Bepaal of dit een verbetering is van een bestaande highscore
+    const isVerbetering = existingScore && existingScore.spelerNaam !== spelerNaam;
+    
     library[key] = {
       score: newScore,
       timestamp: Date.now(),
       spelerNaam: spelerNaam,
       customNaam: customNaam,
+      verbeteringVan: isVerbetering ? `${existingScore.spelerNaam}_${existingScore.timestamp}` : undefined,
+      origineleSpelerNaam: isVerbetering ? existingScore.spelerNaam : undefined,
+      isVerbetering: isVerbetering,
+      aantalPogingen: (existingScore?.aantalPogingen || 0) + 1,
     };
     try {
       localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
@@ -64,8 +75,18 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
       console.error("Fout bij het opslaan van high score:", error);
       return false;
     }
+  } else {
+    // Score was niet hoger, maar tel wel de poging mee
+    if (existingScore) {
+      existingScore.aantalPogingen = (existingScore.aantalPogingen || 0) + 1;
+      try {
+        localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
+      } catch (error) {
+        console.error("Fout bij het bijwerken van aantal pogingen:", error);
+      }
+    }
+    return false; // Score was niet hoger
   }
-  return false; // Score was niet hoger
 };
 
 const PERSONAL_BEST_KEY = 'fruitautomaat_personalBests';
@@ -102,14 +123,21 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
     library[spelerNaam] = {};
   }
 
-  const existingScore = library[spelerNaam][key]?.score || 0;
+  const existingScore = library[spelerNaam][key];
 
-  if (newScore > existingScore) {
+  if (newScore > (existingScore?.score || 0)) {
+    // Bepaal of dit een verbetering is van een bestaande personal best
+    const isVerbetering = existingScore && existingScore.score > 0;
+    
     library[spelerNaam][key] = {
       score: newScore,
       timestamp: Date.now(),
       spelerNaam: spelerNaam,
       customNaam: customNaam,
+      verbeteringVan: isVerbetering ? `personal_${spelerNaam}_${existingScore.timestamp}` : undefined,
+      origineleSpelerNaam: isVerbetering ? spelerNaam : undefined,
+      isVerbetering: isVerbetering,
+      aantalPogingen: (existingScore?.aantalPogingen || 0) + 1,
     };
     try {
       localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
@@ -118,8 +146,18 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
       console.error("Fout bij het opslaan van personal best:", error);
       return false;
     }
+  } else {
+    // Score was niet hoger, maar tel wel de poging mee
+    if (existingScore) {
+      existingScore.aantalPogingen = (existingScore.aantalPogingen || 0) + 1;
+      try {
+        localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
+      } catch (error) {
+        console.error("Fout bij het bijwerken van aantal pogingen:", error);
+      }
+    }
+    return false;
   }
-  return false;
 };
 
 /**
@@ -168,4 +206,47 @@ export const deleteHighScore = (categories: string[]): boolean => {
     }
   }
   return false;
+};
+
+/**
+ * Sorteert highscores op verschillende criteria
+ */
+export type SortOption = 'laatstBehaald' | 'alfabetisch' | 'scoreHoogLaag' | 'scoreLaagHoog';
+
+export const sortHighScores = (highScores: [string, HighScore][], sortBy: SortOption = 'laatstBehaald'): [string, HighScore][] => {
+  const sorted = [...highScores];
+  
+  switch (sortBy) {
+    case 'laatstBehaald':
+      // Standaard: nieuwste eerst
+      return sorted.sort(([, a], [, b]) => b.timestamp - a.timestamp);
+      
+    case 'alfabetisch':
+      // Sorteer op categorienaam (eerste categorie)
+      return sorted.sort(([a], [b]) => {
+        const aFirst = a.split(',')[0];
+        const bFirst = b.split(',')[0];
+        return aFirst.localeCompare(bFirst, 'nl-NL');
+      });
+      
+    case 'scoreHoogLaag':
+      // Hoogste score eerst
+      return sorted.sort(([, a], [, b]) => b.score - a.score);
+      
+    case 'scoreLaagHoog':
+      // Laagste score eerst
+      return sorted.sort(([, a], [, b]) => a.score - b.score);
+      
+    default:
+      return sorted;
+  }
+};
+
+/**
+ * Haalt alle highscores op en sorteert ze
+ */
+export const getSortedHighScores = (sortBy: SortOption = 'laatstBehaald'): [string, HighScore][] => {
+  const library = getHighScoreLibrary();
+  const entries = Object.entries(library);
+  return sortHighScores(entries, sortBy);
 }; 

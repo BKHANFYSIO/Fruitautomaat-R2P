@@ -54,10 +54,28 @@ export const Eindscherm = ({ spelers, onHerstart, gameMode, isNieuwRecord, highS
           <div className="resultaten-blok">
             <p><span className="record-label">Jouw Score ({winnaar.naam}):</span> {winnaar.score.toFixed(1)} pnt</p>
             {personalBest && (
-              <p><span className="record-label">Jouw Oude Record:</span> {personalBest.score.toFixed(1)} pnt</p>
+              <div>
+                <p><span className="record-label">Jouw Oude Record:</span> {personalBest.score.toFixed(1)} pnt</p>
+                {/* Toon personal best poging naam en verbetering info */}
+                {personalBest.customNaam && (
+                  <p><span className="record-label">Poging Naam:</span> {personalBest.customNaam}</p>
+                )}
+                {personalBest.isVerbetering && (
+                  <p><span className="record-label">Verbetering van je eerdere poging</span></p>
+                )}
+              </div>
             )}
             {highScore && (
-              <p><span className="record-label">Algemeen Record:</span> {highScore.score.toFixed(1)} pnt (door {highScore.spelerNaam})</p>
+              <div>
+                <p><span className="record-label">Algemeen Record:</span> {highScore.score.toFixed(1)} pnt (door {highScore.spelerNaam})</p>
+                {/* Toon highscore poging naam en verbetering info */}
+                {highScore.customNaam && (
+                  <p><span className="record-label">Poging Naam:</span> {highScore.customNaam}</p>
+                )}
+                {highScore.isVerbetering && highScore.origineleSpelerNaam && (
+                  <p><span className="record-label">Verbetering van:</span> {highScore.origineleSpelerNaam}</p>
+                )}
+              </div>
             )}
             <p className="record-status">
               {isNieuwPersoonlijkRecord ? '🏆 Nieuw Persoonlijk Record!' : isNieuwRecord ? '🎉 Nieuw Algemeen Record!' : (personalBest || highScore) ? 'Geen records verbroken' : 'Eerste poging met deze categorieën!'}
