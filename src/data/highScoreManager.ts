@@ -43,7 +43,7 @@ export const getHighScore = (categories: string[]): HighScore | null => {
 /**
  * Slaat een nieuwe high score op als deze hoger is dan de vorige.
  */
-export const saveHighScore = (categories: string[], newScore: number, spelerNaam: string): boolean => {
+export const saveHighScore = (categories: string[], newScore: number, spelerNaam: string, customNaam?: string): boolean => {
   if (categories.length === 0) return false;
 
   const library = getHighScoreLibrary();
@@ -55,6 +55,7 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
       score: newScore,
       timestamp: Date.now(),
       spelerNaam: spelerNaam,
+      customNaam: customNaam,
     };
     try {
       localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
@@ -91,7 +92,7 @@ export const getPersonalBest = (categories: string[], spelerNaam: string): HighS
   return library[spelerNaam]?.[key] || null;
 };
 
-export const savePersonalBest = (categories: string[], newScore: number, spelerNaam: string): boolean => {
+export const savePersonalBest = (categories: string[], newScore: number, spelerNaam: string, customNaam?: string): boolean => {
   if (categories.length === 0 || !spelerNaam) return false;
 
   const library = getPersonalBestLibrary();
@@ -108,12 +109,61 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
       score: newScore,
       timestamp: Date.now(),
       spelerNaam: spelerNaam,
+      customNaam: customNaam,
     };
     try {
       localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
       return true; // Nieuw persoonlijk record
     } catch (error) {
       console.error("Fout bij het opslaan van personal best:", error);
+      return false;
+    }
+  }
+  return false;
+};
+
+/**
+ * Werkt de custom naam van een highscore bij.
+ */
+export const updateHighScoreName = (categories: string[], newName: string): boolean => {
+  if (categories.length === 0) return false;
+
+  const library = getHighScoreLibrary();
+  const key = createCategoryKey(categories);
+  const existingScore = library[key];
+
+  if (existingScore) {
+    library[key] = {
+      ...existingScore,
+      customNaam: newName,
+    };
+    try {
+      localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
+      return true;
+    } catch (error) {
+      console.error("Fout bij het bijwerken van highscore naam:", error);
+      return false;
+    }
+  }
+  return false;
+};
+
+/**
+ * Verwijdert een highscore record.
+ */
+export const deleteHighScore = (categories: string[]): boolean => {
+  if (categories.length === 0) return false;
+
+  const library = getHighScoreLibrary();
+  const key = createCategoryKey(categories);
+
+  if (library[key]) {
+    delete library[key];
+    try {
+      localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
+      return true;
+    } catch (error) {
+      console.error("Fout bij het verwijderen van highscore:", error);
       return false;
     }
   }

@@ -577,7 +577,7 @@ export const CategorieSelectieModal = ({
       const updatedLibrary = { ...highScoreLibrary };
       if (updatedLibrary[editingHighscoreKey]) {
         updatedLibrary[editingHighscoreKey] = {
-          ...updatedLibrary[editingHighscoreKey],
+          ...(updatedLibrary[editingHighscoreKey] as any),
           customNaam: editingHighscoreName.trim() || undefined
         };
         
@@ -619,7 +619,7 @@ export const CategorieSelectieModal = ({
       try {
         // Verwijder de highscore uit de library
         const updatedLibrary = { ...highScoreLibrary };
-        delete updatedLibrary[categories];
+        delete (updatedLibrary as any)[categories];
         
         // Sla de bijgewerkte library op in localStorage
         localStorage.setItem('fruitautomaat_highScores', JSON.stringify(updatedLibrary));
@@ -740,7 +740,7 @@ export const CategorieSelectieModal = ({
           // Verberg filters tab bij highscore modus
           const tabs = activeTab === 'highscore' ? ['categories', 'saved'] : ['categories', 'filters', 'saved'];
           return tabs.map(t => (
-            <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t)}>
+            <button key={t} className={`tab-knop ${innerTab === t ? 'actief' : ''}`} onClick={() => setInnerTab(t as 'categories' | 'filters' | 'saved')}>
               {t === 'categories' ? '📂 Categorieën' : t === 'filters' ? '🔍 Filters' : '💾 Opgeslagen'}
             </button>
           ));
@@ -818,7 +818,7 @@ export const CategorieSelectieModal = ({
               const categoryArray = categories.split(',');
               const hoofdCategorieen = [...new Set(categoryArray.map(cat => cat.split(' - ')[0]))];
               const hoofdCategorieenString = hoofdCategorieen.slice(0, 3).join(', ') + (hoofdCategorieen.length > 3 ? '...' : '');
-                const datum = new Date(data.timestamp).toLocaleDateString('nl-NL');
+                const datum = new Date((data as any).timestamp).toLocaleDateString('nl-NL');
               
               return (
                   <div key={categories} className="opgeslagen-selectie-item" style={{
@@ -895,10 +895,10 @@ export const CategorieSelectieModal = ({
                               color: '#4CAF50',
                               flex: 1
                             }}>
-                              🏆 {data.customNaam || `${hoofdCategorieenString} Record`}
+                              🏆 {(data as any).customNaam || `${hoofdCategorieenString} Record`}
                             </span>
                             <button
-                              onClick={() => handleStartEditHighscoreName(categories, data.customNaam || '')}
+                              onClick={() => handleStartEditHighscoreName(categories, (data as any).customNaam || '')}
                               style={{
                                 padding: '4px 8px',
                                 backgroundColor: 'transparent',
@@ -953,20 +953,20 @@ export const CategorieSelectieModal = ({
                         color: '#d0d0d0'
                       }}>
                         <span>
-                          <strong>Score:</strong> {data.score.toFixed(1)} punten
+                          <strong>Score:</strong> {(data as any).score.toFixed(1)} punten
                         </span>
                         <span>
                           <strong>Datum:</strong> {datum}
                         </span>
                         <span>
-                          <strong>Speler:</strong> {data.spelerNaam}
+                          <strong>Speler:</strong> {(data as any).spelerNaam}
                         </span>
                       </div>
                     </div>
                     
                     <div className="selectie-acties" style={{ marginTop: '12px', textAlign: 'center' }}>
                       <button 
-                        onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)} 
+                        onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)}
                         className="laad-selectie-knop" 
                         title="Selecteer deze categorieën en probeer je record te verbeteren"
                         style={{
