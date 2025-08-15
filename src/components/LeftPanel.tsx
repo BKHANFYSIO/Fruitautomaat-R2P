@@ -4,6 +4,7 @@ import type { HighScore } from '../data/highScoreManager';
 import { SpelerInput } from './SpelerInput';
 import { Scorebord } from './Scorebord';
 import { FilterDashboard } from './FilterDashboard';
+import { useSettings } from '../context/SettingsContext';
 
 type Props = {
   // Layout/state
@@ -51,6 +52,7 @@ type Props = {
   onSpelReset: () => void;
 
   onOpenHighscoreCategorieSelectie: () => void;
+  onOpenHighscoreSaved: () => void;
   onOpenMultiplayerCategorieSelectie: () => void;
   onOpenNormaleLeermodusCategorieSelectie: () => void;
   onOpenLeitnerCategorieBeheer: () => void;
@@ -100,6 +102,7 @@ export const LeftPanel: React.FC<Props> = ({
   setLeermodusType,
   onSpelReset,
   onOpenHighscoreCategorieSelectie,
+  onOpenHighscoreSaved,
   onOpenMultiplayerCategorieSelectie,
   onOpenNormaleLeermodusCategorieSelectie,
   onOpenLeitnerCategorieBeheer,
@@ -112,6 +115,8 @@ export const LeftPanel: React.FC<Props> = ({
   opdrachten,
   actieveCategorieSelectie,
 }) => {
+  const { isHulpElementenZichtbaar } = useSettings();
+  
   return (
     <aside className={`left-panel ${isScoreLadeOpen ? 'open' : ''}`}>
       {!isSpelGestart && (
@@ -141,6 +146,8 @@ export const LeftPanel: React.FC<Props> = ({
         isSerieuzeLeerModusActief={isSerieuzeLeerModusActief}
         isFocusStandActief={isFocusStandActief}
         aantalBeurtenGespeeld={aantalBeurtenGespeeld}
+        onOpenHighscoreSaved={onOpenHighscoreSaved}
+        hasAnyHighscoreRecords={true}
       />
 
       {/* Spel beëindigen knop - alleen in highscore/multiplayer modus */}
@@ -157,7 +164,7 @@ export const LeftPanel: React.FC<Props> = ({
 
       {gameMode === 'single' && !isSerieuzeLeerModusActief && (
         <>
-          {!isSpelGestart && (
+          {!isSpelGestart && isHulpElementenZichtbaar && (
             <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
           )}
           <div className="highscore-sectie">
@@ -177,7 +184,7 @@ export const LeftPanel: React.FC<Props> = ({
               {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
             </button>
             <div className="highscore-info-text">
-              <p>Je highscore wordt berekend op basis van de geselecteerde categorieën. Pas deze aan om je score te optimaliseren!</p>
+              <p>Je highscore wordt berekend op basis van de geselecteerde categorieën.</p>
             </div>
           </div>
           
@@ -188,7 +195,7 @@ export const LeftPanel: React.FC<Props> = ({
 
       {gameMode === 'multi' && (
         <>
-          {!isSpelGestart && (
+          {!isSpelGestart && isHulpElementenZichtbaar && (
             <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
           )}
           <div className="multiplayer-sectie">
@@ -225,7 +232,7 @@ export const LeftPanel: React.FC<Props> = ({
 
       {gameMode === 'single' && isSerieuzeLeerModusActief && (
         <>
-          {!isSpelGestart && (
+          {!isSpelGestart && isHulpElementenZichtbaar && (
             <h3 className={`mode-selector-title ${isModeSelectedThisSession ? 'step-pulse' : ''}`}>2. Categorieën & filters</h3>
           )}
           <div className="serieuze-leermodus-uitleg">

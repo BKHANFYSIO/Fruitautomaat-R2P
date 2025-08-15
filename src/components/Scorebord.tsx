@@ -16,9 +16,11 @@ interface ScorebordProps {
   isSerieuzeLeerModusActief?: boolean;
   aantalBeurtenGespeeld?: number;
   isFocusStandActief?: boolean;
+  onOpenHighscoreSaved?: () => void;
+  hasAnyHighscoreRecords?: boolean;
 }
 
-export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gameMode, highScore, personalBest, isSerieuzeLeerModusActief = false, aantalBeurtenGespeeld = 0, isFocusStandActief = false }: ScorebordProps) => {
+export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gameMode, highScore, personalBest, isSerieuzeLeerModusActief = false, aantalBeurtenGespeeld = 0, isFocusStandActief = false, onOpenHighscoreSaved, hasAnyHighscoreRecords = false }: ScorebordProps) => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const gesorteerdeSpelers = [...spelers].sort((a, b) => b.score - a.score);
 
@@ -144,6 +146,17 @@ export const Scorebord = ({ spelers, huidigeSpeler, huidigeRonde, maxRondes, gam
             </p>
           )}
           {(!highScore && !personalBest) && <p>Zet de eerste score neer!</p>}
+          {onOpenHighscoreSaved && hasAnyHighscoreRecords && (
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={onOpenHighscoreSaved}
+                className="categorie-beheer-knop"
+                style={{ backgroundColor: '#4CAF50' }}
+              >
+                💾 Opgeslagen records
+              </button>
+            </div>
+          )}
         </div>
       )}
       {gesorteerdeSpelers.length === 0 ? (

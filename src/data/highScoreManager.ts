@@ -2,6 +2,7 @@ export type HighScore = {
   score: number;
   timestamp: number;
   spelerNaam: string;
+  customNaam?: string; // Optionele eigen naam voor de highscore
 };
 
 export type HighScoreLibrary = {

@@ -11,9 +11,10 @@ interface EindschermProps {
   highScore: HighScore | null;
   personalBest: HighScore | null;
   isNieuwPersoonlijkRecord: boolean;
+  onOpenHighscoreRecords?: () => void; // Nieuwe prop voor het openen van highscore records
 }
 
-export const Eindscherm = ({ spelers, onHerstart, gameMode, isNieuwRecord, highScore, personalBest, isNieuwPersoonlijkRecord }: EindschermProps) => {
+export const Eindscherm = ({ spelers, onHerstart, gameMode, isNieuwRecord, highScore, personalBest, isNieuwPersoonlijkRecord, onOpenHighscoreRecords }: EindschermProps) => {
   const gesorteerdeSpelers = [...spelers].sort((a, b) => b.score - a.score);
   const winnaar = gesorteerdeSpelers[0];
 
@@ -59,8 +60,52 @@ export const Eindscherm = ({ spelers, onHerstart, gameMode, isNieuwRecord, highS
               <p><span className="record-label">Algemeen Record:</span> {highScore.score.toFixed(1)} pnt (door {highScore.spelerNaam})</p>
             )}
             <p className="record-status">
-              {isNieuwPersoonlijkRecord ? '🏆 Nieuw Persoonlijk Record!' : isNieuwRecord ? '🎉 Nieuw Algemeen Record!' : 'Geen records verbroken'}
+              {isNieuwPersoonlijkRecord ? '🏆 Nieuw Persoonlijk Record!' : isNieuwRecord ? '🎉 Nieuw Algemeen Record!' : (personalBest || highScore) ? 'Geen records verbroken' : 'Eerste poging met deze categorieën!'}
             </p>
+            
+            {/* Highscore records sectie - alleen voor single player modus */}
+            {onOpenHighscoreRecords && gameMode === 'single' && (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#1a1a1a',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                fontSize: '0.9rem'
+              }}>
+                <p style={{ margin: '0 0 8px 0', color: '#e0e0e0' }}>
+                  <strong>💡 Probeer andere categorieën!</strong>
+                </p>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: '#b0b0b0', lineHeight: '1.4' }}>
+                  Bekijk je opgeslagen records en probeer verschillende categorie-combinaties. 
+                  Je kunt eenvoudig eerdere categorie-selecties hergebruiken voor nieuwe pogingen.
+                </p>
+                <button
+                  onClick={onOpenHighscoreRecords}
+                  style={{
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#45a049';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#4CAF50';
+                  }}
+                >
+                  🏆 Bekijk Opgeslagen Records
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

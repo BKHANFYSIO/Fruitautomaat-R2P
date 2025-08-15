@@ -129,6 +129,10 @@ interface SettingsContextType {
   isLokaleBonusOpslagActief: boolean;
   setIsLokaleBonusOpslagActief: (actief: boolean) => void;
 
+  // Hulp-elementen instelling
+  isHulpElementenZichtbaar: boolean;
+  setIsHulpElementenZichtbaar: (zichtbaar: boolean) => void;
+
   // Gegroepeerde per-modus instellingen (read-only views)
   highscoreInstellingen: Readonly<{
     isSpinVergrendelingActief: boolean;
@@ -284,6 +288,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Bonus settings
   const [isLokaleBonusOpslagActief, setIsLokaleBonusOpslagActief] = useState(() => loadFromStorage('isLokaleBonusOpslagActief', false));
 
+  // Hulp-elementen instelling
+  const [isHulpElementenZichtbaar, setIsHulpElementenZichtbaar] = useState(() => loadFromStorage('isHulpElementenZichtbaar', true));
+
   // Effect om instellingen op te slaan wanneer ze veranderen
   useEffect(() => {
     saveToStorage('gameMode', gameMode);
@@ -429,6 +436,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     saveToStorage('isLokaleBonusOpslagActief', isLokaleBonusOpslagActief);
   }, [isLokaleBonusOpslagActief]);
 
+  useEffect(() => {
+    saveToStorage('isHulpElementenZichtbaar', isHulpElementenZichtbaar);
+  }, [isHulpElementenZichtbaar]);
+
   const value: SettingsContextType = {
     // Game settings
     gameMode,
@@ -529,6 +540,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     // Bonus settings
     isLokaleBonusOpslagActief,
     setIsLokaleBonusOpslagActief,
+
+    // Hulp-elementen instelling
+    isHulpElementenZichtbaar,
+    setIsHulpElementenZichtbaar,
 
     // Gegroepeerde per-modus instellingen (read-only views)
     highscoreInstellingen: {

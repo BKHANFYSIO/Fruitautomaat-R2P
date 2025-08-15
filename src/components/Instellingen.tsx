@@ -75,6 +75,8 @@ export const Instellingen = React.memo(({
     setIsSpinVergrendelingActief,
     isAutomatischScorebordActief,
     setIsAutomatischScorebordActief,
+    isHulpElementenZichtbaar,
+    setIsHulpElementenZichtbaar,
     bonusKans,
     setBonusKans,
     forceerMobieleWeergave,
@@ -316,6 +318,9 @@ export const Instellingen = React.memo(({
       // Bonus instellingen herstellen
       setIsLokaleBonusOpslagActief(false);
       
+      // Hulp-elementen instelling herstellen
+      setIsHulpElementenZichtbaar(true);
+      
       window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Alle instellingen zijn hersteld naar standaard.', type: 'succes', timeoutMs: 6000 } }));
     }
   };
@@ -452,6 +457,19 @@ export const Instellingen = React.memo(({
                   <p className="setting-description">
                     Toont een timer tijdens het beantwoorden van opdrachten. De timer helpt bij het oefenen van vaardigheden en het automatiseren van kennis. 
                     <strong>Tip:</strong> Schakel de timer uit als je nog bezig bent met het leren van nieuwe stof - dan kan de druk afleiden van het begrijpen van de materie.
+                  </p>
+                  
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isHulpElementenZichtbaar}
+                      onChange={() => setIsHulpElementenZichtbaar(!isHulpElementenZichtbaar)}
+                    />
+                    Toon hulp-elementen voor nieuwe gebruikers
+                  </label>
+                  <p className="setting-description">
+                    Toont stap-voor-stap instructies en hulp-elementen zoals "Kies je spelmodus", "Voeg spelers toe" en "Categorieën & filters". 
+                    Deze elementen helpen nieuwe gebruikers om de app te leren kennen, maar kunnen worden uitgeschakeld voor een schonere interface.
                   </p>
                   
                   {/* Herstel Standaard Instellingen verplaatst naar onderaan Algemeen-tab */}

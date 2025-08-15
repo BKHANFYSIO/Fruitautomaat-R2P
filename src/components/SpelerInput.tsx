@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSettings } from '../context/SettingsContext';
 import './SpelerInput.css';
 
 interface SpelerInputProps {
@@ -129,6 +130,7 @@ export const SpelerInput = ({
   onSpelReset,
   spelersCount = 0,
 }: SpelerInputProps) => {
+  const { isHulpElementenZichtbaar } = useSettings();
   const [naam, setNaam] = useState('');
   const [showSerieuzeModusWaarschuwing, setShowSerieuzeModusWaarschuwing] = useState(false);
   const [showSerieuzeModusUitschakelen, setShowSerieuzeModusUitschakelen] = useState(false);
@@ -225,7 +227,9 @@ export const SpelerInput = ({
 
   return (
     <div className="speler-input-form">
-      <h3 className={`mode-selector-title ${!activeMode ? 'step-pulse' : ''}`}>1. Kies je spelmodus</h3>
+      {isHulpElementenZichtbaar && (
+        <h3 className={`mode-selector-title ${!activeMode ? 'step-pulse' : ''}`}>1. Kies je spelmodus</h3>
+      )}
       
       <div className="mode-selector-grid">
         <TooltipButton
@@ -297,7 +301,7 @@ export const SpelerInput = ({
       {/* Speler input form - alleen tonen nadat een modus is gekozen die spelers vereist */}
       {(activeMode === 'multiplayer' || activeMode === 'highscore') ? (
         <>
-          {(() => {
+          {isHulpElementenZichtbaar && (() => {
             const spelersVoldoende = activeMode === 'multiplayer' ? (spelersCount >= 2) : (spelersCount >= 1);
             const spelerTekst = activeMode === 'multiplayer' ? 'spelers' : 'speler';
             return (

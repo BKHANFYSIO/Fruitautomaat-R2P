@@ -70,6 +70,7 @@ type Props = {
   setGeselecteerdeMultiplayerCategorieen: (categorieen: string[] | ((prev: string[]) => string[])) => void;
   geselecteerdeHighscoreCategorieen: string[];
   initialActiveTab: 'highscore' | 'multiplayer' | 'normaal' | 'leitner';
+  initialInnerTabForCategorieSelectie?: 'categories' | 'filters' | 'saved';
   filters: any;
   setFilters: (f: any) => void;
 
@@ -154,7 +155,7 @@ export const AppModals: React.FC<Props> = (props) => {
     onCategorieSelectie, onBulkCategorieSelectie, onOpenLeitnerBeheer, highScoreLibrary,
     setGeselecteerdeHighscoreCategorieen, geselecteerdeLeitnerCategorieen, setGeselecteerdeLeitnerCategorieen,
     geselecteerdeMultiplayerCategorieen, setGeselecteerdeMultiplayerCategorieen, geselecteerdeHighscoreCategorieen,
-    initialActiveTab, filters, setFilters,
+    initialActiveTab, initialInnerTabForCategorieSelectie, filters, setFilters,
     // Categorie beheer
     isCategorieBeheerOpen, onCloseCategorieBeheer, alleUniekeCategorieen,
     // Limiet bereikt
@@ -245,6 +246,7 @@ export const AppModals: React.FC<Props> = (props) => {
         geselecteerdeHighscoreCategorieen={geselecteerdeHighscoreCategorieen}
         setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         initialActiveTab={initialActiveTab}
+        initialInnerTab={initialInnerTabForCategorieSelectie}
         filters={filters}
         setFilters={setFilters}
       />

@@ -98,6 +98,7 @@ function App() {
     setIsTimerActief,
     isEerlijkeSelectieActief,
     isJokerSpinActief,
+    isHulpElementenZichtbaar,
     setIsJokerSpinActief,
     isBonusOpdrachtenActief,
     isSpinVergrendelingActief,
@@ -222,6 +223,7 @@ const [isInstellingenOpen, setIsInstellingenOpen] = useState(false);
   const [isCategorieSelectieOpen, setIsCategorieSelectieOpen] = useState(false);
 
   const [categorieSelectieActiveTab, setCategorieSelectieActiveTab] = useState<'highscore' | 'multiplayer' | 'normaal' | 'leitner'>('normaal');
+  const [categorieSelectieInnerTab, setCategorieSelectieInnerTab] = useState<'categories' | 'filters' | 'saved' | undefined>(undefined);
   const [isLimietModalOpen, setIsLimietModalOpen] = useState(false);
   const [isOpdrachtenVoltooidModalOpen, setIsOpdrachtenVoltooidModalOpen] = useState(false);
 const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(false);
@@ -271,6 +273,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   const [isNieuwRecord, setIsNieuwRecord] = useState(false);
   const [currentPersonalBest, setCurrentPersonalBest] = useState<HighScore | null>(null);
   const [isNieuwPersoonlijkRecord, setIsNieuwPersoonlijkRecord] = useState(false);
+  const [highScoreLibrary, setHighScoreLibrary] = useState(() => getHighScoreLibrary());
 
   // Dev mode state
   // const [isDevMode, setIsDevMode] = useState(false);
@@ -315,6 +318,18 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       setSpelers([]); // Verwijder alle spelers
     }
   }, [gameMode]);
+
+  // Effect om highscore library bij te werken wanneer er een naam wordt gewijzigd
+  useEffect(() => {
+    const handleHighscoreLibraryUpdate = () => {
+      setHighScoreLibrary(getHighScoreLibrary());
+    };
+
+    window.addEventListener('highscoreLibraryUpdated', handleHighscoreLibraryUpdate);
+    return () => {
+      window.removeEventListener('highscoreLibraryUpdated', handleHighscoreLibraryUpdate);
+    };
+  }, []);
 
   // Bepaal de effectieve max rondes gebaseerd op de game mode
   const effectieveMaxRondes = gameMode === 'single' ? 10 : maxRondes;
@@ -589,8 +604,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const handleOpenCategorieSelectie = (e: Event) => {
       const ce = e as CustomEvent<any>;
       const tab = ce?.detail?.tab as 'highscore' | 'multiplayer' | 'normaal' | 'leitner' | undefined;
+      const inner = ce?.detail?.innerTab as 'categories' | 'filters' | 'saved' | undefined;
       // Stel eerst de gewenste tab in voordat we openen
       if (tab) setCategorieSelectieActiveTab(tab);
+      if (inner) setCategorieSelectieInnerTab(inner);
       // Sluit Leitner modal en open de categorie-selectie modal in een microtask
       setIsCategorieBeheerOpen(false);
       queueMicrotask(() => setIsCategorieSelectieOpen(true));
@@ -668,15 +685,19 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     };
   }, [spelers, bonusOpdrachten]);
 
-  // Effect om de high score te laden wanneer categorieën veranderen in single player mode
+  // Effect om de high score te laden voor HIGHscore-modus (single, niet-serieuze leer-modus)
   useEffect(() => {
-    if (gameMode === 'single' && geselecteerdeCategorieen.length > 0) {
-      const score = getHighScore(geselecteerdeCategorieen);
-      setCurrentHighScore(score);
+    if (gameMode === 'single' && !isSerieuzeLeerModusActief) {
+      const categories = geselecteerdeHighscoreCategorieen;
+      if (categories.length > 0) {
+        setCurrentHighScore(getHighScore(categories));
+      } else {
+        setCurrentHighScore(null);
+      }
     } else {
       setCurrentHighScore(null);
     }
-  }, [gameMode, geselecteerdeCategorieen]);
+  }, [gameMode, isSerieuzeLeerModusActief, geselecteerdeHighscoreCategorieen, highScoreLibrary]);
 
 
 
@@ -1262,14 +1283,18 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // (verplaatst naar useSpinFlow)
 
   useEffect(() => {
-    if (gameMode === 'single' && geselecteerdeCategorieen.length > 0 && spelers.length === 1) {
+    if (gameMode === 'single' && !isSerieuzeLeerModusActief && spelers.length === 1) {
       const spelerNaam = spelers[0].naam;
-      const pb = getPersonalBest(geselecteerdeCategorieen, spelerNaam);
-      setCurrentPersonalBest(pb);
+      const categories = geselecteerdeHighscoreCategorieen;
+      if (categories.length > 0) {
+        setCurrentPersonalBest(getPersonalBest(categories, spelerNaam));
+      } else {
+        setCurrentPersonalBest(null);
+      }
     } else {
       setCurrentPersonalBest(null);
     }
-  }, [gameMode, geselecteerdeCategorieen, spelers]);
+  }, [gameMode, isSerieuzeLeerModusActief, geselecteerdeHighscoreCategorieen, spelers]);
 
   const checkSpelEinde = useCallback((speler?: Speler) => {
     if (gameMode === 'single' && speler) {
@@ -1279,10 +1304,62 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         setIsNieuwPersoonlijkRecord(false);
         playGameEnd();
       } else {
-        const wasNieuwRecord = saveHighScore(geselecteerdeCategorieen, speler.score, speler.naam);
-        const wasNieuwPb = savePersonalBest(geselecteerdeCategorieen, speler.score, speler.naam);
+        // Gebruik de juiste categorieën voor highscore modus
+        // Voor highscore modus, gebruik altijd de categorieën die daadwerkelijk zijn geselecteerd
+        let categoriesToUse: string[];
+        if (isFocusHighscore) {
+          // Probeer eerst geselecteerdeHighscoreCategorieen, anders probeer localStorage
+          if (geselecteerdeHighscoreCategorieen.length > 0) {
+            categoriesToUse = geselecteerdeHighscoreCategorieen;
+          } else {
+            try {
+              const saved = localStorage.getItem('geselecteerdeCategorieen_highscore');
+              categoriesToUse = saved ? JSON.parse(saved) : [];
+            } catch {
+              categoriesToUse = [];
+            }
+          }
+        } else {
+          categoriesToUse = geselecteerdeCategorieen;
+        }
+        
+        const wasNieuwRecord = saveHighScore(categoriesToUse, speler.score, speler.naam);
+        const wasNieuwPb = savePersonalBest(categoriesToUse, speler.score, speler.naam);
         setIsNieuwRecord(wasNieuwRecord);
         setIsNieuwPersoonlijkRecord(wasNieuwPb);
+        
+
+        
+        // Update highscore library als er een nieuwe highscore is opgeslagen
+        if (wasNieuwRecord) {
+          const newLibrary = getHighScoreLibrary();
+          setHighScoreLibrary(newLibrary);
+        }
+        
+        // Als categoriesToUse leeg is maar er wel categorieën in localStorage staan, gebruik die
+        if (categoriesToUse.length === 0) {
+          try {
+            const saved = localStorage.getItem('geselecteerdeCategorieen_highscore');
+            if (saved) {
+              const parsedCategories = JSON.parse(saved);
+              if (parsedCategories.length > 0) {
+                // Probeer de highscore opnieuw op te slaan met de geladen categorieën
+                const wasNieuwRecordRetry = saveHighScore(parsedCategories, speler.score, speler.naam);
+                const wasNieuwPbRetry = savePersonalBest(parsedCategories, speler.score, speler.naam);
+                setIsNieuwRecord(wasNieuwRecordRetry);
+                setIsNieuwPersoonlijkRecord(wasNieuwPbRetry);
+                
+                // Update highscore library als er een nieuwe highscore is opgeslagen
+                if (wasNieuwRecordRetry) {
+                  const newLibrary = getHighScoreLibrary();
+                  setHighScoreLibrary(newLibrary);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Fout bij het laden van categorieën uit localStorage:', error);
+          }
+        }
         
         // Speel geluid op basis van resultaat
         if (wasNieuwRecord) {
@@ -1296,7 +1373,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
       playMultiplayerEnd(); // Feestelijk einde geluid
     }
     setGamePhase('ended');
-  }, [gameMode, geselecteerdeCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd, isFocusHighscore]);
+  }, [gameMode, geselecteerdeCategorieen, geselecteerdeHighscoreCategorieen, playNewRecord, playGameEnd, playMultiplayerEnd, isFocusHighscore]);
 
   const handlePauseOpdracht = useCallback(() => {
     const opdrachtOmTePauzeren = huidigeOpdracht || laatsteBeoordeeldeOpdracht;
@@ -1511,6 +1588,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   // Handlers voor directe tab navigatie
   const handleOpenHighscoreCategorieSelectie = () => {
     setCategorieSelectieActiveTab('highscore');
+    setCategorieSelectieInnerTab('categories');
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
@@ -1519,6 +1597,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const handleOpenMultiplayerCategorieSelectie = () => {
     setCategorieSelectieActiveTab('multiplayer');
+    setCategorieSelectieInnerTab('categories');
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
@@ -1527,6 +1606,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
 
   const handleOpenNormaleLeermodusCategorieSelectie = () => {
     setCategorieSelectieActiveTab('normaal');
+    setCategorieSelectieInnerTab('categories');
     setIsCategorieSelectieOpen(true);
     setIsCategorieBeheerOpen(false); // Sluit Leitner modal
     setIsScoreLadeOpen(false); // Sluit mobiele menu
@@ -1580,6 +1660,10 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           highScore={currentHighScore}
           personalBest={currentPersonalBest}
           isNieuwPersoonlijkRecord={isNieuwPersoonlijkRecord}
+          onOpenHighscoreRecords={() => {
+            // Gebruik één pad voor openen: via custom event dat ook innerTab doorgeeft
+            window.dispatchEvent(new CustomEvent('openCategorieSelectie', { detail: { tab: 'highscore', innerTab: 'saved' } } as any));
+          }}
         />
       )}
       <AchievementNotificatie 
@@ -1642,7 +1726,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         onCategorieSelectie={handleCategorieSelectie}
         onBulkCategorieSelectie={handleBulkCategorieSelectie}
         onOpenLeitnerBeheer={handleOpenLeitnerCategorieBeheer}
-        highScoreLibrary={getHighScoreLibrary()}
+        highScoreLibrary={highScoreLibrary}
         setGeselecteerdeHighscoreCategorieen={setGeselecteerdeHighscoreCategorieen}
         geselecteerdeLeitnerCategorieen={geselecteerdeLeitnerCategorieen}
         setGeselecteerdeLeitnerCategorieen={setGeselecteerdeLeitnerCategorieen}
@@ -1650,6 +1734,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
         setGeselecteerdeMultiplayerCategorieen={setGeselecteerdeMultiplayerCategorieen}
         geselecteerdeHighscoreCategorieen={geselecteerdeHighscoreCategorieen}
         initialActiveTab={categorieSelectieActiveTab}
+        initialInnerTabForCategorieSelectie={categorieSelectieInnerTab}
         filters={filters}
         setFilters={setFilters}
         isCategorieBeheerOpen={isCategorieBeheerOpen}
@@ -1711,6 +1796,12 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           setLeermodusType={setLeermodusType}
           onSpelReset={resetSpelState}
           onOpenHighscoreCategorieSelectie={handleOpenHighscoreCategorieSelectie}
+          onOpenHighscoreSaved={() => {
+            setCategorieSelectieActiveTab('highscore');
+            setIsCategorieBeheerOpen(false);
+            setIsCategorieSelectieOpen(true);
+            sessionStorage.setItem('categorieSelectie.initialInnerTab', 'saved');
+          }}
           onOpenMultiplayerCategorieSelectie={handleOpenMultiplayerCategorieSelectie}
           onOpenNormaleLeermodusCategorieSelectie={handleOpenNormaleLeermodusCategorieSelectie}
           onOpenLeitnerCategorieBeheer={handleOpenLeitnerCategorieBeheer}
@@ -1760,7 +1851,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
               return false;
             })()}
             onEindigSessie={handleEindigSessie}
-          welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() ? (
+          welcomeMessage={gamePhase === 'idle' && !heeftVoldoendeSpelers() && isHulpElementenZichtbaar ? (
               <div className="welkomst-bericht">
                 <h3>Welkom!</h3>
                 {isSerieuzeLeerModusActief && gameMode === 'single' ? (

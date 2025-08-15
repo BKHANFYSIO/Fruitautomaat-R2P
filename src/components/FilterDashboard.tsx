@@ -16,9 +16,11 @@ interface FilterDashboardProps {
   actieveCategorieSelectie: string[];
   // Wanneer deze sleutel verandert, klapt het dashboard automatisch in
   collapseKey?: string;
+  // Of het spel bezig is - filters worden uitgeschakeld tijdens het spel
+  isSpelGestart?: boolean;
 }
 
-export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie, collapseKey }) => {
+export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFilters, opdrachten, actieveCategorieSelectie, collapseKey, isSpelGestart = false }) => {
   // State voor accordeon functionaliteit (standaard ingeklapt, niet persistent)
   const [isExpanded, setIsExpanded] = useState(false);
   // Klap automatisch in bij wisselen van spelmodus/sessie/refresh (collapseKey wijzigt)
@@ -73,6 +75,8 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   }, [filters]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
+    if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
+    
     // Zorg dat minimaal één bron aan blijft en toggle de andere
     const heeftBeide = filters.bronnen.length === 2;
     const include = filters.bronnen.includes(bron);
@@ -94,6 +98,8 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   };
 
   const handleTypeToggle = (type: string) => {
+    if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
+    
     const nieuweTypes = filters.opdrachtTypes.includes(type)
       ? filters.opdrachtTypes.filter(t => t !== type)
       : [...filters.opdrachtTypes, type];
@@ -101,6 +107,8 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   };
 
   const handleNiveauToggle = (niv: 1 | 2 | 3 | 'undef') => {
+    if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
+    
     const huidige = filters.niveaus || [];
     const nieuw = huidige.includes(niv)
       ? huidige.filter(n => n !== niv)
@@ -144,7 +152,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               <div className="filter-icon-group">
                 <InfoTooltip asChild content={`Systeem: ${opdrachtenPerBron['systeem'] || 0} opdr.`}>
                   <span
-                    className={`filter-icon bron ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'}`}
+                    className={`filter-icon bron ${filters.bronnen.includes('systeem') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => handleBronToggle('systeem')}
                   >
                     📖
@@ -152,7 +160,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 </InfoTooltip>
                 <InfoTooltip asChild content={`Eigen: ${opdrachtenPerBron['gebruiker'] || 0} opdr.`}>
                   <span
-                    className={`filter-icon bron ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'}`}
+                    className={`filter-icon bron ${filters.bronnen.includes('gebruiker') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => handleBronToggle('gebruiker')}
                   >
                     👨‍💼
@@ -174,7 +182,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                   return (
                     <InfoTooltip asChild content={titleText} key={type}>
                       <span
-                        className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'}`}
+                        className={`filter-icon ${filters.opdrachtTypes.includes(type) ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                         onClick={() => handleTypeToggle(type)}
                       >
                         {opdrachtTypeIconen[type] || '❓'}
@@ -194,7 +202,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 {[1,2,3].map((niv) => (
                   <InfoTooltip asChild content={`Niv. ${niv}: ${NIVEAU_LABELS[niv as 1|2|3]} — ${(niveausTelling as any)[niv] || 0} opdr.`} key={`niv-${niv}`}>
                     <span
-                      className={`filter-icon ${filters.niveaus?.includes(niv as any) ? 'active' : 'inactive'}`}
+                      className={`filter-icon ${filters.niveaus?.includes(niv as any) ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                       onClick={() => handleNiveauToggle(niv as 1|2|3)}
                     >
                       {`N${niv}`}
@@ -203,7 +211,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 ))}
                 <InfoTooltip asChild content={`Ongedefinieerd: ${(niveausTelling as any)['undef'] || 0} opdr.`}>
                   <span
-                    className={`filter-icon ${filters.niveaus?.includes('undef') ? 'active' : 'inactive'}`}
+                    className={`filter-icon ${filters.niveaus?.includes('undef') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => handleNiveauToggle('undef')}
                   >
                     ∅
@@ -220,8 +228,9 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               <div className="filter-icon-group">
                 <InfoTooltip asChild content={`Ja: expliciet tekenen vereist.`}>
                   <span
-                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'}`}
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('ja') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => {
+                      if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('ja') ? huidige.delete('ja') : huidige.add('ja');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -232,8 +241,9 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 </InfoTooltip>
                 <InfoTooltip asChild content={`Mogelijk: tekenen is optioneel/helpend.`}>
                   <span
-                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'}`}
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('mogelijk') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => {
+                      if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('mogelijk') ? huidige.delete('mogelijk') : huidige.add('mogelijk');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -244,8 +254,9 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 </InfoTooltip>
                 <InfoTooltip asChild content={`Nee: geen tekenen.`}>
                   <span
-                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'}`}
+                    className={`filter-icon ${Array.isArray(filters.tekenen) && filters.tekenen.includes('nee') ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
                     onClick={() => {
+                      if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
                       const huidige = new Set(filters.tekenen || []);
                       huidige.has('nee') ? huidige.delete('nee') : huidige.add('nee');
                       setFilters({ ...filters, tekenen: Array.from(huidige) as any });
@@ -258,8 +269,11 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
               <button
-                className="snelle-selectie-knop"
-                onClick={() => setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] })}
+                className={`snelle-selectie-knop ${isSpelGestart ? 'disabled' : ''}`}
+                onClick={() => {
+                  if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
+                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                }}
               >
                 Reset filters
               </button>

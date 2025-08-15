@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import type { Opdracht } from '../data/types';
 
 export type OpdrachtBron = 'systeem' | 'gebruiker';
@@ -71,13 +71,13 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
   });
 
   const filters = filtersByMode[currentMode] || filtersByMode.normaal;
-  const setFilters: React.Dispatch<React.SetStateAction<Filters>> = (updater) => {
+  const setFilters: React.Dispatch<React.SetStateAction<Filters>> = useCallback((updater) => {
     setFiltersByMode(prev => {
       const current = prev[currentMode] || prev.normaal;
       const nextFilters = typeof updater === 'function' ? (updater as any)(current) : updater;
       return { ...prev, [currentMode]: nextFilters } as Record<ModeKey, Filters>;
     });
-  };
+  }, [currentMode]);
 
   // Debounced save van filters per modus
   useEffect(() => {

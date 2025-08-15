@@ -80,6 +80,8 @@ interface CategorieSelectieModalProps {
     tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
   };
   setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'> }) => void;
+  // Optioneel: gewenste subtab bij openen (alleen van toepassing voor highscore)
+  initialInnerTab?: 'categories' | 'filters' | 'saved';
 }
 
 export const CategorieSelectieModal = ({
@@ -101,9 +103,10 @@ export const CategorieSelectieModal = ({
   initialActiveTab,
       filters = { bronnen: ['systeem'], opdrachtTypes: [] },
   setFilters,
+  initialInnerTab,
 }: CategorieSelectieModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>(initialActiveTab || 'normaal');
-  const [innerTab, setInnerTab] = useState<'categories' | 'filters' | 'saved'>('categories');
+  const [innerTab, setInnerTab] = useState<'categories' | 'filters' | 'saved'>(initialInnerTab || 'categories');
   const categorieLijstRef = useRef<HTMLDivElement | null>(null);
   const modalTopRef = useRef<HTMLDivElement | null>(null);
   const [opgeslagenSelecties, setOpgeslagenSelecties] = useState<OpgeslagenCategorieSelectie[]>([]);
@@ -113,6 +116,10 @@ export const CategorieSelectieModal = ({
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
+  
+  // State voor het bewerken van highscore namen
+  const [editingHighscoreKey, setEditingHighscoreKey] = useState<string | null>(null);
+  const [editingHighscoreName, setEditingHighscoreName] = useState('');
   
 
   
@@ -180,10 +187,14 @@ export const CategorieSelectieModal = ({
     }
   }, []);
 
+
+
   // Reset subtabs en scroll-gedrag bij openen of tabwissel
   useEffect(() => {
     if (!isOpen) return;
-    setInnerTab('categories');
+    // Als expliciet gevraagd is om 'saved' te openen in highscore, doe dat.
+    const desired = activeTab === 'highscore' && initialInnerTab ? initialInnerTab : 'categories';
+    setInnerTab(desired);
     // Standaard alle hoofd-categorieën dicht bij openen/tabwissel
     setOpenHoofdCategorieen({});
     setIsSubtabHidden(false);
@@ -199,7 +210,7 @@ export const CategorieSelectieModal = ({
         categorieLijstRef.current?.focus?.();
       }
     });
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, initialInnerTab]);
 
   // Zorg ervoor dat filters tab niet actief is bij highscore modus
   useEffect(() => {
@@ -213,7 +224,7 @@ export const CategorieSelectieModal = ({
     if (activeTab === 'highscore' && setFilters) {
       setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
     }
-  }, [activeTab, setFilters]);
+  }, [activeTab]); // Verwijder setFilters uit dependencies om oneindige loop te voorkomen
 
   // Bepaal welke categorie selectie actief is voor de huidige tab
   const getActieveCategorieSelectie = () => {
@@ -551,6 +562,80 @@ export const CategorieSelectieModal = ({
       }
     }
   };
+
+  // Functies voor het bewerken van highscore namen
+  const handleStartEditHighscoreName = (categories: string, currentName: string) => {
+    setEditingHighscoreKey(categories);
+    setEditingHighscoreName(currentName || '');
+  };
+
+  const handleSaveHighscoreName = () => {
+    if (!editingHighscoreKey || !highScoreLibrary) return;
+    
+    try {
+      // Update de highscore library met de nieuwe naam
+      const updatedLibrary = { ...highScoreLibrary };
+      if (updatedLibrary[editingHighscoreKey]) {
+        updatedLibrary[editingHighscoreKey] = {
+          ...updatedLibrary[editingHighscoreKey],
+          customNaam: editingHighscoreName.trim() || undefined
+        };
+        
+        // Sla de bijgewerkte library op in localStorage
+        localStorage.setItem('fruitautomaat_highScores', JSON.stringify(updatedLibrary));
+        
+        // Update de parent component
+        if (onHighScoreSelect) {
+          // Trigger een refresh van de highscore library
+          window.dispatchEvent(new CustomEvent('highscoreLibraryUpdated'));
+        }
+        
+        setToastBericht('Naam succesvol bijgewerkt!');
+        setIsToastZichtbaar(true);
+      }
+    } catch (error) {
+      console.error('Fout bij het opslaan van highscore naam:', error);
+      setToastBericht('Fout bij het opslaan van de naam');
+      setIsToastZichtbaar(true);
+    }
+    
+    setEditingHighscoreKey(null);
+    setEditingHighscoreName('');
+  };
+
+  const handleCancelEditHighscoreName = () => {
+    setEditingHighscoreKey(null);
+    setEditingHighscoreName('');
+  };
+
+  const handleDeleteHighscore = (categories: string) => {
+    if (!highScoreLibrary) return;
+    
+    const bevestiging = window.confirm(
+      'Weet je zeker dat je dit record wilt verwijderen? Dit kan niet ongedaan worden gemaakt.'
+    );
+    
+    if (bevestiging) {
+      try {
+        // Verwijder de highscore uit de library
+        const updatedLibrary = { ...highScoreLibrary };
+        delete updatedLibrary[categories];
+        
+        // Sla de bijgewerkte library op in localStorage
+        localStorage.setItem('fruitautomaat_highScores', JSON.stringify(updatedLibrary));
+        
+        // Update de parent component
+        window.dispatchEvent(new CustomEvent('highscoreLibraryUpdated'));
+        
+        setToastBericht('Record succesvol verwijderd!');
+        setIsToastZichtbaar(true);
+      } catch (error) {
+        console.error('Fout bij het verwijderen van highscore:', error);
+        setToastBericht('Fout bij het verwijderen van het record');
+        setIsToastZichtbaar(true);
+      }
+    }
+  };
   
   const getTabTitle = (tab: TabType) => {
     switch (tab) {
@@ -704,22 +789,227 @@ export const CategorieSelectieModal = ({
 
       {(innerTab === 'saved') && activeTab === 'highscore' && (
         <div className="recordpogingen">
-          <h4>🏆 Eerdere Recordpogingen</h4>
-          <select onChange={handleHighScoreSelect} className="recordpoging-select">
-            <option value="">-- Selecteer een recordpoging --</option>
-            {highScoreLibrary && Object.entries(highScoreLibrary).map(([categories, data]) => {
+          <h4>🏆 Opgeslagen Records</h4>
+          
+          {/* Uitleg bovenaan */}
+          <div className="highscore-uitleg" style={{ 
+            backgroundColor: '#1a1a1a', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            marginBottom: '16px',
+            fontSize: '0.9rem',
+            color: '#e0e0e0',
+            border: '1px solid #333'
+          }}>
+            <p style={{ margin: '0 0 8px 0' }}>
+              <strong>💡 Hoe werkt het?</strong>
+            </p>
+            <p style={{ margin: '0', fontSize: '0.85rem', lineHeight: '1.4' }}>
+              Hier zie je de beste scores per categorie-combinatie. Klik op "Probeer te verbeteren" om dezelfde categorieën te selecteren en het record te proberen te breken. 
+              Alleen de hoogste score per combinatie wordt bewaard, ongeacht door wie deze is behaald. Je kunt om de beurt spelen en elkaars records proberen te verbeteren!
+              <br /><br />
+              <strong>💡 Tip:</strong> Klik op het ✏️ icoon om een record een eigen naam te geven, zoals "Casus Amir" of "Anatomie Test".
+            </p>
+          </div>
+
+          {highScoreLibrary && Object.keys(highScoreLibrary).length > 0 ? (
+            <div className="opgeslagen-selecties-lijst">
+              {Object.entries(highScoreLibrary).map(([categories, data]) => {
               const categoryArray = categories.split(',');
               const hoofdCategorieen = [...new Set(categoryArray.map(cat => cat.split(' - ')[0]))];
               const hoofdCategorieenString = hoofdCategorieen.slice(0, 3).join(', ') + (hoofdCategorieen.length > 3 ? '...' : '');
-              const datum = new Date().toLocaleDateString('nl-NL');
+                const datum = new Date(data.timestamp).toLocaleDateString('nl-NL');
               
               return (
-                <option key={categories} value={categories}>
-                  {datum} | {hoofdCategorieenString} ({categoryArray.length} cat.) - {data.score} pnt ({data.spelerNaam})
-                </option>
+                  <div key={categories} className="opgeslagen-selectie-item" style={{
+                    backgroundColor: '#1a1a1a',
+                    padding: '16px',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    border: '1px solid #333'
+                  }}>
+                    <div className="selectie-info">
+                      {/* Eigen naam of standaard naam */}
+                      <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {editingHighscoreKey === categories ? (
+                          // Bewerkingsmodus
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                            <input
+                              type="text"
+                              value={editingHighscoreName}
+                              onChange={(e) => setEditingHighscoreName(e.target.value)}
+                              placeholder="Geef een naam aan je record..."
+                              style={{
+                                flex: 1,
+                                padding: '6px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #555',
+                                backgroundColor: '#2a2a2a',
+                                color: '#fff',
+                                fontSize: '0.9rem'
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveHighscoreName();
+                                } else if (e.key === 'Escape') {
+                                  handleCancelEditHighscoreName();
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={handleSaveHighscoreName}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              ✅
+                            </button>
+                            <button
+                              onClick={handleCancelEditHighscoreName}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              ❌
+                            </button>
+                          </div>
+                        ) : (
+                          // Weergavemodus
+                          <>
+                            <span className="selectie-naam" style={{ 
+                              fontSize: '1.1rem', 
+                              fontWeight: 'bold',
+                              color: '#4CAF50',
+                              flex: 1
+                            }}>
+                              🏆 {data.customNaam || `${hoofdCategorieenString} Record`}
+                            </span>
+                            <button
+                              onClick={() => handleStartEditHighscoreName(categories, data.customNaam || '')}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: 'transparent',
+                                color: '#888',
+                                border: '1px solid #555',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                              }}
+                              title="Bewerk naam"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHighscore(categories)}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: 'transparent',
+                                color: '#f44336',
+                                border: '1px solid #f44336',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem'
+                              }}
+                              title="Verwijder record"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      
+                      {/* Alle categorieën zichtbaar */}
+                      <div style={{ 
+                        marginBottom: '8px',
+                        fontSize: '0.85rem',
+                        color: '#b0b0b0',
+                        backgroundColor: '#252525',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #404040'
+                      }}>
+                        <strong>Categorieën:</strong> {categoryArray.join(', ')}
+                      </div>
+                      
+                      {/* Score en datum info */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.9rem',
+                        color: '#d0d0d0'
+                      }}>
+                        <span>
+                          <strong>Score:</strong> {data.score.toFixed(1)} punten
+                        </span>
+                        <span>
+                          <strong>Datum:</strong> {datum}
+                        </span>
+                        <span>
+                          <strong>Speler:</strong> {data.spelerNaam}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="selectie-acties" style={{ marginTop: '12px', textAlign: 'center' }}>
+                      <button 
+                        onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)} 
+                        className="laad-selectie-knop" 
+                        title="Selecteer deze categorieën en probeer je record te verbeteren"
+                        style={{
+                          backgroundColor: '#4CAF50',
+                          color: 'white',
+                          border: 'none',
+                          padding: '10px 16px',
+                          borderRadius: '6px',
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          margin: '0 auto'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#45a049';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#4CAF50';
+                        }}
+                      >
+                        🎯 Probeer te verbeteren
+                      </button>
+                    </div>
+                  </div>
               );
             })}
-          </select>
+            </div>
+          ) : (
+            <div className="geen-selecties-melding" style={{
+              textAlign: 'center',
+              padding: '32px',
+              color: '#888',
+              fontSize: '1rem'
+            }}>
+              <p>🏆 Nog geen recordpogingen</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>
+                Speel een highscore spel om hier je recordpogingen te zien.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
