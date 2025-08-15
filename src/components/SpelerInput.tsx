@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './SpelerInput.css';
 
 interface SpelerInputProps {
@@ -34,6 +34,7 @@ const TooltipButton = ({
   tooltipContent: React.ReactNode;
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const pressTimer = useRef<number | null>(null);
 
   // Effect om tooltip te sluiten bij klikken buiten de knop (alleen wanneer tooltip open is)
   useEffect(() => {
@@ -52,16 +53,30 @@ const TooltipButton = ({
   // Detecteer touch device
   const isTouchDevice = () => 'ontouchstart' in window || (navigator as any).maxTouchPoints > 0;
 
+  const handlePressStart = () => {
+    if (isTouchDevice()) {
+      pressTimer.current = window.setTimeout(() => {
+        setShowTooltip(true);
+      }, 500); // 500ms voor een lange druk
+    }
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
   const handleClick = () => {
     if (isTouchDevice()) {
-      if (!showTooltip) {
-        // Eerste tik op mobiel: toon tooltip én selecteer direct
-        setShowTooltip(true);
-        onClick();
+      if (showTooltip) {
+        // Als tooltip open is, sluit deze eerst
+        setShowTooltip(false);
         return;
       }
-      // Tweede tik: sluit tooltip
-      setShowTooltip(false);
+      // Anders voer de normale klik actie uit
+      onClick();
       return;
     }
     // Desktop: normale klik selecteert; tooltip via hover
@@ -74,6 +89,9 @@ const TooltipButton = ({
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       onMouseDown={() => setShowTooltip(false)}
+      onTouchStart={isTouchDevice() ? handlePressStart : undefined}
+      onTouchEnd={isTouchDevice() ? handlePressEnd : undefined}
+      onTouchCancel={isTouchDevice() ? handlePressEnd : undefined}
     >
       <button
         className={`mode-button ${activeMode === mode ? 'active' : ''}`}
@@ -84,7 +102,16 @@ const TooltipButton = ({
         <span className="mode-text">{text}</span>
       </button>
       {showTooltip && (
-        <div className="tooltip tooltip-top">{tooltipContent}</div>
+        <div 
+          className="tooltip tooltip-top" 
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowTooltip(false);
+          }}
+        >
+          {tooltipContent}
+          <div className="tooltip-close">✕</div>
+        </div>
       )}
     </div>
   );

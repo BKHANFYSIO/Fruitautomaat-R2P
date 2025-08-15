@@ -145,7 +145,9 @@ export const LeftPanel: React.FC<Props> = ({
 
       {gameMode === 'single' && !isSerieuzeLeerModusActief && (
         <>
-          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          {!isSpelGestart && (
+            <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          )}
           <div className="highscore-sectie">
           <div className="highscore-header">
             <h5>🏆 Highscore Modus</h5>
@@ -172,7 +174,9 @@ export const LeftPanel: React.FC<Props> = ({
 
       {gameMode === 'multi' && (
         <>
-          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          {!isSpelGestart && (
+            <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          )}
           <div className="multiplayer-sectie">
           <div className="multiplayer-header">
             <h5>🎮 Multiplayer Modus</h5>

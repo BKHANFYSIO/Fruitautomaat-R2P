@@ -328,7 +328,7 @@
   overflow-wrap: break-word;
   white-space: normal;
   touch-action: none; /* beter gedrag op mobiel */
-  pointer-events: none; /* content zelf niet klikbaar houden */
+  pointer-events: auto; /* maak tooltip klikbaar */
   min-height: 50px;
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
@@ -400,6 +400,35 @@
 .tooltip-content strong {
   color: #e67e22;
   font-weight: bold;
+}
+
+/* Sluitknop voor tooltips */
+.tooltip-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.tooltip-close:hover {
+  background-color: #c0392b;
+}
+
+/* Zorg dat de tooltip zelf klikbaar is */
+.tooltip {
+  cursor: pointer;
 }
 
 /* Modal styling voor serieuze leermodus waarschuwingen */
