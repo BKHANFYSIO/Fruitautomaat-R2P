@@ -334,6 +334,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
   useEffect(() => {
     const handleSelectHighscoreMode = () => {
       setGameMode('single');
+      setIsSerieuzeLeerModusActief(false); // Zorg ervoor dat serieuze leermodus wordt uitgeschakeld
       // Trigger een refresh van de highscore library om de nieuwe selectie te tonen
       setHighScoreLibrary(getHighScoreLibrary());
     };
@@ -342,7 +343,7 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     return () => {
       window.removeEventListener('selectHighscoreMode', handleSelectHighscoreMode);
     };
-  }, [setGameMode]);
+  }, [setGameMode, setIsSerieuzeLeerModusActief]);
 
   // Bepaal de effectieve max rondes gebaseerd op de game mode
   const effectieveMaxRondes = gameMode === 'single' ? 10 : maxRondes;
