@@ -212,8 +212,25 @@ export const SpelerInput = ({
 
   // Bepaal welke modus actief is - gebruik lokale state als die bestaat, anders bereken
   const getActiveMode = () => {
-    // Toon geen vooraf geselecteerde modus; pas highlight na expliciete keuze in deze sessie
-    return localActiveMode;
+    // Als er een lokale modus is geselecteerd in deze sessie, gebruik die
+    if (localActiveMode) {
+      return localActiveMode;
+    }
+    
+    // Anders, bepaal op basis van de huidige game state
+    if (gameMode === 'multi') {
+      return 'multiplayer';
+    } else if (gameMode === 'single') {
+      if (isSerieuzeLeerModusActief) {
+        // We kunnen niet bepalen of het leitner of vrije leermodus is zonder leermodusType
+        // Dus we laten dit leeg en laten de gebruiker een keuze maken
+        return '';
+      } else {
+        return 'highscore';
+      }
+    }
+    
+    return '';
   };
 
   const activeMode = getActiveMode();
@@ -229,13 +246,21 @@ export const SpelerInput = ({
   useEffect(() => {
     const handleSelectHighscoreMode = () => {
       setLocalActiveMode('highscore');
+      // Zorg ervoor dat de serieuze leermodus wordt uitgeschakeld voor highscore modus
+      if (setIsSerieuzeLeerModusActief) {
+        setIsSerieuzeLeerModusActief(false);
+      }
+      // Reset de leermodus type
+      if (setLeermodusType) {
+        setLeermodusType('normaal');
+      }
     };
 
     window.addEventListener('selectHighscoreMode', handleSelectHighscoreMode);
     return () => {
       window.removeEventListener('selectHighscoreMode', handleSelectHighscoreMode);
     };
-  }, []);
+  }, [setIsSerieuzeLeerModusActief, setLeermodusType]);
 
   return (
     <div className="speler-input-form">
