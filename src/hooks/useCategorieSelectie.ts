@@ -88,7 +88,7 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
   }, [filtersByMode]);
 
   const opdrachtenVoorSelectie = useMemo(() => {
-    return opdrachten.filter(op => {
+    let gefilterdeOpdrachten = opdrachten.filter(op => {
       const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes((op.bron as OpdrachtBron) || 'systeem');
       if (!bronMatch) return false;
       const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
@@ -103,7 +103,17 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
       if (typeof niv === 'number') return nivs.includes(niv);
       return nivs.includes('undef');
     });
-  }, [opdrachten, filters]);
+
+    // Als er highscore categorieën zijn geselecteerd, filter op basis daarvan
+    if (geselecteerdeHighscoreCategorieen.length > 0) {
+      gefilterdeOpdrachten = gefilterdeOpdrachten.filter(op => {
+        const opdrachtCategorie = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+        return geselecteerdeHighscoreCategorieen.includes(opdrachtCategorie);
+      });
+    }
+
+    return gefilterdeOpdrachten;
+  }, [opdrachten, filters, geselecteerdeHighscoreCategorieen]);
 
   const alleUniekeCategorieen = useMemo(() => {
     const unieke = new Set<string>();

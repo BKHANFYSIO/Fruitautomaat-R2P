@@ -330,6 +330,20 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     };
   }, []);
 
+  // Event listener om highscore modus te activeren vanuit CategorieSelectieModal
+  useEffect(() => {
+    const handleSelectHighscoreMode = () => {
+      setGameMode('single');
+      // Trigger een refresh van de highscore library om de nieuwe selectie te tonen
+      setHighScoreLibrary(getHighScoreLibrary());
+    };
+
+    window.addEventListener('selectHighscoreMode', handleSelectHighscoreMode);
+    return () => {
+      window.removeEventListener('selectHighscoreMode', handleSelectHighscoreMode);
+    };
+  }, [setGameMode]);
+
   // Bepaal de effectieve max rondes gebaseerd op de game mode
   const effectieveMaxRondes = gameMode === 'single' ? 10 : maxRondes;
   
@@ -1664,23 +1678,6 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     const leermodusNaam = leermodusType === 'leitner' ? 'Leitner Leermodus' : 'Vrije Leermodus';
     showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 7000);
   };
-
-  useEffect(() => {
-    const handler = () => {
-      // Activeer single player highscore modus
-      setGameMode('single');
-      setIsSerieuzeLeerModusActief(false);
-      // Zorg dat de juiste tab meteen zichtbaar is
-      setCategorieSelectieActiveTab('highscore');
-      setCategorieSelectieInnerTab('categories');
-      // Sluit de categorie-selectie modal zodat fruitautomaat klaar staat
-      setIsCategorieSelectieOpen(false);
-      // Scroll naar dashboard
-      scrollToDashboard();
-    };
-    window.addEventListener('selectHighscoreMode', handler);
-    return () => window.removeEventListener('selectHighscoreMode', handler);
-  }, [setGameMode, setIsSerieuzeLeerModusActief]);
 
   if (loading) {
     return <div>Laden...</div>;
