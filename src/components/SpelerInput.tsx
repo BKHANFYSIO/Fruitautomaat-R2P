@@ -118,14 +118,15 @@ const TooltipButton = ({
   );
 };
 
-export const SpelerInput = ({
+export const SpelerInput: React.FC<SpelerInputProps> = ({
   onSpelerToevoegen,
   gameMode,
   setGameMode,
   isSpelerInputDisabled,
   isSpelGestart,
-  isSerieuzeLeerModusActief = false,
+  isSerieuzeLeerModusActief,
   setIsSerieuzeLeerModusActief,
+  leermodusType,
   setLeermodusType,
   onSpelReset,
   spelersCount = 0,
@@ -224,6 +225,25 @@ export const SpelerInput = ({
       setLocalActiveMode('');
     }
   }, [isSpelGestart]);
+
+  // Update localActiveMode wanneer gameMode extern wordt gewijzigd
+  useEffect(() => {
+    if (gameMode === 'single' && !isSerieuzeLeerModusActief) {
+      // Highscore modus
+      setLocalActiveMode('highscore');
+    } else if (gameMode === 'multi') {
+      // Multiplayer modus
+      setLocalActiveMode('multiplayer');
+    } else if (gameMode === 'single' && isSerieuzeLeerModusActief && leermodusType) {
+      if (leermodusType === 'leitner') {
+        // Leitner leermodus
+        setLocalActiveMode('leitner');
+      } else {
+        // Vrije leermodus
+        setLocalActiveMode('vrije-leermodus');
+      }
+    }
+  }, [gameMode, isSerieuzeLeerModusActief, leermodusType]);
 
   return (
     <div className="speler-input-form">
