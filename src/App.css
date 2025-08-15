@@ -185,7 +185,7 @@ header, footer, main {
 }
 
 .left-panel {
-  width: 300px;
+  width: 340px;
   padding: 20px;
   background-color: #242424; /* Donkere achtergrond voor het linkerpaneel */
   color: #e0e0e0; /* Lichte tekstkleur voor contrast */
@@ -542,6 +542,47 @@ header, footer, main {
   background-color: #c0392b;
 }
 
+/* Spel beëindigen sectie styling */
+.spel-beindigen-sectie {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  border-left: 4px solid #63b3ed;
+  text-align: center;
+}
+
+.spel-beindigen-knop {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.spel-beindigen-knop:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.spel-beindigen-knop:active {
+  transform: translateY(0);
+}
+
+.spel-beindigen-tekst {
+  color: #95a5a6;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.3;
+}
+
 .sessie-controle-tekst {
   color: #95a5a6;
   font-size: 0.9rem;
@@ -576,51 +617,47 @@ header, footer, main {
   font-size: 12px;
 }
 
-/* Modus-specifieke secties styling */
+/* Modus-specifieke secties styling - allemaal dezelfde kleur als RETURN2PERFORMANCE titel */
 .highscore-sectie {
   margin-top: 15px;
   padding: 15px;
-  background: rgba(241, 196, 15, 0.1);
+  background-color: #2c3e50;
   border-radius: 8px;
-  border-left: 4px solid #f1c40f;
+  border-left: 4px solid #63b3ed;
 }
 
 .multiplayer-sectie {
   margin-top: 15px;
   padding: 15px;
-  background: rgba(155, 89, 182, 0.1);
+  background-color: #2c3e50;
   border-radius: 8px;
-  border-left: 4px solid #9b59b6;
+  border-left: 4px solid #63b3ed;
 }
 
-.vrije-leermodus-sectie {
+.serieuze-leermodus-uitleg {
   margin-top: 15px;
   padding: 15px;
-  background: rgba(46, 204, 113, 0.1);
+  background-color: #2c3e50;
   border-radius: 8px;
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #63b3ed;
 }
 
-.leitner-sectie {
-  margin-top: 15px;
-  padding: 15px;
-  background: rgba(52, 152, 219, 0.1);
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
-}
+
 
 .highscore-header h5,
 .multiplayer-header h5,
-.vrije-leermodus-header h5,
-.leitner-header h5 {
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
+.serieuze-leermodus-uitleg h5 {
+  margin: 0 0 15px 0;
+  font-size: 1.2rem;
   color: #63b3ed;
+  font-weight: 600;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  border-bottom: 2px solid rgba(99, 179, 237, 0.3);
+  padding-bottom: 8px;
 }
 
 .highscore-info-text p,
-.multiplayer-info-text p,
-.vrije-leermodus-info-text p {
+.multiplayer-info-text p {
   margin: 5px 0;
   font-size: 0.9rem;
   color: #bdc3c7;

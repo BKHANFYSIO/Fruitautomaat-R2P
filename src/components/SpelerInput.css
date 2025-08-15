@@ -220,18 +220,7 @@
   border-left: 4px solid #9b59b6;
 }
 
-.leitner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
 
-.leitner-header h5 {
-  margin: 0;
-  color: #9b59b6;
-  font-size: 1em;
-}
 
 .leitner-checkbox {
   display: flex;
@@ -260,9 +249,7 @@
 .leitner-stats-info {
   margin-top: 8px;
   padding: 8px;
-  background-color: rgba(52, 73, 94, 0.3);
   border-radius: 4px;
-  border-left: 3px solid #3498db;
 }
 
 .leitner-priority {
