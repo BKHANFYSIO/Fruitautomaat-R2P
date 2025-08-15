@@ -473,9 +473,9 @@ header, footer, main {
 }
 
 @keyframes stepPulse {
-  0% { transform: scale(1); color: #ecf0f1; }
-  50% { transform: scale(1.04); color: #63b3ed; }
-  100% { transform: scale(1); color: #ecf0f1; }
+  0% { transform: scale(1); color: #63b3ed; }
+  50% { transform: scale(1.04); color: #ff6b35; }
+  100% { transform: scale(1); color: #63b3ed; }
 }
 
 /* Leitner status indicator styling */

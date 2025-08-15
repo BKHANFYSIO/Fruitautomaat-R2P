@@ -143,9 +143,23 @@ export const LeftPanel: React.FC<Props> = ({
         aantalBeurtenGespeeld={aantalBeurtenGespeeld}
       />
 
+      {/* Spel beëindigen knop - alleen in highscore/multiplayer modus */}
+      {isSpelGestart && !isSerieuzeLeerModusActief && (
+        <div className="spel-beindigen-sectie">
+          <button 
+            className="spel-beindigen-knop" 
+            onClick={onEindigSpel}
+          >
+            🛑 Spel Beëindigen
+          </button>
+        </div>
+      )}
+
       {gameMode === 'single' && !isSerieuzeLeerModusActief && (
         <>
-          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          {!isSpelGestart && (
+            <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 1 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          )}
           <div className="highscore-sectie">
           <div className="highscore-header">
             <h5>🏆 Highscore Modus</h5>
@@ -163,16 +177,26 @@ export const LeftPanel: React.FC<Props> = ({
               {isSpelGestart && <span className="disabled-hint"> - Spel is bezig</span>}
             </button>
             <div className="highscore-info-text">
-              <p>Probeer je beste score te behalen met de geselecteerde categorieën!</p>
+              <p>Je highscore wordt berekend op basis van de geselecteerde categorieën. Pas deze aan om je score te optimaliseren!</p>
             </div>
           </div>
+          
+          <FilterDashboard
+            filters={filters}
+            setFilters={setFilters}
+            opdrachten={opdrachten}
+            actieveCategorieSelectie={actieveCategorieSelectie}
+            collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
+          />
           </div>
         </>
       )}
 
       {gameMode === 'multi' && (
         <>
-          <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          {!isSpelGestart && (
+            <h3 className={`mode-selector-title ${isModeSelectedThisSession && spelers.length >= 2 ? 'step-pulse' : ''}`}>3. Categorieën & filters</h3>
+          )}
           <div className="multiplayer-sectie">
           <div className="multiplayer-header">
             <h5>🎮 Multiplayer Modus</h5>
@@ -193,6 +217,14 @@ export const LeftPanel: React.FC<Props> = ({
               <p>Speel samen met vrienden en familie!</p>
             </div>
           </div>
+          
+          <FilterDashboard
+            filters={filters}
+            setFilters={setFilters}
+            opdrachten={opdrachten}
+            actieveCategorieSelectie={actieveCategorieSelectie}
+            collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
+          />
           </div>
         </>
       )}
@@ -204,11 +236,8 @@ export const LeftPanel: React.FC<Props> = ({
           )}
           <div className="serieuze-leermodus-uitleg">
             {leermodusType === 'leitner' && (
-              <div className="leitner-sectie">
-                <div className="leitner-header">
-                <h5>🔄 Leitner</h5>
-                </div>
-                <div className="leitner-stats">
+              <>
+                <h5>🔄 Leitner Leermodus</h5>
                 <button onClick={onOpenLeitnerCategorieBeheer} className="categorie-beheer-knop">
                   <span className="knop-titel">Categorieën Aanpassen</span>
                   <span className="knop-details">
@@ -225,38 +254,35 @@ export const LeftPanel: React.FC<Props> = ({
                 {vandaagBeschikbaar > 0 && (
                   <p className="leitner-priority">⭐ Herhalingen komen eerst, nieuwe opdrachten daarna.</p>
                 )}
-                </div>
-              </div>
+              </>
             )}
             {leermodusType === 'normaal' && (
-              <div className="vrije-leermodus-sectie">
-                <div className="vrije-leermodus-header">
-                  <h5>📚 Vrije Leermodus</h5>
+              <>
+                <h5>📚 Vrije Leermodus</h5>
+                <button onClick={onOpenNormaleLeermodusCategorieSelectie} className="categorie-beheer-knop">
+                  <span className="knop-titel">Categorieën Aanpassen</span>
+                  <span className="knop-details">
+                    {gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.
+                  </span>
+                </button>
+                <div className="vrije-leermodus-info-text">
+                  <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
                 </div>
-                <div className="vrije-leermodus-info">
-                  <button onClick={onOpenNormaleLeermodusCategorieSelectie} className="categorie-beheer-knop">
-                    <span className="knop-titel">Categorieën Aanpassen</span>
-                    <span className="knop-details">
-                      {gefilterdeGeselecteerdeCategorieen.length}/{alleUniekeCategorieen.length} Cat. | {aantalOpdrachtenNormaal} Opdr.
-                    </span>
-                  </button>
-                  <div className="vrije-leermodus-info-text">
-                    <p>Je leert op basis van herhalingen met opslaan van data voor leeranalyses en certificaat.</p>
-                  </div>
-                </div>
-              </div>
+              </>
             )}
+            
+            <FilterDashboard
+              filters={filters}
+              setFilters={setFilters}
+              opdrachten={opdrachten}
+              actieveCategorieSelectie={actieveCategorieSelectie}
+              collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
+            />
           </div>
         </>
       )}
 
-      <FilterDashboard
-        filters={filters}
-        setFilters={setFilters}
-        opdrachten={opdrachten}
-        actieveCategorieSelectie={actieveCategorieSelectie}
-        collapseKey={`${gameMode}|${isSerieuzeLeerModusActief?'1':'0'}|${isSpelGestart?'1':'0'}|${leermodusType}`}
-      />
+
 
       {isSpelGestart && gameMode === 'single' && isSerieuzeLeerModusActief && (
         <div className="spel-controle-knoppen">
@@ -265,12 +291,7 @@ export const LeftPanel: React.FC<Props> = ({
         </div>
       )}
 
-      {isSpelGestart && !isSerieuzeLeerModusActief && (
-        <div className="spel-controle-knoppen">
-          <button className="eindig-knop" onClick={onEindigSpel}>🛑 Spel Beëindigen</button>
-          <p className="sessie-controle-tekst">Hiermee reset je het spel en de scores.</p>
-        </div>
-      )}
+
 
       <div className="instellingen-knoppen instellingen-grid">
         <div className="instellingen-row">
