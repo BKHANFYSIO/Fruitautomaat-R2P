@@ -1665,6 +1665,23 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
     showNotificatie(`${leermodusNaam} gestart voor: ${categorie}`, 'succes', 7000);
   };
 
+  useEffect(() => {
+    const handler = () => {
+      // Activeer single player highscore modus
+      setGameMode('single');
+      setIsSerieuzeLeerModusActief(false);
+      // Zorg dat de juiste tab meteen zichtbaar is
+      setCategorieSelectieActiveTab('highscore');
+      setCategorieSelectieInnerTab('categories');
+      // Sluit de categorie-selectie modal zodat fruitautomaat klaar staat
+      setIsCategorieSelectieOpen(false);
+      // Scroll naar dashboard
+      scrollToDashboard();
+    };
+    window.addEventListener('selectHighscoreMode', handler);
+    return () => window.removeEventListener('selectHighscoreMode', handler);
+  }, [setGameMode, setIsSerieuzeLeerModusActief]);
+
   if (loading) {
     return <div>Laden...</div>;
   }

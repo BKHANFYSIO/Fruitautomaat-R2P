@@ -553,20 +553,6 @@ export const CategorieSelectieModal = ({
     setIsToastZichtbaar(true);
   };
 
-  const handleHighScoreSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value;
-    if (selectedValue && onHighScoreSelect) {
-      const categories = selectedValue.split(',');
-      onHighScoreSelect(categories);
-      
-      if (setGeselecteerdeHighscoreCategorieen) {
-        setGeselecteerdeHighscoreCategorieen(categories);
-        setToastBericht(`Recordpoging geladen! Categorieën aangepast.`);
-        setIsToastZichtbaar(true);
-      }
-    }
-  };
-
   // Functies voor het bewerken van highscore namen
   const handleStartEditHighscoreName = (categories: string, currentName: string) => {
     setEditingHighscoreKey(categories);
@@ -735,6 +721,8 @@ export const CategorieSelectieModal = ({
       return 0;
     });
   };
+
+  
 
   const renderBasisCategorieSelectie = () => (
     <div className="categorie-selectie-container">
@@ -1101,7 +1089,15 @@ export const CategorieSelectieModal = ({
 
                           {/* Actieknop */}
                           <button 
-                            onClick={() => handleHighScoreSelect({ target: { value: categories } } as any)}
+                            onClick={() => {
+                              const cats = categories.split(',');
+                              onHighScoreSelect?.(cats);
+                              setGeselecteerdeHighscoreCategorieen?.(cats);
+                              onClose();
+                              window.dispatchEvent(new CustomEvent('selectHighscoreMode'));
+                              setToastBericht('Recordpoging geladen: highscore modus geactiveerd.');
+                              setIsToastZichtbaar(true);
+                            }}
                             title="Selecteer deze categorieën en probeer je record te verbeteren"
                             style={{
                               backgroundColor: '#4CAF50',
