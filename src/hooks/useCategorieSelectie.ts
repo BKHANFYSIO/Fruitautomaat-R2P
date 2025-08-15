@@ -87,43 +87,6 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
     return () => clearTimeout(id);
   }, [filtersByMode]);
 
-  const opdrachtenVoorSelectie = useMemo(() => {
-    let gefilterdeOpdrachten = opdrachten.filter(op => {
-      const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes((op.bron as OpdrachtBron) || 'systeem');
-      if (!bronMatch) return false;
-      const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
-      if (!typeMatch) return false;
-      if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
-        const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
-        if (!filters.tekenen.includes(status)) return false;
-      }
-      const nivs = filters.niveaus || [];
-      if (nivs.length === 0) return true; // geen niveau-filter
-      const niv = (op as any).niveau as (1|2|3|undefined);
-      if (typeof niv === 'number') return nivs.includes(niv);
-      return nivs.includes('undef');
-    });
-
-    // Als er highscore categorieën zijn geselecteerd, filter op basis daarvan
-    if (geselecteerdeHighscoreCategorieen.length > 0) {
-      gefilterdeOpdrachten = gefilterdeOpdrachten.filter(op => {
-        const opdrachtCategorie = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
-        return geselecteerdeHighscoreCategorieen.includes(opdrachtCategorie);
-      });
-    }
-
-    return gefilterdeOpdrachten;
-  }, [opdrachten, filters, geselecteerdeHighscoreCategorieen]);
-
-  const alleUniekeCategorieen = useMemo(() => {
-    const unieke = new Set<string>();
-    opdrachtenVoorSelectie.forEach(op => {
-      const id = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
-      unieke.add(id);
-    });
-    return [...unieke];
-  }, [opdrachtenVoorSelectie]);
-
   // Geselecteerde sets per modus
   const [geselecteerdeCategorieen, setGeselecteerdeCategorieen] = useState<string[]>(() => {
     try {
@@ -160,6 +123,43 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
       return [];
     }
   });
+
+  const opdrachtenVoorSelectie = useMemo(() => {
+    let gefilterdeOpdrachten = opdrachten.filter(op => {
+      const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes((op.bron as OpdrachtBron) || 'systeem');
+      if (!bronMatch) return false;
+      const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
+      if (!typeMatch) return false;
+      if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+        const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+        if (!filters.tekenen.includes(status)) return false;
+      }
+      const nivs = filters.niveaus || [];
+      if (nivs.length === 0) return true; // geen niveau-filter
+      const niv = (op as any).niveau as (1|2|3|undefined);
+      if (typeof niv === 'number') return nivs.includes(niv);
+      return nivs.includes('undef');
+    });
+
+    // Als er highscore categorieën zijn geselecteerd, filter op basis daarvan
+    if (geselecteerdeHighscoreCategorieen.length > 0) {
+      gefilterdeOpdrachten = gefilterdeOpdrachten.filter(op => {
+        const opdrachtCategorie = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+        return geselecteerdeHighscoreCategorieen.includes(opdrachtCategorie);
+      });
+    }
+
+    return gefilterdeOpdrachten;
+  }, [opdrachten, filters, geselecteerdeHighscoreCategorieen]);
+
+  const alleUniekeCategorieen = useMemo(() => {
+    const unieke = new Set<string>();
+    opdrachtenVoorSelectie.forEach(op => {
+      const id = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
+      unieke.add(id);
+    });
+    return [...unieke];
+  }, [opdrachtenVoorSelectie]);
 
   // Debounced saves
   useEffect(() => {
