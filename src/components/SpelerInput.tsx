@@ -225,6 +225,18 @@ export const SpelerInput = ({
     }
   }, [isSpelGestart]);
 
+  // Event listener om highscore modus te activeren vanuit CategorieSelectieModal
+  useEffect(() => {
+    const handleSelectHighscoreMode = () => {
+      setLocalActiveMode('highscore');
+    };
+
+    window.addEventListener('selectHighscoreMode', handleSelectHighscoreMode);
+    return () => {
+      window.removeEventListener('selectHighscoreMode', handleSelectHighscoreMode);
+    };
+  }, []);
+
   return (
     <div className="speler-input-form">
       {isHulpElementenZichtbaar && (
