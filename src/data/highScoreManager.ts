@@ -54,6 +54,9 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
   const key = createCategoryKey(categories);
   const existingScore = library[key];
 
+  // Tel altijd de poging mee, ongeacht of de score hoger is
+  const nieuweAantalPogingen = (existingScore?.aantalPogingen || 0) + 1;
+
   if (newScore > (existingScore?.score || 0)) {
     // Bepaal of dit een verbetering is van een bestaande highscore
     const isVerbetering = existingScore && existingScore.spelerNaam !== spelerNaam;
@@ -66,7 +69,7 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
       verbeteringVan: isVerbetering ? `${existingScore.spelerNaam}_${existingScore.timestamp}` : undefined,
       origineleSpelerNaam: isVerbetering ? existingScore.spelerNaam : undefined,
       isVerbetering: isVerbetering,
-      aantalPogingen: (existingScore?.aantalPogingen || 0) + 1,
+      aantalPogingen: nieuweAantalPogingen,
     };
     try {
       localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
@@ -78,11 +81,29 @@ export const saveHighScore = (categories: string[], newScore: number, spelerNaam
   } else {
     // Score was niet hoger, maar tel wel de poging mee
     if (existingScore) {
-      existingScore.aantalPogingen = (existingScore.aantalPogingen || 0) + 1;
+      // Maak een kopie van de bestaande score om mutatie te voorkomen
+      library[key] = {
+        ...existingScore,
+        aantalPogingen: nieuweAantalPogingen,
+      };
       try {
         localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
       } catch (error) {
         console.error("Fout bij het bijwerken van aantal pogingen:", error);
+      }
+    } else {
+      // Eerste poging met deze categorieën, maak een nieuwe entry
+      library[key] = {
+        score: newScore,
+        timestamp: Date.now(),
+        spelerNaam: spelerNaam,
+        customNaam: customNaam,
+        aantalPogingen: nieuweAantalPogingen,
+      };
+      try {
+        localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(library));
+      } catch (error) {
+        console.error("Fout bij het opslaan van eerste poging:", error);
       }
     }
     return false; // Score was niet hoger
@@ -125,6 +146,9 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
 
   const existingScore = library[spelerNaam][key];
 
+  // Tel altijd de poging mee, ongeacht of de score hoger is
+  const nieuweAantalPogingen = (existingScore?.aantalPogingen || 0) + 1;
+
   if (newScore > (existingScore?.score || 0)) {
     // Bepaal of dit een verbetering is van een bestaande personal best
     const isVerbetering = existingScore && existingScore.score > 0;
@@ -137,7 +161,7 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
       verbeteringVan: isVerbetering ? `personal_${spelerNaam}_${existingScore.timestamp}` : undefined,
       origineleSpelerNaam: isVerbetering ? spelerNaam : undefined,
       isVerbetering: isVerbetering,
-      aantalPogingen: (existingScore?.aantalPogingen || 0) + 1,
+      aantalPogingen: nieuweAantalPogingen,
     };
     try {
       localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
@@ -149,11 +173,29 @@ export const savePersonalBest = (categories: string[], newScore: number, spelerN
   } else {
     // Score was niet hoger, maar tel wel de poging mee
     if (existingScore) {
-      existingScore.aantalPogingen = (existingScore.aantalPogingen || 0) + 1;
+      // Maak een kopie van de bestaande score om mutatie te voorkomen
+      library[spelerNaam][key] = {
+        ...existingScore,
+        aantalPogingen: nieuweAantalPogingen,
+      };
       try {
         localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
       } catch (error) {
         console.error("Fout bij het bijwerken van aantal pogingen:", error);
+      }
+    } else {
+      // Eerste poging met deze categorieën, maak een nieuwe entry
+      library[spelerNaam][key] = {
+        score: newScore,
+        timestamp: Date.now(),
+        spelerNaam: spelerNaam,
+        customNaam: customNaam,
+        aantalPogingen: nieuweAantalPogingen,
+      };
+      try {
+        localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(library));
+      } catch (error) {
+        console.error("Fout bij het opslaan van eerste poging:", error);
       }
     }
     return false;

@@ -1913,19 +1913,24 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           onKopOfMunt={(keuze) => {
             const uitkomst = Math.random() < 0.5 ? 'kop' : 'munt';
             const gewonnen = keuze === uitkomst;
-            if (huidigeSpeler) {
-              if (gewonnen) {
-                const gewonnenPunten = puntenVoorVerdubbeling * 2;
-               showNotificatie(`Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`, 'succes', 6000);
-                setSpelers(spelers.map(speler => speler.naam === huidigeSpeler.naam ? { ...speler, score: speler.score + gewonnenPunten } : speler));
-              } else {
-               showNotificatie(`Het is ${uitkomst}! Helaas, geen extra punten.`, 'fout', 6000);
+
+            // Toon notificatie en pas score toe NA de animatie (~2.8s)
+            setTimeout(() => {
+              if (huidigeSpeler) {
+                if (gewonnen) {
+                  const gewonnenPunten = puntenVoorVerdubbeling * 2;
+                  showNotificatie(`Het is ${uitkomst}! Je wint ${gewonnenPunten} punten!`, 'succes', 6000);
+                  setSpelers(spelers.map(speler => speler.naam === huidigeSpeler.naam ? { ...speler, score: speler.score + gewonnenPunten } : speler));
+                } else {
+                  showNotificatie(`Het is ${uitkomst}! Helaas, geen extra punten.`, 'fout', 6000);
+                }
+                setTimeout(() => {
+                  mainContentRef.current?.scrollTo(0, 0);
+                  window.scrollTo(0, 0);
+                }, 100);
               }
-              setTimeout(() => {
-                mainContentRef.current?.scrollTo(0, 0);
-                window.scrollTo(0, 0);
-              }, 100);
-            }
+            }, 2800);
+
             return { uitkomst, gewonnen };
           }}
                 huidigeBonusOpdracht={huidigeBonusOpdracht}

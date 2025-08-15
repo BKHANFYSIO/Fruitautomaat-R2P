@@ -3,7 +3,7 @@ import { useAudio } from '../hooks/useAudio';
 import './KopOfMunt.css';
 
 interface KopOfMuntProps {
-  onKeuze: (keuze: 'kop' | 'munt') => void;
+  onKeuze: (keuze: 'kop' | 'munt') => { uitkomst: 'kop' | 'munt'; gewonnen: boolean };
   punten: number;
   onVoltooid: () => void;
   isGeluidActief: boolean;
@@ -12,18 +12,22 @@ interface KopOfMuntProps {
 export const KopOfMunt = ({ onKeuze, punten, onVoltooid, isGeluidActief }: KopOfMuntProps) => {
   const [flipping, setFlipping] = useState(false);
   const [keuzeGemaakt, setKeuzeGemaakt] = useState<boolean>(false);
+  const [uitkomst, setUitkomst] = useState<'kop' | 'munt' | null>(null);
   const [playSpinningCoin] = useAudio('/sounds/spinning-coin.mp3', isGeluidActief);
 
   const handleFlip = (keuze: 'kop' | 'munt') => {
     if (flipping) return;
+
+    // Bepaal direct de uitkomst via parent zodat animatie en logica overeenkomen
+    const result = onKeuze(keuze);
+    setUitkomst(result.uitkomst);
 
     playSpinningCoin(); // Speel het munt draai geluid
     setFlipping(true);
     setKeuzeGemaakt(true);
     
     setTimeout(() => {
-      onKeuze(keuze); // Bepaal de uitslag en toon notificatie
-      onVoltooid();   // Start het afronden van de beurt
+      onVoltooid();   // Start het afronden van de beurt na de animatie
     }, 3000); // Wacht tot de animatie klaar is
   };
 
@@ -35,7 +39,7 @@ export const KopOfMunt = ({ onKeuze, punten, onVoltooid, isGeluidActief }: KopOf
       </div>
       
       <div className="coin-container">
-        <div className={`coin ${flipping ? 'flipping' : ''}`}>
+        <div className={`coin ${flipping ? 'flipping' : ''} ${uitkomst ? `result-${uitkomst}` : ''}`}>
           <div className="side head">KOP</div>
           <div className="side tail">MUNT</div>
         </div>
