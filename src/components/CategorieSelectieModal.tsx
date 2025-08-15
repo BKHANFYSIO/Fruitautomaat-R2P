@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import type { Opdracht } from '../data/types';
-import type { SortOption } from '../data/highScoreManager';
+import type { SortOption, HighScoreLibrary } from '../data/highScoreManager';
 import { getSortedHighScores } from '../data/highScoreManager';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
@@ -60,7 +60,7 @@ interface CategorieSelectieModalProps {
   geselecteerdeCategorieen: string[];
   onCategorieSelectie: (categorie: string) => void;
   onBulkCategorieSelectie: (categorieen: string[], type: 'select' | 'deselect') => void;
-  highScoreLibrary?: { [key: string]: { score: number; spelerNaam: string; timestamp: string; isVerbetering?: boolean; origineleSpelerNaam?: string; aantalPogingen?: number } };
+  highScoreLibrary?: HighScoreLibrary;
   onHighScoreSelect?: (categories: string[]) => void;
   onOpenLeitnerBeheer: () => void;
   // Nieuwe props voor Leitner
