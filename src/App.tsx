@@ -1855,7 +1855,8 @@ const [limietWaarschuwingGenegeerd, setLimietWaarschuwingGenegeerd] = useState(f
           warning={dismissedWarning ? null : warning}
           DevPanelSlot={null}
             titel="Return2Performance"
-            opdrachten={opdrachtenVoorSelectie}
+            // Gebruik de daadwerkelijk gefilterde opdrachten voor consistente weergave
+            opdrachten={gefilterdeOpdrachten}
             spelers={spelers}
             isSpinning={isAanHetSpinnen}
             resultaat={spinResultaat}

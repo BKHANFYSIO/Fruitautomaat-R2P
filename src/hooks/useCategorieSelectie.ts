@@ -141,8 +141,8 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
       return nivs.includes('undef');
     });
 
-    // Als er highscore categorieën zijn geselecteerd, filter op basis daarvan
-    if (geselecteerdeHighscoreCategorieen.length > 0) {
+    // Alleen in highscore-modus beperken op highscore-categorieën
+    if (currentMode === 'highscore' && geselecteerdeHighscoreCategorieen.length > 0) {
       gefilterdeOpdrachten = gefilterdeOpdrachten.filter(op => {
         const opdrachtCategorie = `${op.Hoofdcategorie || 'Overig'} - ${op.Categorie}`;
         return geselecteerdeHighscoreCategorieen.includes(opdrachtCategorie);

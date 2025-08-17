@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 import { CRITERIA } from '../data/criteria';
 import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';
 import './AiOpgaveGenerator.css';
@@ -174,6 +175,10 @@ Je bent een expert-docent en curriculumontwikkelaar op het gebied van ${onderwer
 **CONTEXT:**
 Je ontwikkelt opdrachten voor een educatieve fruitautomaat-game. De opdrachten worden gebruikt om de kennis en vaardigheden van hbo-studenten fysiotherapie te toetsen. Ze moeten kort, eenduidig en uitdagend zijn.
 
+**BELANGRIJK: Download de bijlagen uit stap 3 van de AI Generator om de juiste structuur en niveau-indeling te begrijpen:**
+- **Excel Sjabloon**: Voor de juiste kolomstructuur
+- **Niveau Bepaling Instructies**: Voor gedetailleerde richtlijnen per opdrachttype
+
 **DOELGROEP:**
 ${studentNiveauInstructie}
 
@@ -215,22 +220,54 @@ Je kunt links naar websites, afbeeldingen en video's toevoegen in de antwoordsle
 ${criteriaInstructie}
 
 **NIVEAU BEPALING:**
-Bepaal het niveau op basis van de cognitieve complexiteit en vaardigheden die vereist zijn:
+BELANGRIJK!! Gebruik onderstaande regels en beschrijvingen om elk type opdracht/vraagstuk in te delen op niveau 1, 2 of 3. De niveaus zijn type-overstijgend en worden bepaald door de complexiteit van kennis, uitvoering, redenering of communicatie. Lees per opdrachttype hoe de niveaus zijn gedefinieerd en bepaal vervolgens het juiste niveau.
 
-- **Niveau 1 (Opwarmers/Basis)**: Eenvoudige feiten, basis definities, herkenning, reproductie van kennis
-  - Voorbeelden: Spiernamen benoemen, basis definities, eenvoudige anatomie
-  - Tijdslimiet: 30-60 seconden
-  - Extra punten: 0 (standaard)
+**Algemeen:**
+- **Niveau 1 – Opwarmers / Startniveau**: Basiskennis of eenvoudige uitvoering.
+- **Niveau 2 – Standaardniveau**: Toepassing in herkenbare context, met keuze en onderbouwing.
+- **Niveau 3 – Uitdagend niveau**: Integratie, analyse en meerdere stappen in complexe context.
 
-- **Niveau 2 (Standaard)**: Begrip, eenvoudige toepassing, basis vaardigheden, interpretatie
-  - Voorbeelden: Processen uitleggen, eenvoudige toepassing, basis onderzoekstechnieken
-  - Tijdslimiet: 60-120 seconden
-  - Extra punten: 0-1 (afhankelijk van complexiteit)
+**Niveau bepaling per opdrachttype:**
 
-- **Niveau 3 (Uitdagend)**: Complexe toepassing, analyse, evaluatie, creatie, synthese
-  - Voorbeelden: Klinisch redeneren, complexe casussen, meerdere vaardigheden combineren
-  - Tijdslimiet: 120-300 seconden
-  - Extra punten: 1-2 (afhankelijk van complexiteit)
+**Feitenkennis:**
+- **Niveau 1**: Eenvoudige reproductie van direct aangeleerde, oppervlakkige basiskennis (enkelvoudige feitjes zoals fasen of hoofdstructuren). Gericht op het onthouden en benoemen van losse feiten, zonder interpretatie, verklaring of toepassing.
+- **Niveau 2**: Verdere detaillering of ordening van meerdere feiten. Hierbij is aanwezige basiskennis een voorwaarde. Het gaat om vragen die verdieping vragen door feiten in samenhang te plaatsen of onderscheid te maken tussen meerdere nauw verwante feiten. Geen verklaringen of toepassingen, enkel ordening en precisering.
+- **Typisch gebruik**: Meestal niveau 1 of 2; niveau 3 komt vrijwel niet voor.
+
+**Begripsuitleg:**
+- **Niveau 1**: Uitleg van één eenvoudig basisconcept of -proces. Maximaal 1 causale link. Weinig diepgang, vooral gericht op herkenning en het verwoorden van oppervlakkige kennis.
+- **Niveau 2**: Uitleg van een proces met 2–3 causale links of één duidelijke toepassing. Vereist aanwezige basiskennis en inzicht in relaties tussen onderdelen. Middelmatige complexiteit, vraagt om koppeling van meerdere losse elementen.
+- **Niveau 3**: Uitleg van een complex concept of proces met meerdere factoren, interacties en minimaal één uitzondering of beperking. Vereist diepgaande kennis, meerdere lagen van begrip en vermogen om relaties én implicaties te verwoorden. Hoge complexiteit en veel diepgang.
+- **Typisch gebruik**: Vooral niveau 2; soms 1 of 3 afhankelijk van complexiteit.
+
+**Toepassing:**
+- **Niveau 1**: Eenvoudige toepassing van kennis in een korte casus of voorbeeld. Maximaal 1 variabele en 1 stap in de redenering of handeling. Weinig diepgang; het gaat om het direct omzetten van basiskennis naar een herkenbare, simpele situatie.
+- **Niveau 2**: Toepassing met keuze en korte onderbouwing in een context met 2–3 variabelen. Vereist koppeling van kennis en eenvoudige redenering (2–3 stappen). Middelmatige complexiteit; vraagt onderbouwing met één criterium of rationale.
+- **Niveau 3**: Toepassing in een complexere casus met meerdere variabelen of conflicterende factoren. Vereist uitgebreide onderbouwing, meerdere stappen en vaak een progressieplan of meerdere criteria. Hoge complexiteit en integratie van verschillende kennisdomeinen.
+- **Typisch gebruik**: Vooral niveau 2; soms 1 bij eenvoudige toepassingen en 3 bij complexere casus.
+
+**Klinisch redeneren:**
+- **Niveau 2**: Redeneren met meerdere gegevens uit een korte casus. Formuleer 1–2 plausibele hypotheses, kies min. 1 gericht vervolgonderzoek (test/meetmoment) én een eerste interventierichting, met korte rationale. Context met 2–3 relevante variabelen, 2–3 redeneringsstappen, beperkte ambiguïteit. Geen volledige differentiaal; focus op meest waarschijnlijke optie met beknopte onderbouwing.
+- **Niveau 3**: Volledig redeneerproces met differentiaaldiagnose (≥2 alternatieven) en expliciete argumentatie. Integreert ≥3 domeinen (bijv. anamnese, LO/metingen, richtlijn/ICF, trainingsleer/gedrag) en onzekerheid (conflicterende gegevens). Bevat meetplan (≥2 metingen of tijdspunten), beslis-/progressiecriteria (inclusief stop-/red flags waar passend) en een gefundeerde keuze met 4+ redeneringsstappen.
+- **Typisch gebruik**: Vooral niveau 3; soms niveau 2; niveau 1 wordt in dit type niet gebruikt.
+
+**Vaardigheid – Onderzoek:**
+- **Niveau 1**: Uitvoeren van een eenvoudige vaardigheid of test. Focus op correcte techniek. Kan gecombineerd zijn met een eenvoudige, niet-complexe beredenering, maar geen diepgaande analyse vereist.
+- **Niveau 2**: Uitvoeren van een vaardigheid van gemiddelde complexiteit én kort beredeneren waarom/hoe deze uitgevoerd wordt. Inclusief basisinterpretatie van de uitkomst. 2–3 stappen, 2–3 variabelen.
+- **Niveau 3**: Uitvoeren van een complexe vaardigheid of cluster, gecombineerd met uitgebreid beredeneren vanuit meerdere perspectieven. Inclusief mogelijke uitkomsten en alternatieven. Analyse van resultaten en vertaling naar vervolgstappen. ≥4 stappen, ≥3 variabelen.
+- **Typisch gebruik**: Alle niveaus mogelijk; verschil zit in de complexiteit van de uitvoering en de mate van beredeneren.
+
+**Vaardigheid – Behandeling:**
+- **Niveau 1**: Uitvoeren van een eenvoudige behandeling of oefening. Correcte uitvoering staat centraal. Kan gecombineerd zijn met een eenvoudige, niet-complexe beredenering (bijv. benoemen doelspier), maar geen dosering of uitgebreide rationale vereist.
+- **Niveau 2**: Uitvoeren van een behandeling of oefening van gemiddelde complexiteit met korte beredenering (doel, dosering). Inclusief basisuitleg van het waarom. 2–3 stappen, 2–3 variabelen.
+- **Niveau 3**: Uitvoeren van een complexe behandeling of cluster met uitgebreid beredeneren vanuit meerdere perspectieven. Inclusief progressieplan, criteria voor opbouw/afbouw, alternatieven en onderbouwing vanuit richtlijnen of klinisch redeneren. ≥4 stappen, ≥3 variabelen.
+- **Typisch gebruik**: Alle niveaus mogelijk; verschil zit in de complexiteit van de uitvoering en de mate van beredeneren.
+
+**Communicatie met patiënt:**
+- **Niveau 1**: Basiscommunicatie zoals open vragen stellen, actief luisteren en eenvoudige uitleg in begrijpelijke taal. 1 stap, 1 variabele (één onderwerp), zonder noodzaak tot overtuigen of aanpassen.
+- **Niveau 2**: Communicatie mét motiveren of instrueren, afgestemd op de situatie van de patiënt. 2–3 variabelen; 2–3 stappen (uitleg + instructie + motivatie). Vereist afstemming en kort onderbouwen waarom de boodschap relevant is.
+- **Niveau 3**: Complexe communicatie met gedragsverandering of weerstand. Vereist gedeelde besluitvorming, motiverende gespreksvoering en integratie van meerdere factoren. ≥3 variabelen; ≥4 stappen inclusief uitleg, motivatie, omgaan met tegenargumenten en het gezamenlijk formuleren van een plan.
+- **Typisch gebruik**: Vooral niveau 1 of 2; niveau 3 bij complexe gedragsverandering of weerstand.
 
 **TIJDSLIMIET BEPALING:**
 Bepaal realistische tijdslimieten op basis van het opdrachttype en complexiteit:
@@ -298,7 +335,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
     try {
       await navigator.clipboard.writeText(prompt);
       window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Prompt gekopieerd naar klembord!', type: 'succes', timeoutMs: 6000 } }));
-    } catch (err) {
+    } catch {
       // Fallback voor oudere browsers
       const textArea = document.createElement('textarea');
       textArea.value = prompt;
@@ -341,6 +378,172 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Opdrachten');
     XLSX.writeFile(workbook, 'opdrachten_sjabloon.xlsx');
+  };
+
+  const generateNiveauBepalingPDF = () => {
+    // Download de bestaande PDF uit de public/Downloads map
+    const link = document.createElement('a');
+    link.href = '/Downloads/Instructie voor AI bepaling niveau van opdrachten.pdf';
+    link.download = 'instructie_niveau_bepaling_AI.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generateOpdrachtTypeInstructiesPDF = () => {
+    const pdf = new jsPDF('p', 'mm', 'a4', true);
+    
+    // Titel
+    pdf.setFontSize(20);
+    pdf.setTextColor(102, 126, 234);
+    pdf.text('Instructies per Opdrachttype', 105, 25, { align: 'center' });
+    
+    // Subtitel
+    pdf.setFontSize(14);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Overzicht van alle opdrachttypes met beschrijvingen en werkwoorden', 105, 35, { align: 'center' });
+    
+    let yPos = 50;
+    const lineHeight = 6;
+    const margin = 20;
+    const pageWidth = 210;
+    const contentWidth = pageWidth - (2 * margin);
+    
+    // Functie om tekst te wrappen
+    const wrapText = (text: string, maxWidth: number) => {
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        const testWidth = pdf.getTextWidth(testLine);
+        
+        if (testWidth > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      
+      return lines;
+    };
+    
+    // Functie om opdrachttype sectie toe te voegen
+    const addOpdrachtTypeSection = (type: string, beschrijving: string, werkwoorden: string, voorbeeld: string) => {
+      if (yPos > 250) {
+        pdf.addPage();
+        yPos = 20;
+      }
+      
+      // Type titel
+      pdf.setFontSize(16);
+      pdf.setTextColor(102, 126, 234);
+      pdf.text(type, margin, yPos);
+      yPos += lineHeight + 2;
+      
+      // Beschrijving
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Beschrijving:', margin, yPos);
+      yPos += lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      const wrappedBeschrijving = wrapText(beschrijving, contentWidth);
+      for (const line of wrappedBeschrijving) {
+        if (yPos > 250) {
+          pdf.addPage();
+          yPos = 20;
+        }
+        pdf.text(line, margin, yPos);
+        yPos += lineHeight;
+      }
+      yPos += 2;
+      
+      // Werkwoorden
+      if (yPos > 250) {
+        pdf.addPage();
+        yPos = 20;
+      }
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Werkwoorden:', margin, yPos);
+      yPos += lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(80, 80, 80);
+      const wrappedWerkwoorden = wrapText(werkwoorden, contentWidth);
+      for (const line of wrappedWerkwoorden) {
+        if (yPos > 250) {
+          pdf.addPage();
+          yPos = 20;
+        }
+        pdf.text(line, margin, yPos);
+        yPos += lineHeight;
+      }
+      yPos += 2;
+      
+      // Voorbeeld
+      if (yPos > 250) {
+        pdf.addPage();
+        yPos = 20;
+      }
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Voorbeeld:', margin, yPos);
+      yPos += lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(60, 60, 60);
+      const wrappedVoorbeeld = wrapText(voorbeeld, contentWidth);
+      for (const line of wrappedVoorbeeld) {
+        if (yPos > 250) {
+          pdf.addPage();
+          yPos = 20;
+        }
+        pdf.text(line, margin, yPos);
+        yPos += lineHeight;
+      }
+      
+      yPos += lineHeight * 2;
+    };
+    
+    // Voeg alle opdrachttypes toe
+    BESCHIKBARE_TYPES.forEach((type) => {
+      const beschrijving = TYPE_BESCHRIJVINGEN[type] || 'Geen beschrijving beschikbaar';
+      const werkwoorden = getWerkwoordenVoorType(type);
+      const voorbeeld = TYPE_VOORBEELDEN[type] || 'Geen voorbeeld beschikbaar';
+      
+      addOpdrachtTypeSection(type, beschrijving, werkwoorden, voorbeeld);
+    });
+    
+    // Download het PDF bestand
+    const filename = 'instructies_opdrachttypes_AI.pdf';
+    pdf.save(filename);
+  };
+
+  const getWerkwoordenVoorType = (type: string): string => {
+    const werkwoordenPerType: Record<string, string> = {
+      'Feitenkennis': 'Benoem, noem, geef, wat, welke, waar, wanneer, wie',
+      'Begripsuitleg': 'Leg uit, beschrijf, verklaar, definieer, wat betekent, hoe werkt',
+      'Toepassing': 'Pas toe, kies, beslis, onderbouw, motiveer, stel voor, maak een plan',
+      'Vaardigheid – Onderzoek': 'Demonstreer, voer uit, test, onderzoek, meet, observeer, analyseer',
+      'Vaardigheid – Behandeling': 'Demonstreer, voer uit, behandel, oefen, pas toe, stel samen, maak',
+      'Communicatie met patiënt': 'Leg uit, instrueer, motiveer, adviseer, begeleid, luister, stel vragen',
+      'Klinisch redeneren': 'Analyseer, redeneer, stel hypothese, differentieer, beslis, onderbouw, evalueer'
+    };
+    
+    return werkwoordenPerType[type] || 'Geen specifieke werkwoorden gedefinieerd';
   };
 
   if (!isOpen) {
@@ -1005,14 +1208,123 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
           </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 3: Download sjabloon</h4>
+            <h4>Stap 3: Download bijlagen voor AI chatbot</h4>
             <p className="instruction-text">
-              Download het Excel/CSV‑sjabloon om mee te geven als bijlage bij de prompt. Dit helpt de AI om de juiste kolomstructuur te begrijpen. 
-              Gebruik het sjabloon ook als de AI de opdrachten niet zelf in een downloadbaar Excel-bestand kan teruggeven - dan kun je de gegenereerde opdrachten handmatig in het sjabloon plakken.
+              Download de benodigde bijlagen om mee te geven aan je AI chatbot. Deze helpen de AI om de juiste structuur en niveau-indeling te begrijpen.
             </p>
-            <button className="download-knop" onClick={handleDownloadTemplate}>
-              Download Sjabloon
-            </button>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
+              <button className="download-knop" onClick={handleDownloadTemplate}>
+                📊 Download Excel Sjabloon
+              </button>
+              <button className="download-knop" onClick={generateNiveauBepalingPDF}>
+                📋 Download Niveau Bepaling Instructies
+              </button>
+              <button className="download-knop" onClick={generateOpdrachtTypeInstructiesPDF}>
+                📚 Download Instructies per Opdrachttype
+              </button>
+            </div>
+            
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '16px', 
+              backgroundColor: '#2d3748', 
+              borderRadius: '8px', 
+              border: '1px solid #4a5568',
+              borderLeft: '4px solid #48bb78'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                marginBottom: '8px' 
+              }}>
+                <span style={{ 
+                  fontSize: '16px', 
+                  color: '#48bb78'
+                }}>ℹ️</span>
+                <strong style={{ 
+                  color: '#e2e8f0', 
+                  fontSize: '14px'
+                }}>Wat download je?</strong>
+              </div>
+              <ul style={{ 
+                margin: '0', 
+                color: '#cbd5e0', 
+                lineHeight: '1.5',
+                fontSize: '13px',
+                paddingLeft: '20px'
+              }}>
+                <li><strong>Excel Sjabloon:</strong> De juiste kolomstructuur voor je opdrachten</li>
+                <li><strong>Niveau Bepaling Instructies:</strong> Gedetailleerde richtlijnen voor het bepalen van niveau 1, 2 of 3 per opdrachttype</li>
+                <li><strong>Instructies per Opdrachttype:</strong> Overzicht van alle opdrachttypes met beschrijvingen en werkwoorden</li>
+              </ul>
+            </div>
+            
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '16px', 
+              backgroundColor: '#2d3748', 
+              borderRadius: '8px', 
+              border: '1px solid #4a5568',
+              borderLeft: '4px solid #ed8936'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                marginBottom: '8px' 
+              }}>
+                <span style={{ 
+                  fontSize: '16px', 
+                  color: '#ed8936'
+                }}>🔗</span>
+                <strong style={{ 
+                  color: '#e2e8f0', 
+                  fontSize: '14px'
+                }}>Instructies per opdrachttype</strong>
+              </div>
+              <p style={{ 
+                margin: '0 0 12px 0', 
+                color: '#cbd5e0', 
+                lineHeight: '1.5',
+                fontSize: '13px'
+              }}>
+                Bekijk hieronder welke werkwoorden en beschrijvingen passen bij elk opdrachttype:
+              </p>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                gap: '12px' 
+              }}>
+                {BESCHIKBARE_TYPES.map((type) => (
+                  <div key={type} style={{ 
+                    padding: '12px', 
+                    backgroundColor: '#1a202c', 
+                    borderRadius: '6px', 
+                    border: '1px solid #2d3748' 
+                  }}>
+                    <strong style={{ color: '#e2e8f0', fontSize: '13px' }}>{type}</strong>
+                    <p style={{ 
+                      margin: '8px 0 0 0', 
+                      color: '#cbd5e0', 
+                      fontSize: '12px',
+                      lineHeight: '1.4'
+                    }}>
+                      {TYPE_BESCHRIJVINGEN[type]}
+                    </p>
+                    <p style={{ 
+                      margin: '4px 0 0 0', 
+                      color: '#a0aec0', 
+                      fontSize: '11px',
+                      fontStyle: 'italic'
+                    }}>
+                      <strong>Werkwoorden:</strong> {getWerkwoordenVoorType(type)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="ai-generator-section">

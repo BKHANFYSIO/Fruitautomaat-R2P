@@ -416,21 +416,25 @@ export const CategorieSelectieModal = ({
     setFilters({ ...filters, niveaus: nieuw });
   };
 
-  // Gefilterde opdrachten op basis van huidige filters
+  // Gefilterde opdrachten op basis van huidige filters (incl. niveau)
   const gefilterdeOpdrachten = useMemo(() => {
-      return opdrachten.filter(op => {
-      // Filter op bron
+    return opdrachten.filter(op => {
+      // Bron
       const bronMatch = filters.bronnen.length === 0 || filters.bronnen.includes(op.bron as 'systeem' | 'gebruiker');
       if (!bronMatch) return false;
-
-      // Filter op opdrachtType
-        if (filters.opdrachtTypes.length > 0 && !filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend')) return false;
-        // Filter op tekenen tri-status
-        if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
-          const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
-          if (!filters.tekenen.includes(status)) return false;
-        }
-        return true;
+      // Type
+      if (filters.opdrachtTypes.length > 0 && !filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend')) return false;
+      // Tekenen
+      if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+        const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+        if (!filters.tekenen.includes(status)) return false;
+      }
+      // Niveau
+      const nivs = filters.niveaus || [];
+      if (nivs.length === 0) return true;
+      const niv = (op as any).niveau as (1|2|3|undefined);
+      if (typeof niv === 'number') return nivs.includes(niv as any);
+      return nivs.includes('undef' as any);
     });
   }, [opdrachten, filters]);
 
@@ -681,17 +685,33 @@ export const CategorieSelectieModal = ({
   };
 
   const handleBekijkOpdrachten = (isHoofd: boolean, naam: string) => {
-    const gefilterdeOpdrachten = isHoofd
-        ? opdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === naam)
-        : opdrachten.filter(op => {
-            const [hoofd, sub] = naam.split(' - ');
-            return (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub;
+    const basis = isHoofd
+      ? opdrachten.filter(op => (op.Hoofdcategorie || 'Overig') === naam)
+      : opdrachten.filter(op => {
+          const [hoofd, sub] = naam.split(' - ');
+          return (op.Hoofdcategorie || 'Overig') === hoofd && op.Categorie === sub;
         });
 
-    setOpdrachtenVoorDetail(gefilterdeOpdrachten.map(op => ({
-        opdracht: op.Opdracht,
-        antwoord: op.Antwoordsleutel || '',
-        bron: op.bron,
+    // Pas dezelfde filters toe als in de modal (zodat selectie/iconen overeenkomen)
+    const zichtbaar = basis.filter(op => {
+      if (filters.bronnen.length > 0 && op.bron && !filters.bronnen.includes(op.bron)) return false;
+      if (filters.opdrachtTypes.length > 0 && (op.opdrachtType || 'Onbekend') && !filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend')) return false;
+      if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
+        const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
+        if (!filters.tekenen.includes(status)) return false;
+      }
+      const nivs = filters.niveaus || [];
+      if (nivs.length === 0) return true;
+      const niv = (op as any).niveau as (1|2|3|undefined);
+      if (typeof niv === 'number') return nivs.includes(niv as any);
+      return nivs.includes('undef' as any);
+    });
+
+    setOpdrachtenVoorDetail(zichtbaar.map(op => ({
+      opdracht: op.Opdracht,
+      antwoord: op.Antwoordsleutel || '',
+      bron: op.bron,
+      opdrachtType: op.opdrachtType,
     })));
     setGeselecteerdeCategorieVoorDetail(isHoofd ? naam : naam.split(' - ')[1]);
     setDetailModalOpen(true);
