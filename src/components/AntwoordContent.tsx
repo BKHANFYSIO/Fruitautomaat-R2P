@@ -9,7 +9,7 @@ interface AntwoordContentProps {
 
 type EmbedItem =
   | { kind: 'youtube'; id: string; url: string; startSec?: number }
-  | { kind: 'vimeo'; id: string; url: string }
+  | { kind: 'vimeo'; id: string; url: string; startSec?: number }
   | { kind: 'image'; url: string };
 
 const urlRegex = /(https?:\/\/[^\s)]+)(?=[\s)|]|$)/gi;
@@ -26,6 +26,28 @@ function parseYouTubeStartParam(url: URL): number | undefined {
   const mi = parseInt(m[2] || '0', 10);
   const se = parseInt(m[3] || '0', 10);
   return h * 3600 + mi * 60 + se;
+}
+
+function parseVimeoStartParam(url: URL): number | undefined {
+  // Vimeo ondersteunt #t= (bijv. #t=30s, #t=2m30s, #t=1h2m30s, #t=38.172)
+  const hash = url.hash;
+  if (!hash) return undefined;
+  
+  // Eerst proberen decimale seconden te matchen (bijv. #t=38.172)
+  const decimalMatch = hash.match(/#t=(\d+\.\d+)/);
+  if (decimalMatch) {
+    return parseFloat(decimalMatch[1]);
+  }
+  
+  // Dan proberen het tijdformaat te matchen (bijv. #t=2m30s)
+  const timeMatch = hash.match(/#t=((?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?)/);
+  if (!timeMatch) return undefined;
+  
+  const h = parseInt(timeMatch[2] || '0', 10);
+  const m = parseInt(timeMatch[3] || '0', 10);
+  const s = parseInt(timeMatch[4] || '0', 10);
+  
+  return h * 3600 + m * 60 + s;
 }
 
 function extractEmbedsFromUrls(urls: string[]): EmbedItem[] {
@@ -57,7 +79,8 @@ function extractEmbedsFromUrls(urls: string[]): EmbedItem[] {
         const parts = url.pathname.split('/').filter(Boolean);
         const id = parts.find((p) => /^(\d+)$/.test(p));
         if (id) {
-          embeds.push({ kind: 'vimeo', id, url: rawUrl });
+          const startSec = parseVimeoStartParam(url);
+          embeds.push({ kind: 'vimeo', id, url: rawUrl, startSec });
           continue;
         }
       }
@@ -197,7 +220,8 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
               );
             }
             if (item.kind === 'vimeo') {
-              const embedSrc = `https://player.vimeo.com/video/${item.id}`;
+              const startQuery = typeof item.startSec === 'number' && item.startSec > 0 ? `#t=${item.startSec}` : '';
+              const embedSrc = `https://player.vimeo.com/video/${item.id}${startQuery}`;
               const entry: ManifestEntry | undefined = manifestMap[item.url];
               return (
                 <div className="media-video" key={`vimeo-${i}`}>

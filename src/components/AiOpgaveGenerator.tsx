@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
 import { CRITERIA } from '../data/criteria';
 import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';
 import './AiOpgaveGenerator.css';
@@ -17,19 +16,19 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
   const [gekozenBestaandeHoofdcategorie, setGekozenBestaandeHoofdcategorie] = useState('');
   const [aantalOpdrachten, setAantalOpdrachten] = useState(30);
   const [niveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
-  const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar'>('2e jaar');
+  const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar' | ''>('');
   const [subcatMode, setSubcatMode] = useState<'ai' | 'handmatig'>('ai');
   // legacy input verwijderd; vervangen door handmatige lijst met aantallen
   const [onderwerpBeschrijving, setOnderwerpBeschrijving] = useState('');
   const [handmatigeSubcats, setHandmatigeSubcats] = useState<Array<{ naam: string; aantal: number }>>([{ naam: '', aantal: 15 }]);
   const TYPE_BESCHRIJVINGEN: Record<string, string> = {
-    'Feitenkennis': 'Eén juist, kort feit/definitie zonder context.',
-    'Begripsuitleg': 'Concept/proces helder uitleggen zonder casus of patiënt.',
-    'Toepassing': 'Kennis toepassen op een korte praktijksituatie met keuze/onderbouwing. Casus kan in de opdrachttekst zitten; aparte "Casus" is optioneel.',
-    'Vaardigheid – Onderzoek': 'Demonstreren/uitvoeren van lichamelijk onderzoek.',
-    'Vaardigheid – Behandeling': 'Uitvoeren/demonstreren van interventie of oefenprogramma.',
-    'Communicatie met patiënt': 'Patiëntgerichte uitleg/instructie/motiveren.',
-    'Klinisch redeneren': 'Hypothesevorming/differentiaal/keuze op basis van argumentatie. Vereist casusbeschrijving.'
+    'Feitenkennis': 'Opdrachten die gericht zijn op het reproduceren van concrete, losse feiten zonder verdere interpretatie of toepassing.',
+    'Begripsuitleg': 'Opdrachten waarin studenten een concept, proces of verschil uitleggen, beschrijven of verklaren. Het draait om inzicht in verbanden en (causale) relaties.',
+    'Toepassing': 'Opdrachten waarbij kennis in een herkenbare (casus)context wordt gebruikt om een keuze te maken, oplossing te bedenken of plan op te stellen. Vereist korte onderbouwing of motivatie.',
+    'Vaardigheid – Onderzoek': 'Opdrachten gericht op het demonstreren en uitvoeren van een onderzoekstechniek of test, inclusief (basis)beredenering en interpretatie van resultaten.',
+    'Vaardigheid – Behandeling': 'Opdrachten waarin studenten een behandeling of oefening uitvoeren of samenstellen. Focus ligt op correcte uitvoering, met toenemende complexiteit in onderbouwing en opbouw.',
+    'Communicatie met patiënt': 'Opdrachten waarin studenten uitleg geven, motiveren, adviseren of begeleiden van patiënten. De nadruk ligt op begrijpelijke taal, afstemming, motivatie en omgaan met weerstand.',
+    'Klinisch redeneren': 'Opdrachten die vragen om een gestructureerd redeneerproces met meerdere gegevens uit een casus, waarbij hypotheses, onderzoek en interventierichtingen gekozen en onderbouwd worden.'
   };
   const BESCHIKBARE_TYPES = OPDRACHT_TYPE_ORDER.filter(t => TYPE_BESCHRIJVINGEN[t as keyof typeof TYPE_BESCHRIJVINGEN]);
   const TYPE_VOORBEELDEN: Record<string, string> = {
@@ -41,6 +40,16 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
     'Communicatie met patiënt': 'Leg aan een patiënt uit waarom de voorste kruisband belangrijk is voor voorwaartse stabiliteit.',
     'Klinisch redeneren': '**Casus:** 30-jarige loper met pijn aan de mediale knie, slotklachten, positief McMurray. **Opdracht:** Bepaal twee mogelijke diagnoses en geef aan welk aanvullend onderzoek je kiest.'
   };
+
+  const TYPE_OPDRACHTEN_VOORBEELDEN: Record<string, string> = {
+    'Feitenkennis': 'Benoemen van structuren, functies, fasen, data of namen; eenvoudige tekenopdrachten van structuren; vragen met "wat", "welke", "noem", "benoem".',
+    'Begripsuitleg': 'Uitleg van fysiologische processen (bv. sliding filament theorie), beschrijven van verschillen (acute vs. chronische pijn), tekenen en toelichten van processen of grafieken.',
+    'Toepassing': 'Kiezen van een oefening of meetmethode in een casus, motiveren van een keuze, opstellen van een eenvoudig oefenplan.',
+    'Vaardigheid – Onderzoek': 'Uitvoeren/demonstreren van een test (bv. Lachman test), meten van vitale functies, observeren en analyseren van onderzoeksuitkomsten.',
+    'Vaardigheid – Behandeling': 'Demonstreren van een oefening, opstellen van een oefenprogramma, behandelen volgens een richtlijn, inclusief dosering, progressie en alternatieven.',
+    'Communicatie met patiënt': 'Eenvoudig uitleggen van een begrip, motiveren tot gedragsverandering, geven van instructies, oefenen van motiverende gespreksvoering, gezamenlijke besluitvorming.',
+    'Klinisch redeneren': 'Formuleren van hypothesen, differentiëren tussen diagnoses, beslissen over vervolgonderzoek en eerste interventie, maken van een differentiaaldiagnose met argumentatie.'
+  };
   const [geselecteerdeTypes, setGeselecteerdeTypes] = useState<string[]>([]);
   // Tekenen tri-status filter voor generatie
   const [allowTekenenJa, setAllowTekenenJa] = useState<boolean>(true);
@@ -48,6 +57,7 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
   const [allowTekenenNee, setAllowTekenenNee] = useState<boolean>(true);
   const [isTekenenUitlegOpen, setIsTekenenUitlegOpen] = useState(false);
   const [openTypeUitleg, setOpenTypeUitleg] = useState<string | null>(null);
+  const [alleTypesUitgeklapt, setAlleTypesUitgeklapt] = useState(false);
 
   const updateHandmatigeSubcat = (index: number, veld: 'naam' | 'aantal', waarde: string | number) => {
     setHandmatigeSubcats(prev => {
@@ -78,6 +88,18 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
 
   const toggleType = (type: string) => {
     setGeselecteerdeTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
+
+  const toggleAlleTypesUitklappen = () => {
+    if (alleTypesUitgeklapt) {
+      // Alles inklappen
+      setOpenTypeUitleg(null);
+      setAlleTypesUitgeklapt(false);
+    } else {
+      // Alles uitklappen
+      setOpenTypeUitleg('all');
+      setAlleTypesUitgeklapt(true);
+    }
   };
 
   const generatePrompt = () => {
@@ -390,161 +412,9 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
     document.body.removeChild(link);
   };
 
-  const generateOpdrachtTypeInstructiesPDF = () => {
-    const pdf = new jsPDF('p', 'mm', 'a4', true);
-    
-    // Titel
-    pdf.setFontSize(20);
-    pdf.setTextColor(102, 126, 234);
-    pdf.text('Instructies per Opdrachttype', 105, 25, { align: 'center' });
-    
-    // Subtitel
-    pdf.setFontSize(14);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('Overzicht van alle opdrachttypes met beschrijvingen en werkwoorden', 105, 35, { align: 'center' });
-    
-    let yPos = 50;
-    const lineHeight = 6;
-    const margin = 20;
-    const pageWidth = 210;
-    const contentWidth = pageWidth - (2 * margin);
-    
-    // Functie om tekst te wrappen
-    const wrapText = (text: string, maxWidth: number) => {
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-      
-      for (const word of words) {
-        const testLine = currentLine ? currentLine + ' ' + word : word;
-        const testWidth = pdf.getTextWidth(testLine);
-        
-        if (testWidth > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
-      }
-      
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      
-      return lines;
-    };
-    
-    // Functie om opdrachttype sectie toe te voegen
-    const addOpdrachtTypeSection = (type: string, beschrijving: string, werkwoorden: string, voorbeeld: string) => {
-      if (yPos > 250) {
-        pdf.addPage();
-        yPos = 20;
-      }
-      
-      // Type titel
-      pdf.setFontSize(16);
-      pdf.setTextColor(102, 126, 234);
-      pdf.text(type, margin, yPos);
-      yPos += lineHeight + 2;
-      
-      // Beschrijving
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Beschrijving:', margin, yPos);
-      yPos += lineHeight;
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      const wrappedBeschrijving = wrapText(beschrijving, contentWidth);
-      for (const line of wrappedBeschrijving) {
-        if (yPos > 250) {
-          pdf.addPage();
-          yPos = 20;
-        }
-        pdf.text(line, margin, yPos);
-        yPos += lineHeight;
-      }
-      yPos += 2;
-      
-      // Werkwoorden
-      if (yPos > 250) {
-        pdf.addPage();
-        yPos = 20;
-      }
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Werkwoorden:', margin, yPos);
-      yPos += lineHeight;
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.setTextColor(80, 80, 80);
-      const wrappedWerkwoorden = wrapText(werkwoorden, contentWidth);
-      for (const line of wrappedWerkwoorden) {
-        if (yPos > 250) {
-          pdf.addPage();
-          yPos = 20;
-        }
-        pdf.text(line, margin, yPos);
-        yPos += lineHeight;
-      }
-      yPos += 2;
-      
-      // Voorbeeld
-      if (yPos > 250) {
-        pdf.addPage();
-        yPos = 20;
-      }
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('Voorbeeld:', margin, yPos);
-      yPos += lineHeight;
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.setTextColor(60, 60, 60);
-      const wrappedVoorbeeld = wrapText(voorbeeld, contentWidth);
-      for (const line of wrappedVoorbeeld) {
-        if (yPos > 250) {
-          pdf.addPage();
-          yPos = 20;
-        }
-        pdf.text(line, margin, yPos);
-        yPos += lineHeight;
-      }
-      
-      yPos += lineHeight * 2;
-    };
-    
-    // Voeg alle opdrachttypes toe
-    BESCHIKBARE_TYPES.forEach((type) => {
-      const beschrijving = TYPE_BESCHRIJVINGEN[type] || 'Geen beschrijving beschikbaar';
-      const werkwoorden = getWerkwoordenVoorType(type);
-      const voorbeeld = TYPE_VOORBEELDEN[type] || 'Geen voorbeeld beschikbaar';
-      
-      addOpdrachtTypeSection(type, beschrijving, werkwoorden, voorbeeld);
-    });
-    
-    // Download het PDF bestand
-    const filename = 'instructies_opdrachttypes_AI.pdf';
-    pdf.save(filename);
-  };
 
-  const getWerkwoordenVoorType = (type: string): string => {
-    const werkwoordenPerType: Record<string, string> = {
-      'Feitenkennis': 'Benoem, noem, geef, wat, welke, waar, wanneer, wie',
-      'Begripsuitleg': 'Leg uit, beschrijf, verklaar, definieer, wat betekent, hoe werkt',
-      'Toepassing': 'Pas toe, kies, beslis, onderbouw, motiveer, stel voor, maak een plan',
-      'Vaardigheid – Onderzoek': 'Demonstreer, voer uit, test, onderzoek, meet, observeer, analyseer',
-      'Vaardigheid – Behandeling': 'Demonstreer, voer uit, behandel, oefen, pas toe, stel samen, maak',
-      'Communicatie met patiënt': 'Leg uit, instrueer, motiveer, adviseer, begeleid, luister, stel vragen',
-      'Klinisch redeneren': 'Analyseer, redeneer, stel hypothese, differentieer, beslis, onderbouw, evalueer'
-    };
-    
-    return werkwoordenPerType[type] || 'Geen specifieke werkwoorden gedefinieerd';
-  };
+
+
 
   if (!isOpen) {
     return null;
@@ -842,7 +712,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 </div>
                 
                 <div className="instruction-text" style={{ marginBottom: 12 }}>
-                  <strong>Uitleg:</strong> Kies het studiejaar van de studenten waarvoor je opdrachten wilt genereren. Dit helpt de AI om de complexiteit en diepgang van de opdrachten aan te passen aan het kennisniveau.
+                  <strong>Uitleg:</strong> Kies het studiejaar van de studenten waarvoor je opdrachten wilt genereren. Dit helpt de AI om de complexiteit en diepgang van de opdrachten aan te passen aan het kennisniveau. <strong>Verplicht veld.</strong>
                 </div>
                 
                 <div className="radio-group">
@@ -888,19 +758,55 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 borderRadius: '8px', 
                 border: '1px solid #4a5568' 
               }}>
-                <div style={{ marginBottom: 12 }}>
+                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
                     Opdracht types (meerdere mogelijk):
                   </label>
+                  {geselecteerdeTypes.length > 0 && (
+                    <span style={{
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {geselecteerdeTypes.length} geselecteerd
+                    </span>
+                  )}
                 </div>
                 
                 <div className="instruction-text" style={{ marginBottom: 12 }}>
-                  <strong>Uitleg:</strong> Vink de typen aan die je wilt laten genereren. Laat alles leeg om de keuze aan de AI over te laten.
+                  <strong>Uitleg:</strong> Vink de typen aan die je wilt laten genereren. <strong>Tip:</strong> Kies maximaal 2-3 types tegelijk voor betere output. De AI kan zich dan beter focussen op specifieke vraagtypen in plaats van te veel verschillende stijlen door elkaar te mengen.
+                </div>
+                
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    onClick={toggleAlleTypesUitklappen}
+                    style={{
+                      backgroundColor: alleTypesUitgeklapt ? '#e53e3e' : '#4CAF50',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    title={alleTypesUitgeklapt ? 'Klik om alle types in te klappen' : 'Klik om alle types uit te klappen'}
+                  >
+                    {alleTypesUitgeklapt ? '🔽 Alles inklappen' : '🔼 Alles uitklappen'}
+                  </button>
                 </div>
                 
                 <ul className="type-list">
                   {BESCHIKBARE_TYPES.map((t) => (
                     <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`}>
+                      {/* Header rij met checkbox, titel en uitklap knop */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                         <label style={{ flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <input
@@ -922,40 +828,87 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                             cursor: 'pointer',
                             padding: '4px 8px',
                             borderRadius: '4px',
-                            backgroundColor: openTypeUitleg === t ? '#4a5568' : 'transparent',
+                            backgroundColor: (openTypeUitleg === t || openTypeUitleg === 'all') ? '#4a5568' : 'transparent',
                             transition: 'background-color 0.2s'
                           }} 
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenTypeUitleg(openTypeUitleg === t ? null : t);
+                            if (openTypeUitleg === 'all') {
+                              // Als alles uitgeklapt is, klap alleen deze in
+                              setOpenTypeUitleg(null);
+                              setAlleTypesUitgeklapt(false);
+                            } else {
+                              // Normale toggle
+                              setOpenTypeUitleg(openTypeUitleg === t ? null : t);
+                            }
                           }}
                           title="Klik voor uitleg en voorbeelden"
                         >
                           <span style={{ 
                             fontSize: '12px', 
                             transition: 'transform 0.2s', 
-                            transform: openTypeUitleg === t ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transform: (openTypeUitleg === t || openTypeUitleg === 'all') ? 'rotate(90deg)' : 'rotate(0deg)',
                             color: '#a0aec0'
                           }}>
                             ▶
                           </span>
                         </div>
                       </div>
-                      {openTypeUitleg === t && (
+                      {(openTypeUitleg === t || openTypeUitleg === 'all') && (
                         <div style={{ 
                           marginTop: '8px', 
                           padding: '12px', 
                           backgroundColor: '#1a202c', 
                           borderRadius: '6px', 
-                          border: '1px solid #2d3748',
-                          marginLeft: '24px'
+                          border: '1px solid #2d3748'
                         }}>
-                          <div style={{ color: '#cbd5e0', fontSize: '13px', marginBottom: '12px', lineHeight: '1.4' }}>
-                            {TYPE_BESCHRIJVINGEN[t]}
+                          {/* Definitie sectie */}
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ 
+                              color: '#90cdf4', 
+                              fontSize: '12px', 
+                              fontWeight: 'bold', 
+                              marginBottom: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              📖 Definitie
+                            </div>
+                            <div style={{ color: '#cbd5e0', fontSize: '13px', lineHeight: '1.5' }}>
+                              {TYPE_BESCHRIJVINGEN[t]}
+                            </div>
                           </div>
-                          <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.4' }}>
-                            <strong style={{ color: '#e2e8f0' }}>Voorbeelden:</strong>
-                            <div style={{ marginTop: '8px' }}>
+
+                          {/* Wat voor opdrachten vallen hieronder sectie */}
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ 
+                              color: '#90cdf4', 
+                              fontSize: '12px', 
+                              fontWeight: 'bold', 
+                              marginBottom: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              🎯 Wat voor opdrachten vallen hieronder?
+                            </div>
+                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.5' }}>
+                              {TYPE_OPDRACHTEN_VOORBEELDEN[t]}
+                            </div>
+                          </div>
+
+                          {/* Concrete voorbeelden sectie */}
+                          <div>
+                            <div style={{ 
+                              color: '#90cdf4', 
+                              fontSize: '12px', 
+                              fontWeight: 'bold', 
+                              marginBottom: '8px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              💡 Concrete voorbeelden
+                            </div>
+                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.4' }}>
                               {(() => {
                                 const voorbeelden = {
                                   'Feitenkennis': [
@@ -1211,6 +1164,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
             <h4>Stap 3: Download bijlagen voor AI chatbot</h4>
             <p className="instruction-text">
               Download de benodigde bijlagen om mee te geven aan je AI chatbot. Deze helpen de AI om de juiste structuur en niveau-indeling te begrijpen.
+              <strong>Kies zelf welke bestanden je nodig hebt, maar download altijd:</strong>
             </p>
             
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
@@ -1220,9 +1174,55 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               <button className="download-knop" onClick={generateNiveauBepalingPDF}>
                 📋 Download Niveau Bepaling Instructies
               </button>
-              <button className="download-knop" onClick={generateOpdrachtTypeInstructiesPDF}>
+              <a 
+                href="/Downloads/Instructie voor AI - Opdracht Types.pdf" 
+                download="Instructie voor AI - Opdracht Types.pdf"
+                className="download-knop"
+                style={{ textDecoration: 'none', display: 'inline-block' }}
+              >
                 📚 Download Instructies per Opdrachttype
+              </a>
+            </div>
+
+            <p className="instruction-text" style={{ marginTop: '16px', fontSize: '14px', color: '#a0aec0' }}>
+              <strong>Excel sjablonen per vakgebied:</strong> Download Excel sjablonen die je aan de AI meegeeft om een goed voorbeeld te geven. 
+              Dit maakt de kwaliteit van de output een stuk beter. Je kunt de sjablonen na downloaden nog aanpassen of verrijken 
+              zodat de output meer op maat gemaakt wordt passend bij jouw wensen.
+            </p>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
+              <button className="download-knop" onClick={handleDownloadTemplate}>
+                📊 Sjabloon Algemeen
               </button>
+              <button className="download-knop" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                🦴 Sjabloon Anatomie
+              </button>
+              <button className="download-knop" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                🫀 Sjabloon Pathfysiologie
+              </button>
+              <button className="download-knop" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                🏥 Sjabloon Fysiotherapie
+              </button>
+              <button className="download-knop" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                💬 Sjabloon Communicatie
+              </button>
+            </div>
+
+            <p className="instruction-text" style={{ marginTop: '16px', fontSize: '14px', color: '#a0aec0' }}>
+              <strong>Video met timestamps:</strong> Alleen nodig als je video bronnen gebruikt als basis voor het genereren van opdrachten. 
+              De fruitautomaat kan automatisch timestamps toevoegen aan antwoordsleutels en bij ondersteunde formaten (zoals YouTube en Vimeo) 
+              de video direct embedden op het relevante tijdstip.
+            </p>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
+              <a 
+                href="/Downloads/Instructie voor AI - Video met timestamps.pdf" 
+                download="Instructie voor AI - Video met timestamps.pdf"
+                className="download-knop"
+                style={{ textDecoration: 'none', display: 'inline-block' }}
+              >
+                🎬 Download Video met Timestamps Instructie
+              </a>
             </div>
             
             <div style={{ 
@@ -1258,72 +1258,9 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 <li><strong>Excel Sjabloon:</strong> De juiste kolomstructuur voor je opdrachten</li>
                 <li><strong>Niveau Bepaling Instructies:</strong> Gedetailleerde richtlijnen voor het bepalen van niveau 1, 2 of 3 per opdrachttype</li>
                 <li><strong>Instructies per Opdrachttype:</strong> Overzicht van alle opdrachttypes met beschrijvingen en werkwoorden</li>
+                <li><strong>Video met Timestamps Instructie:</strong> Uitleg over het gebruik van video bronnen met timestamps en automatische embedding</li>
+                <li><strong>Excel Sjablonen:</strong> Vakspecifieke sjablonen die je aan de AI meegeeft voor betere output kwaliteit</li>
               </ul>
-            </div>
-            
-            <div style={{ 
-              marginTop: '16px', 
-              padding: '16px', 
-              backgroundColor: '#2d3748', 
-              borderRadius: '8px', 
-              border: '1px solid #4a5568',
-              borderLeft: '4px solid #ed8936'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                marginBottom: '8px' 
-              }}>
-                <span style={{ 
-                  fontSize: '16px', 
-                  color: '#ed8936'
-                }}>🔗</span>
-                <strong style={{ 
-                  color: '#e2e8f0', 
-                  fontSize: '14px'
-                }}>Instructies per opdrachttype</strong>
-              </div>
-              <p style={{ 
-                margin: '0 0 12px 0', 
-                color: '#cbd5e0', 
-                lineHeight: '1.5',
-                fontSize: '13px'
-              }}>
-                Bekijk hieronder welke werkwoorden en beschrijvingen passen bij elk opdrachttype:
-              </p>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                gap: '12px' 
-              }}>
-                {BESCHIKBARE_TYPES.map((type) => (
-                  <div key={type} style={{ 
-                    padding: '12px', 
-                    backgroundColor: '#1a202c', 
-                    borderRadius: '6px', 
-                    border: '1px solid #2d3748' 
-                  }}>
-                    <strong style={{ color: '#e2e8f0', fontSize: '13px' }}>{type}</strong>
-                    <p style={{ 
-                      margin: '8px 0 0 0', 
-                      color: '#cbd5e0', 
-                      fontSize: '12px',
-                      lineHeight: '1.4'
-                    }}>
-                      {TYPE_BESCHRIJVINGEN[type]}
-                    </p>
-                    <p style={{ 
-                      margin: '4px 0 0 0', 
-                      color: '#a0aec0', 
-                      fontSize: '11px',
-                      fontStyle: 'italic'
-                    }}>
-                      <strong>Werkwoorden:</strong> {getWerkwoordenVoorType(type)}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -1347,6 +1284,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
             <h4>Stap 5: Kopieer de prompt</h4>
             <p className="instruction-text">
               Klik op "Kopieer Prompt" om de gegenereerde prompt naar je klembord te kopiëren. 
+              <strong>Let op:</strong> Je moet eerst het studentniveau selecteren en ten minste één opdrachttype selecteren in Stap 1 voordat je de prompt kunt kopiëren.
               Plak deze vervolgens in je favoriete AI-tool (zoals ChatGPT, Claude, NotebookLM, etc.).
             </p>
             <button 
@@ -1356,9 +1294,17 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                   window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Vul eerst de onderwerp-beschrijving in (Stap 1).', type: 'error', timeoutMs: 6000 } }));
                   return;
                 }
+                if (!studentNiveau) {
+                  window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Selecteer eerst het studentniveau voordat je de prompt kunt kopiëren.', type: 'error', timeoutMs: 6000 } }));
+                  return;
+                }
+                if (geselecteerdeTypes.length === 0) {
+                  window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Selecteer ten minste één opdrachttype voordat je de prompt kunt kopiëren.', type: 'error', timeoutMs: 6000 } }));
+                  return;
+                }
                 handleCopyPrompt();
               }}
-              disabled={!onderwerpBeschrijving.trim()}
+              disabled={!onderwerpBeschrijving.trim() || !studentNiveau || geselecteerdeTypes.length === 0}
             >
               Kopieer Prompt
             </button>
@@ -1372,8 +1318,9 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 <div className="step-content">
                   <strong>Bestanden toevoegen</strong>
                   <ul className="substeps-list">
-                    <li className="substep-item"><span className="substep-badge">a</span><span>Sjabloon toevoegen (of het gewenste kolomformaat benoemen).</span></li>
-                    <li className="substep-item"><span className="substep-badge">b</span><span>Br(on)nen toevoegen (indien van toepassing): links of korte samenvattingen per bron.</span></li>
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Sjabloon toevoegen.</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Instructies voor niveau bepaling en opdracht types toevoegen (de gedownloade PDF's).</span></li>
+                    <li className="substep-item"><span className="substep-badge">c</span><span>Br(on)nen toevoegen (indien van toepassing).</span></li>
                   </ul>
                 </div>
               </li>
@@ -1393,8 +1340,11 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 <div className="step-content">
                   <strong>Itereren</strong>
                   <ul className="substeps-list">
-                    <li className="substep-item"><span className="substep-badge">a</span><span>Pas de prompt aan als het resultaat nog niet naar wens is.</span></li>
-                    <li className="substep-item"><span className="substep-badge">b</span><span>Vraag extra opdrachten of bijsturing om de output te verbeteren.</span></li>
+                    <li className="substep-item"><span className="substep-badge">a</span><span>Geef bijsturing: extra instructies, voorbeelden of specificaties.</span></li>
+                    <li className="substep-item"><span className="substep-badge">b</span><span>Vraag om extra opdrachten of aanpassingen.</span></li>
+                    <li className="substep-item"><span className="substep-badge">c</span><span>Wijzig opdrachten handmatig waar nodig.</span></li>
+                    <li className="substep-item"><span className="substep-badge">d</span><span>Voeg links toe voor afbeeldingen/video's met timestamps in antwoordsleutels.</span></li>
+                    <li className="substep-item"><span className="substep-badge">e</span><span>Controleer alles op juistheid, volledigheid en consistentie.</span></li>
                   </ul>
                 </div>
               </li>
@@ -1438,9 +1388,9 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 lineHeight: '1.5',
                 fontSize: '13px'
               }}>
-                Valt het resultaat tegen? Maak het onderwerp concreter (subthema) en gebruik gerichte bronnen over hetzelfde onderwerp. 
+                Valt het resultaat tegen? Maak het onderwerp concreter (subthema), selecteer maximaal 2-3 opdrachttypes tegelijk, en gebruik gerichte bronnen over hetzelfde onderwerp. 
                 Hoe concreter, afgebakender en met toevoeging van relevante bronnen, hoe beter de output zal zijn. 
-                Vage, heel uitgebreide onderwerpen zonder bronnen leveren vaak minder bruikbare of minder kwalitatieve output op.
+                Vage, heel uitgebreide onderwerpen zonder bronnen zullen eerder minder bruikbare of minder kwalitatieve output opleveren.
               </p>
             </div>
           </div>

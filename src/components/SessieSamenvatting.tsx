@@ -51,8 +51,11 @@ export const SessieSamenvatting = ({
   const leerData = (mgr as any).loadLeerData?.() || null;
   let countHeelGoed = 0, countRedelijk = 0, countNietGoed = 0;
   const categorieNaarScores: Record<string, { sum: number; count: number }> = {};
+  let uniekeOpdrachtenInSessie = 0;
 
   if (leerData && leerData.opdrachten) {
+    const uniekeOpdrachtIds = new Set<string>();
+    
     for (const op of Object.values(leerData.opdrachten) as any[]) {
       const cat = op.categorie as string;
       const geschiedenis = Array.isArray(op.scoreGeschiedenis) ? op.scoreGeschiedenis : [];
@@ -64,9 +67,14 @@ export const SessieSamenvatting = ({
           if (!categorieNaarScores[cat]) categorieNaarScores[cat] = { sum: 0, count: 0 };
           categorieNaarScores[cat].sum += score;
           categorieNaarScores[cat].count += 1;
+          
+          // Tel unieke opdrachten in deze sessie
+          uniekeOpdrachtIds.add(op.opdrachtId);
         }
       }
     }
+    
+    uniekeOpdrachtenInSessie = uniekeOpdrachtIds.size;
   }
 
   // Sterkste/zwakste categorie op basis van sessie-gemiddelde
@@ -122,7 +130,11 @@ export const SessieSamenvatting = ({
             <span className="statistiek-waarde">{sessieData.duur ? formatTijd(sessieData.duur) : 'N/A'}</span>
           </div>
           <div className="statistiek-item">
-            <span className="statistiek-label">📚 Opdrachten:</span>
+            <span className="statistiek-label">📚 Opdrachten (uniek):</span>
+            <span className="statistiek-waarde">{uniekeOpdrachtenInSessie}</span>
+          </div>
+          <div className="statistiek-item">
+            <span className="statistiek-label">📚 Opdrachten (totaal):</span>
             <span className="statistiek-waarde">{sessieData.opdrachtenGedaan}</span>
           </div>
           <div className="statistiek-item">

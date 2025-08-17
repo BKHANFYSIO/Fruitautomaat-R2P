@@ -189,11 +189,9 @@
 }
 
 .type-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  align-items: start;
-  gap: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px;
   border: 1px solid #4a5568;
   border-radius: 6px;
@@ -206,7 +204,6 @@
 }
 
 .type-item label {
-  grid-column: 1 / -1;
   display: flex;
   gap: 10px;
   align-items: center;
@@ -230,12 +227,10 @@
 }
 
 .type-desc {
-  grid-column: 1 / -1;
   color: #cbd5e0;
 }
 
 .type-example {
-  grid-column: 1 / -1;
   color: #a0aec0;
   font-style: italic;
 }

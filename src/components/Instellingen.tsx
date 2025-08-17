@@ -488,7 +488,7 @@ export const Instellingen = React.memo(({
                       <strong>Bekijk eerst de "Instructie Excel‑sjabloon" hieronder om het bestand correct in te vullen.</strong>
                     </p>
                     
-                    <div className="opdracht-knoppen-container">
+                    <div className="opdracht-knoppen-container" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       <button 
                         onClick={() => {
                           const data = [
@@ -526,25 +526,18 @@ export const Instellingen = React.memo(({
                       >
                         📥 Download Excel Sjabloon
                       </button>
-                      {/* Instructie-knop direct onder de downloadknop */}
-                      <div>
-                        <button 
-                          className="instellingen-knop"
-                          onClick={() => setIsSjabloonUitlegOpen(true)}
-                          title="Uitleg over kolommen, filters en links in Excel"
-                          style={{ 
-                            marginTop: 8, 
-                            width: '100%', 
-                            maxWidth: '350px',
-                            display: 'block',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                        >
-                          ℹ️ Instructie Excel‑sjabloon
-                        </button>
-                      </div>
+                      <button 
+                        className="instellingen-knop"
+                        onClick={() => setIsSjabloonUitlegOpen(true)}
+                        title="Uitleg over kolommen, filters en links in Excel"
+                        style={{ 
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        ℹ️ Instructie Excel‑sjabloon
+                      </button>
                     </div>
                   </div>
 
@@ -553,7 +546,7 @@ export const Instellingen = React.memo(({
                     <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>🤖 Opdrachten genereren met AI</h5>
                     <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
                       Klik op de knop hieronder voor een instructie en prompt die je kunt kopiëren en gebruiken in je favoriete AI-tool. 
-                      Dit is een snelle manier om veel opdrachten te maken.
+                      Dit is een snelle manier om veel opdrachten te maken, maar <strong>controleer altijd achteraf de inhoud op juistheid en volledigheid</strong> (human in the loop).
                     </p>
                     
                     <button 
@@ -580,19 +573,20 @@ export const Instellingen = React.memo(({
                     <h5 style={{ margin: '0 0 10px 0', color: '#4ea3ff', fontSize: '1rem' }}>🎯 Categorieën selectie</h5>
                     <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '15px' }}>
                       <strong>Belangrijk:</strong> Na het uploaden van opdrachten kun je via de categorieën selectie (in het hoofdmenu) bepalen welke opdrachten je wilt gebruiken tijdens het spelen. 
-                      Dit geldt voor alle spellen en leermodi. Je kunt hier filteren op hoofdcategorie, subcategorie, opdrachttype en andere criteria.
+                      Dit geldt voor alle spellen en leermodi. Je kunt hier filteren op hoofdcategorie, subcategorie, opdrachttype en andere criteria, 
+                      en ook kiezen tussen systeem opdrachten en eigen toegevoegde opdrachten.
                     </p>
                   </div>
                 </div>
 
                 {/* --- Groep: Data Beheer --- */}
                 <div className="settings-group">
-                  <h4>Data Beheer</h4>
-                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '-5px', marginBottom: '15px' }}>
-                    Hier kun je verschillende soorten lokaal opgeslagen gegevens verwijderen.
+                  <h4>🗑️ Data Beheer</h4>
+                  <p className="setting-description" style={{ marginLeft: 0, marginTop: '0px', marginBottom: '20px' }}>
+                    Hier kun je verschillende soorten lokaal opgeslagen gegevens verwijderen. <strong>Let op:</strong> Deze acties kunnen niet ongedaan worden gemaakt.
                   </p>
                   
-                  <div className="data-beheer-knoppen">
+                  <div className="data-beheer-knoppen" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <button 
                       onClick={() => {
                         if (confirm('Weet je zeker dat je alle zelf toegevoegde opdrachten wilt verwijderen? Je kunt ze later weer uploaden via het Excel bestand als je dat nog hebt.')) {
@@ -601,6 +595,12 @@ export const Instellingen = React.memo(({
                         }
                       }}
                       className="data-beheer-knop opdrachten-knop"
+                      style={{ 
+                        backgroundColor: '#dc2626', 
+                        borderColor: '#dc2626',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
                     >
                       📝 Verwijder Eigen Opdrachten
                     </button>
@@ -608,6 +608,12 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={handleClearHighscoresAndRecords}
                       className="data-beheer-knop single-player-knop"
+                      style={{ 
+                        backgroundColor: '#dc2626', 
+                        borderColor: '#dc2626',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
                     >
                       🎯 Verwijder Highscores & Records
                     </button>
@@ -615,6 +621,12 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={handleClearBonusOpdrachten}
                       className="data-beheer-knop bonus-knop"
+                      style={{ 
+                        backgroundColor: '#dc2626', 
+                        borderColor: '#dc2626',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
                     >
                       🎭 Verwijder Bonusopdrachten
                     </button>
@@ -622,6 +634,12 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={handleClearLeeranalyseData}
                       className="data-beheer-knop leeranalyse-knop"
+                      style={{ 
+                        backgroundColor: '#dc2626', 
+                        borderColor: '#dc2626',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
                     >
                       📊 Verwijder Leeranalyse & Statistieken
                     </button>
@@ -629,6 +647,12 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={handleClearLeitnerData}
                       className="data-beheer-knop leitner-knop"
+                      style={{ 
+                        backgroundColor: '#dc2626', 
+                        borderColor: '#dc2626',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
                     >
                       📚 Verwijder Leitner-systeem Data
                     </button>
@@ -636,14 +660,35 @@ export const Instellingen = React.memo(({
                     <button 
                       onClick={handleClearAllData}
                       className="data-beheer-knop alles-knop"
+                      style={{ 
+                        backgroundColor: '#991b1b', 
+                        borderColor: '#991b1b',
+                        color: 'white',
+                        fontWeight: '600',
+                        fontSize: '1.1rem'
+                      }}
                     >
                       🗑️ Verwijder Alle Gegevens
                     </button>
                   </div>
                   
-                  <p className="setting-description" style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
-                    <strong>Verwijder Alle Gegevens</strong> verwijdert: alle leerdata, highscores, bonusopdrachten, eigen opdrachten, categorie selecties, filters, instellingen en UI voorkeuren. Dit is een complete reset van alle opgeslagen data.
-                  </p>
+                  <div style={{ 
+                    marginTop: '16px', 
+                    padding: '12px', 
+                    backgroundColor: '#1f2937', 
+                    borderRadius: '6px', 
+                    border: '1px solid #374151',
+                    borderLeft: '4px solid #dc2626'
+                  }}>
+                    <p style={{ 
+                      margin: '0', 
+                      color: '#d1d5db', 
+                      fontSize: '0.9rem', 
+                      lineHeight: '1.5'
+                    }}>
+                      <strong style={{ color: '#fca5a5' }}>⚠️ Waarschuwing:</strong> <strong>Verwijder Alle Gegevens</strong> verwijdert alle leerdata, highscores, bonusopdrachten, eigen opdrachten, categorie selecties, filters, instellingen en UI voorkeuren. Dit is een complete reset van alle opgeslagen data.
+                    </p>
+                  </div>
                 </div>
 
                 {/* --- Groep: Herstel Standaard Instellingen (onderaan) --- */}
