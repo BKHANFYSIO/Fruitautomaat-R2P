@@ -3603,6 +3603,63 @@ td.sub-categorie,
   border-color: #444;
 }
 
+/* Selecteerbare chips voor specifieke bron: zichtbaar actief/inactief */
+.code-chip {
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  user-select: none;
+}
+.code-chip:hover { transform: translateY(-1px); }
+.code-chip.active {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #4a90e2;
+}
+.code-chip.partial {
+  background: #3a6fbf;
+  color: #fff;
+  border-color: #3a6fbf;
+}
+
+/* Specifieke bron – nette layout */
+.bron-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.bron-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+.bron-actions .mini-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+.bron-actions .mini-btn:hover { background-color: #45a049; transform: translateY(-1px); }
+.bron-actions .mini-btn:active { transform: translateY(0); }
+
+.bron-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bron-chips details summary {
+  list-style: none;
+}
+
 .filter-icon:hover {
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);

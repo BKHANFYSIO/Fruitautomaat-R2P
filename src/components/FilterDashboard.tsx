@@ -3,6 +3,7 @@ import type { Opdracht } from '../data/types';
 import { opdrachtTypeIconen, OPDRACHT_TYPE_ORDER, NIVEAU_LABELS } from '../data/constants';
 import './FilterDashboard.css';
 import { InfoTooltip } from './ui/InfoTooltip';
+import { extractResourceRefsFromText } from '../utils/sourceFacets';
 
 interface FilterDashboardProps {
   filters: {
@@ -10,8 +11,10 @@ interface FilterDashboardProps {
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
     tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
+    inhoudBronTypes?: Array<'video' | 'richtlijn' | 'artikel' | 'boek' | 'website'>;
+    inhoudBronnen?: string[];
   };
-  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja' | 'mogelijk' | 'nee'> }) => void;
+  setFilters: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja' | 'mogelijk' | 'nee'>; inhoudBronTypes?: Array<'video' | 'richtlijn' | 'artikel' | 'boek' | 'website'>; inhoudBronnen?: string[] }) => void;
   opdrachten: Opdracht[];
   actieveCategorieSelectie: string[];
   // Wanneer deze sleutel verandert, klapt het dashboard automatisch in
@@ -26,7 +29,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
   // Klap automatisch in bij wisselen van spelmodus/sessie/refresh (collapseKey wijzigt)
   useEffect(() => { setIsExpanded(false); }, [collapseKey]);
 
-  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling } = useMemo(() => {
+  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling } = useMemo(() => {
     // Beperk tellingen tot geselecteerde categorieën (indien aanwezig)
     const isCategorieFilterActief = Array.isArray(actieveCategorieSelectie) && actieveCategorieSelectie.length > 0;
     const subset = isCategorieFilterActief
@@ -39,6 +42,7 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
     const opdrachtenPerType: { [key: string]: number } = {};
     const opdrachtenPerBron: { [key: string]: number } = {};
     const niveausTelling: { [k in 1|2|3|'undef']?: number } = {};
+    const bronTypeTelling: { [k in 'video'|'richtlijn'|'artikel'|'boek'|'website']?: number } = {} as any;
     
     // Tellingen binnen subset
     subset.forEach(op => {
@@ -49,13 +53,20 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
       const niv = (op as any).niveau as (1|2|3|undefined);
       const key = (typeof niv === 'number' ? niv : 'undef') as 1|2|3|'undef';
       niveausTelling[key] = (niveausTelling[key] || 0) + 1;
+      try {
+        const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
+        refs.forEach((r: any) => {
+          const ct = r.contentType as 'video'|'richtlijn'|'artikel'|'boek'|'website';
+          bronTypeTelling[ct] = (bronTypeTelling[ct] || 0) + 1;
+        });
+      } catch {}
     });
     
     // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
     // Gebruik vaste set i.p.v. dynamische uitbreiding vanuit Excel
     const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
     
-    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
+    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling };
   }, [opdrachten, actieveCategorieSelectie]);
 
   // Tel aantal actieve filters voor opvallende badge in header
@@ -71,6 +82,9 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
     count += (filters.niveaus?.length || 0);
     // tekenen
     count += (filters.tekenen?.length || 0);
+    // inhoudsbron-types en specifieke bronnen
+    count += (filters.inhoudBronTypes?.length || 0);
+    count += (filters.inhoudBronnen?.length || 0);
     return count;
   }, [filters]);
 
@@ -114,6 +128,13 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
       ? huidige.filter(n => n !== niv)
       : [...huidige, niv];
     setFilters({ ...filters, niveaus: nieuw });
+  };
+
+  const handleContentTypeToggle = (t: 'video'|'richtlijn'|'artikel'|'boek'|'website') => {
+    if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
+    const huidige = new Set(filters.inhoudBronTypes || []);
+    huidige.has(t) ? huidige.delete(t) : huidige.add(t);
+    setFilters({ ...filters, inhoudBronTypes: Array.from(huidige) as any });
   };
 
   const toggleExpanded = () => {
@@ -193,6 +214,58 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
               </div>
             </div>
 
+            {/* Inhoudsbron-type filters (compact) */}
+            <div className="filter-group">
+              <div className="filter-label-container">
+                <span className="filter-label">Inhoud:</span>
+              </div>
+              <div className="filter-icon-group">
+                {(['video','richtlijn','artikel','boek','website'] as const).map((t) => (
+                  <InfoTooltip asChild content={`${t}: ${((bronTypeTelling as Record<'video'|'richtlijn'|'artikel'|'boek'|'website', number>)[t]) || 0} opdr.`} key={t}>
+                    <span
+                      className={`filter-icon ${Array.isArray(filters.inhoudBronTypes) && (filters.inhoudBronTypes as Array<'video'|'richtlijn'|'artikel'|'boek'|'website'>).includes(t) ? 'active' : 'inactive'} ${isSpelGestart ? 'disabled' : ''}`}
+                      onClick={() => handleContentTypeToggle(t)}
+                    >
+                      {t === 'video' && '🎬'}
+                      {t === 'richtlijn' && '📑'}
+                      {t === 'artikel' && '📄'}
+                      {t === 'boek' && '📘'}
+                      {t === 'website' && '🌐'}
+                    </span>
+                  </InfoTooltip>
+                ))}
+              </div>
+              {/* Compacte statusregel voor geselecteerde specifieke bronnen */}
+              {(() => {
+                const hasSelections = Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0;
+                return (
+                  <div style={{ marginTop: 8, fontSize: '0.85rem', color: '#9aa0a6' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span>Spec. bronnen:</span>
+                      <span
+                        className={`status-chip ${hasSelections ? '' : 'off'}`}
+                        title={hasSelections ? 'Klik om uit te schakelen (toggle). Klik nogmaals om te herstellen.' : 'Klik om eerdere selectie te herstellen'}
+                        onClick={() => {
+                          if (isSpelGestart) return;
+                          const key = 'last_inhoudBronnen_selection';
+                          if (hasSelections) {
+                            try { sessionStorage.setItem(key, JSON.stringify(filters.inhoudBronnen || [])); } catch {}
+                            setFilters({ ...filters, inhoudBronnen: [] });
+                          } else {
+                            let restored: string[] = [];
+                            try { const s = sessionStorage.getItem(key); if (s) restored = JSON.parse(s); } catch {}
+                            setFilters({ ...filters, inhoudBronnen: restored });
+                          }
+                        }}
+                      >
+                        <span className="count">{filters.inhoudBronnen?.length || 0}</span> geselect.
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Niveau filters */}
             <div className="filter-group">
               <div className="filter-label-container">
@@ -267,12 +340,12 @@ export const FilterDashboard: React.FC<FilterDashboardProps> = ({ filters, setFi
                 </InfoTooltip>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 10 }}>
               <button
                 className={`snelle-selectie-knop ${isSpelGestart ? 'disabled' : ''}`}
                 onClick={() => {
                   if (isSpelGestart) return; // Uitgeschakeld tijdens het spel
-                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [], inhoudBronTypes: [], inhoudBronnen: [] });
                 }}
               >
                 Reset filters

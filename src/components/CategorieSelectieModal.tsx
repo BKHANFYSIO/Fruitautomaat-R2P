@@ -5,7 +5,10 @@ import { getSortedHighScores } from '../data/highScoreManager';
 import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
+import { extractResourceRefsFromText } from '../utils/sourceFacets';
+import type { ManifestMap } from '../utils/sourceFacets';
 import { InfoTooltip } from './ui/InfoTooltip';
+import { getResourceGroup } from '../utils/sourceFacets';
 
 
 // Toast melding component
@@ -80,8 +83,10 @@ interface CategorieSelectieModalProps {
     opdrachtTypes: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
     tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
+    inhoudBronTypes?: Array<'video' | 'richtlijn' | 'artikel' | 'boek' | 'website'>;
+    inhoudBronnen?: string[];
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'> }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'>; inhoudBronTypes?: Array<'video'|'richtlijn'|'artikel'|'boek'|'website'>; inhoudBronnen?: string[] }) => void;
   // Optioneel: gewenste subtab bij openen (alleen van toepassing voor highscore)
   initialInnerTab?: 'categories' | 'filters' | 'saved';
 }
@@ -118,6 +123,7 @@ export const CategorieSelectieModal = ({
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
+  const [manifestMap, setManifestMap] = useState<ManifestMap>({});
   
   // State voor het bewerken van highscore namen
   const [editingHighscoreKey, setEditingHighscoreKey] = useState<string | null>(null);
@@ -159,6 +165,16 @@ export const CategorieSelectieModal = ({
       el.removeEventListener('scroll', handleScroll as any);
     };
   }, [isOpen]);
+
+  // Lazy manifest laden (labels zoals videokanaal/titel)
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/answer-media/manifest.json')
+      .then(r => r.json())
+      .then((data) => { if (!cancelled) setManifestMap(data || {}); })
+      .catch(() => { if (!cancelled) setManifestMap({}); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Sorteer functionaliteit (standaard alfabetisch op categorienaam)
   const [sortConfig, setSortConfig] = useState<{
@@ -226,7 +242,7 @@ export const CategorieSelectieModal = ({
   // Zorg ervoor dat filters altijd op standaard waarden staan bij highscore modus
   useEffect(() => {
     if (activeTab === 'highscore' && setFilters) {
-      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [], inhoudBronTypes: [], inhoudBronnen: [] });
     }
   }, [activeTab]); // Verwijder setFilters uit dependencies om oneindige loop te voorkomen
 
@@ -330,10 +346,16 @@ export const CategorieSelectieModal = ({
   const actieveBulkHandler = getActieveBulkHandler();
 
   // Filter functionaliteit
-  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling } = useMemo(() => {
+  const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen } = useMemo(() => {
     const opdrachtenPerType: { [key: string]: number } = {};
     const opdrachtenPerBron: { [key: string]: number } = {};
     const niveausTelling: { [k in 1|2|3|'undef']?: number } = {};
+    const bronTypeTelling: { [k in 'video'|'richtlijn'|'artikel'|'boek'|'website']?: number } = {} as any;
+    const bronTypeSelectedTelling: { [k in 'video'|'richtlijn'|'artikel'|'boek'|'website']?: number } = {} as any;
+    const bronKeyTelling: Record<string, number> = {};
+    const bronKeyLabels: Record<string, string> = {};
+    const groupKeyToMembers: Record<string, { key: string; label: string }[]> = {};
+    const groupKeyToLabel: Record<string, string> = {};
     
     // Gebruik alleen opdrachten binnen actieve categorie selectie
     const isCategorieFilterActief = Array.isArray(actieveCategorieSelectie) && actieveCategorieSelectie.length > 0;
@@ -352,13 +374,64 @@ export const CategorieSelectieModal = ({
       const niv = (op as any).niveau as (1|2|3|undefined);
       const key = (typeof niv === 'number' ? niv : 'undef') as 1|2|3|'undef';
       niveausTelling[key] = (niveausTelling[key] || 0) + 1;
+      try {
+        const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+        // Mark presence per type
+        const present: Record<'video'|'richtlijn'|'artikel'|'boek'|'website', boolean> = { video: false, richtlijn: false, artikel: false, boek: false, website: false } as any;
+        let hasSelectedKey = false;
+        refs.forEach((r: any) => {
+          const ct = r.contentType as 'video'|'richtlijn'|'artikel'|'boek'|'website';
+          bronTypeTelling[ct] = (bronTypeTelling[ct] || 0) + 1;
+          bronKeyTelling[r.key] = (bronKeyTelling[r.key] || 0) + 1;
+          if (r.label) bronKeyLabels[r.key] = r.label;
+          const grp = getResourceGroup(r);
+          groupKeyToLabel[grp.id] = grp.label;
+          if (!groupKeyToMembers[grp.id]) groupKeyToMembers[grp.id] = [];
+          groupKeyToMembers[grp.id].push({ key: r.key, label: r.title || r.label });
+          present[ct] = true;
+          if (Array.isArray(filters?.inhoudBronnen) && filters!.inhoudBronnen!.length > 0) {
+            if ((filters!.inhoudBronnen as string[]).includes(r.key)) hasSelectedKey = true;
+          }
+        });
+        // Selected counting respects current filters
+        (['video','richtlijn','artikel','boek','website'] as const).forEach((ct) => {
+          if (!present[ct]) return;
+          // Type must be included if any type filter is active
+          const typeOk = !Array.isArray(filters?.inhoudBronTypes) || (filters!.inhoudBronTypes!.length === 0) || (filters!.inhoudBronTypes as any).includes(ct);
+          if (!typeOk) return;
+          const keyOk = !Array.isArray(filters?.inhoudBronnen) || (filters!.inhoudBronnen!.length === 0) || hasSelectedKey;
+          if (!keyOk) return;
+          bronTypeSelectedTelling[ct] = (bronTypeSelectedTelling[ct] || 0) + 1;
+        });
+      } catch {}
     });
     
     // Zorg ervoor dat alle types altijd zichtbaar blijven, ook als ze 0 opdrachten hebben
     const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
+    let specifiekeBronnen = Object.keys(groupKeyToMembers)
+      .map(gid => ({ groupId: gid, label: groupKeyToLabel[gid] || gid, members: groupKeyToMembers[gid] }))
+      .sort((a,b) => (b.members.length - a.members.length));
+    if (Array.isArray(filters?.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
+      const allowed = new Set(filters.inhoudBronTypes);
+      specifiekeBronnen = specifiekeBronnen.filter((g) => {
+        if (g.groupId.startsWith('channel:')) return allowed.has('video');
+        if (g.groupId.startsWith('boek:')) return allowed.has('boek');
+        if (g.groupId.startsWith('domain:')) {
+          try {
+            // Neem het eerste member om type te peilen
+            return g.members.some(m => {
+              const url = m.key.startsWith('url:') ? m.key.slice(4) : m.key;
+              const tmpRefs = extractResourceRefsFromText(url, manifestMap);
+              return tmpRefs.some((r: any) => allowed.has(r.contentType));
+            });
+          } catch { return false; }
+        }
+        return false;
+      });
+    }
     
-    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
-  }, [opdrachten, actieveCategorieSelectie]);
+    return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen } as any;
+  }, [opdrachten, actieveCategorieSelectie, manifestMap, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     if (!setFilters) return;
@@ -429,6 +502,18 @@ export const CategorieSelectieModal = ({
         const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
         if (!filters.tekenen.includes(status)) return false;
       }
+      // Inhoudsbronnen (types en specifieke bronnen)
+      if ((Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) || (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0)) {
+        try {
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          if (Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
+            if (!refs.some((r: any) => (filters.inhoudBronTypes as any).includes(r.contentType))) return false;
+          }
+          if (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0) {
+            if (!refs.some((r: any) => (filters.inhoudBronnen as any).includes(r.key))) return false;
+          }
+        } catch {}
+      }
       // Niveau
       const nivs = filters.niveaus || [];
       if (nivs.length === 0) return true;
@@ -436,7 +521,7 @@ export const CategorieSelectieModal = ({
       if (typeof niv === 'number') return nivs.includes(niv as any);
       return nivs.includes('undef' as any);
     });
-  }, [opdrachten, filters]);
+  }, [opdrachten, filters, manifestMap]);
 
   const gegroepeerdeCategorieen = useMemo(() => {
     const groepen: Record<string, string[]> = { 'Overig': [] };
@@ -1196,7 +1281,7 @@ export const CategorieSelectieModal = ({
             <div className="filter-groep">
               <span className="filter-label">Type:</span>
               <div className="filter-iconen">
-                {alleOpdrachtTypes.map(type => {
+                {alleOpdrachtTypes.map((type: string) => {
                   const count = opdrachtenPerType[type] || 0;
                   return (
                     <InfoTooltip asChild content={`${type}: ${count} opdr.`} key={type}>
@@ -1211,6 +1296,132 @@ export const CategorieSelectieModal = ({
                 })}
               </div>
             </div>
+            {/* Inhoudsbron-type filters */}
+            <div className="filter-groep">
+              <span className="filter-label">Inhoud:</span>
+              <div className="filter-iconen">
+                {(['video','richtlijn','artikel','boek','website'] as const).map((t) => (
+                  <InfoTooltip asChild content={`${t}: ${((bronTypeSelectedTelling as Record<'video'|'richtlijn'|'artikel'|'boek'|'website', number>)[t] || 0)}/${((bronTypeTelling as Record<'video'|'richtlijn'|'artikel'|'boek'|'website', number>)[t] || 0)} opdr.`} key={t}>
+                    <span
+                      className={`filter-icon ${Array.isArray(filters.inhoudBronTypes) && (filters.inhoudBronTypes as Array<'video'|'richtlijn'|'artikel'|'boek'|'website'>).includes(t) ? 'active' : 'inactive'}`}
+                      onClick={() => {
+                        if (!setFilters) return;
+                        if (activeTab === 'highscore') {
+                          setToastBericht('Filters kunnen niet worden aangepast in highscore modus');
+                          setIsToastZichtbaar(true);
+                          return;
+                        }
+                        const huidige = new Set(filters.inhoudBronTypes || []);
+                        huidige.has(t) ? huidige.delete(t) : huidige.add(t);
+                        setFilters({ ...filters, inhoudBronTypes: Array.from(huidige) as any });
+                      }}
+                    >
+                      {t === 'video' && '🎬'}
+                      {t === 'richtlijn' && '📑'}
+                      {t === 'artikel' && '📄'}
+                      {t === 'boek' && '📘'}
+                      {t === 'website' && '🌐'}
+                    </span>
+                  </InfoTooltip>
+                ))}
+              </div>
+            </div>
+            {/* Specifieke bronnen lijst (Top 12) */}
+            {(() => {
+              const groups = (specifiekeBronnen || []) as Array<{ groupId: string; label: string; members: { key: string; label: string }[] }>;
+              const top = groups.slice(0, 8);
+              if (top.length === 0) return null;
+              const selected = new Set(filters.inhoudBronnen || []);
+              return (
+                <div className="filter-groep">
+                  <span className="filter-label">Specifieke bron:</span>
+                  <div className="bron-toolbar">
+                    <div className="bron-actions">
+                      <button type="button" className="mini-btn" onClick={() => {
+                        if (!setFilters) return;
+                        const huidige = new Set(filters.inhoudBronnen || []);
+                        top.forEach(g => g.members.forEach(m => huidige.add(m.key)));
+                        setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                      }}>Alles</button>
+                      <button type="button" className="mini-btn" onClick={() => {
+                        if (!setFilters) return;
+                        const huidige = new Set(filters.inhoudBronnen || []);
+                        top.forEach(g => g.members.forEach(m => huidige.delete(m.key)));
+                        setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                      }}>Geen</button>
+                    </div>
+                  </div>
+                  <div className="bron-chips">
+                    {top.map(g => {
+                      const total = g.members.length;
+                      const selectedCount = g.members.filter(m => selected.has(m.key)).length;
+                      const isActive = selectedCount === total && total > 0;
+                      const isPartial = selectedCount > 0 && selectedCount < total;
+                      const className = `code-chip ${isActive ? 'active' : ''} ${isPartial ? 'partial' : ''}`;
+                      let dRef = null as HTMLDetailsElement | null;
+                      const toggleGroup = (selectAll: boolean) => {
+                        if (!setFilters) return;
+                        const huidige = new Set(filters.inhoudBronnen || []);
+                        g.members.forEach(m => { selectAll ? huidige.add(m.key) : huidige.delete(m.key); });
+                        setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                      };
+                      return (
+                        <details key={g.groupId} style={{ display: 'inline-block' }} ref={(el) => { dRef = el; }}>
+                          <summary className={className} style={{ listStyle: 'none', cursor: 'default', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                            <span
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGroup(!(isActive && !isPartial)); }}
+                              title={total > 1 ? `${selectedCount}/${total} geselecteerd — klik om groep te togglen` : 'Klik om te togglen'}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {g.label}{total > 1 ? ` (${selectedCount}/${total})` : ''}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (dRef) dRef.open = !dRef.open; }}
+                              aria-label="Open/Sluit"
+                              style={{ cursor: 'pointer', background: 'transparent', border: '1px solid #444', color: '#ccc', borderRadius: 6, padding: '0 6px' }}
+                            >
+                              {(dRef && (dRef as HTMLDetailsElement).open) ? '∨' : '+'}
+                            </button>
+                          </summary>
+                          <div style={{ marginTop: 6, padding: 8, background: '#252525', border: '1px solid #404040', borderRadius: 6, minWidth: 260 }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 6 }}>
+                              <button
+                                type="button"
+                                onClick={() => toggleGroup(true)}
+                                className="mini-btn"
+                              >Alles</button>
+                              <button
+                                type="button"
+                                onClick={() => toggleGroup(false)}
+                                className="mini-btn"
+                              >Geen</button>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {g.members.map(m => (
+                                <span
+                                  key={m.key}
+                                  className={`code-chip ${selected.has(m.key) ? 'active' : ''}`}
+                                  onClick={() => {
+                                    if (!setFilters) return;
+                                    const huidige = new Set(filters.inhoudBronnen || []);
+                                    huidige.has(m.key) ? huidige.delete(m.key) : huidige.add(m.key);
+                                    setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                                  }}
+                                  title={m.label}
+                                >
+                                  {m.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="filter-groep">
               <span className="filter-label">Tekenen:</span>
               <div className="filter-iconen">
@@ -1302,7 +1513,7 @@ export const CategorieSelectieModal = ({
                 </InfoTooltip>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 10 }}>
               <button
                 className="snelle-selectie-knop"
                 onClick={() => {
@@ -1315,7 +1526,7 @@ export const CategorieSelectieModal = ({
                     return;
                   }
                   
-                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                  setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [], inhoudBronTypes: [], inhoudBronnen: [] });
                   setToastBericht('Filters hersteld naar standaard');
                   setIsToastZichtbaar(true);
                   setTimeout(() => setIsToastZichtbaar(false), 2000);

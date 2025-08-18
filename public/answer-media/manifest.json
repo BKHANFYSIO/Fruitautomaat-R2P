@@ -40,8 +40,8 @@
     "etag": "\"ebeb-5ba3a504-9c61fb73a0961138;;;\"",
     "lastModified": "Thu, 20 Sep 2018 13:47:48 GMT",
     "status": "ok",
-    "lastChecked": "2025-08-08T21:50:06.621Z",
-    "lastSeen": "2025-08-08T21:50:06.621Z"
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
   },
   "https://www.youtube.com/watch?v=G6eDhgTmNIA": {
     "originalUrl": "https://www.youtube.com/watch?v=G6eDhgTmNIA",
@@ -52,21 +52,59 @@
       "author": "Physiotutors"
     },
     "status": "ok",
-    "lastChecked": "2025-08-08T21:50:06.621Z",
-    "lastSeen": "2025-08-08T21:50:06.621Z"
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
+  },
+  "https://example.com/anatomy.jpg": {
+    "originalUrl": "https://example.com/anatomy.jpg",
+    "meta": {
+      "site": "example.com",
+      "kind": "image"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
+  },
+  "https://example.com/rotator-cuff.jpg": {
+    "originalUrl": "https://example.com/rotator-cuff.jpg",
+    "meta": {
+      "site": "example.com",
+      "kind": "image"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
+  },
+  "https://youtube.com/watch?v=abc123?t=2m30s": {
+    "originalUrl": "https://youtube.com/watch?v=abc123?t=2m30s",
+    "meta": {
+      "site": "youtube.com",
+      "kind": "youtube"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
+  },
+  "https://youtube.com/watch?v=…”.</td>": {
+    "originalUrl": "https://youtube.com/watch?v=…”.</td>",
+    "meta": {
+      "site": "youtube.com",
+      "kind": "youtube"
+    },
+    "status": "error",
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
+  },
+  "https://youtu.be/-N5OxSz-5L0?feature=shared": {
+    "originalUrl": "https://youtu.be/-N5OxSz-5L0?feature=shared",
+    "meta": {
+      "site": "youtu.be",
+      "kind": "youtube",
+      "title": "Muscle Tightness Explained:  Why do my muscles feel tight?",
+      "author": "Physiotutors"
+    },
+    "status": "ok",
+    "lastChecked": "2025-08-18T12:36:34.104Z",
+    "lastSeen": "2025-08-18T12:36:34.104Z"
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

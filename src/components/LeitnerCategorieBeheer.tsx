@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht } from '../data/types';
+import type { SortOption, HighScoreLibrary } from '../data/highScoreManager';
+import { getSortedHighScores } from '../data/highScoreManager';
 import './LeitnerCategorieBeheer.css';
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
+import { extractResourceRefsFromText } from '../utils/sourceFacets';
+import type { ManifestMap } from '../utils/sourceFacets';
+import { getResourceGroup } from '../utils/sourceFacets';
 
 // ... (rest van de interfaces en utility functions blijven hetzelfde)
 
@@ -164,10 +169,12 @@ interface LeitnerCategorieBeheerProps {
   filters?: {
     bronnen: ('systeem' | 'gebruiker')[];
     opdrachtTypes: string[];
+    inhoudBronTypes?: Array<'video' | 'richtlijn' | 'artikel' | 'boek' | 'website'>;
+    inhoudBronnen?: string[];
     niveaus?: Array<1 | 2 | 3 | 'undef'>;
     tekenen?: Array<'ja' | 'mogelijk' | 'nee'>;
   };
-  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'> }) => void;
+  setFilters?: (filters: { bronnen: ('systeem' | 'gebruiker')[]; opdrachtTypes: string[]; niveaus?: Array<1|2|3|'undef'>; tekenen?: Array<'ja'|'mogelijk'|'nee'>; inhoudBronTypes?: Array<'video'|'richtlijn'|'artikel'|'boek'|'website'>; inhoudBronnen?: string[] }) => void;
 }
 
 interface CategorieStatistiek {
@@ -204,13 +211,28 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
     const [geselecteerdeOpdrachtenVoorDetail, setGeselecteerdeOpdrachtenVoorDetail] = useState<string[]>([]);
 
+    const [manifestMap, setManifestMap] = useState<ManifestMap>({});
 
+    useEffect(() => {
+      let cancelled = false;
+      fetch('/answer-media/manifest.json')
+        .then(r => r.json())
+        .then((data) => { if (!cancelled) setManifestMap(data || {}); })
+        .catch(() => { if (!cancelled) setManifestMap({}); });
+      return () => { cancelled = true; };
+    }, []);
 
     // Filter functionaliteit
-    const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling } = useMemo(() => {
+    const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen } = useMemo(() => {
       const opdrachtenPerType: { [key: string]: number } = {};
       const opdrachtenPerBron: { [key: string]: number } = {};
       const niveausTelling: { [k in 1|2|3|'undef']?: number } = {};
+      const bronTypeTelling: { [k in 'video'|'richtlijn'|'artikel'|'boek'|'website']?: number } = {} as any;
+      const bronTypeSelectedTelling: { [k in 'video'|'richtlijn'|'artikel'|'boek'|'website']?: number } = {} as any;
+      const bronKeyTelling: Record<string, number> = {};
+      const bronKeyLabels: Record<string, string> = {};
+      const groupKeyToMembers: Record<string, { key: string; label: string }[]> = {};
+      const groupKeyToLabel: Record<string, string> = {};
 
       // Tellingen beperken tot reeds geselecteerde categorieën indien aanwezig
       const isCatSelActief = Array.isArray(geselecteerdeCategorieen) && geselecteerdeCategorieen.length > 0;
@@ -229,12 +251,66 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         const niv = (op as any).niveau as (1|2|3|undefined);
         const key = (typeof niv === 'number' ? niv : 'undef') as 1|2|3|'undef';
         niveausTelling[key] = (niveausTelling[key] || 0) + 1;
+        // inhoudsbronnen tellen
+        try {
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          const present: Record<'video'|'richtlijn'|'artikel'|'boek'|'website', boolean> = { video: false, richtlijn: false, artikel: false, boek: false, website: false } as any;
+          let hasSelectedKey = false;
+          refs.forEach((r: any) => {
+            const ct = r.contentType as 'video'|'richtlijn'|'artikel'|'boek'|'website';
+            bronTypeTelling[ct] = (bronTypeTelling[ct] || 0) + 1;
+            bronKeyTelling[r.key] = (bronKeyTelling[r.key] || 0) + 1;
+            if (r.label) bronKeyLabels[r.key] = r.label;
+            const grp = getResourceGroup(r);
+            groupKeyToLabel[grp.id] = grp.label;
+            if (!groupKeyToMembers[grp.id]) groupKeyToMembers[grp.id] = [];
+            groupKeyToMembers[grp.id].push({ key: r.key, label: r.title || r.label });
+            present[ct] = true;
+            if (Array.isArray(filters?.inhoudBronnen) && filters!.inhoudBronnen!.length > 0) {
+              if ((filters!.inhoudBronnen as string[]).includes(r.key)) hasSelectedKey = true;
+            }
+          });
+          (['video','richtlijn','artikel','boek','website'] as const).forEach((ct) => {
+            if (!present[ct]) return;
+            const typeOk = !Array.isArray(filters?.inhoudBronTypes) || (filters!.inhoudBronTypes!.length === 0) || (filters!.inhoudBronTypes as any).includes(ct);
+            if (!typeOk) return;
+            const keyOk = !Array.isArray(filters?.inhoudBronnen) || (filters!.inhoudBronnen!.length === 0) || hasSelectedKey;
+            if (!keyOk) return;
+            bronTypeSelectedTelling[ct] = (bronTypeSelectedTelling[ct] || 0) + 1;
+          });
+        } catch {}
       });
 
       const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
 
-      return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling };
-    }, [alleOpdrachten, geselecteerdeCategorieen]);
+      let specifiekeBronnen = Object.keys(bronKeyTelling)
+        .map(k => ({ key: k, count: bronKeyTelling[k], label: bronKeyLabels[k] || k }))
+        .sort((a,b) => (b.count - a.count));
+      // Vervang door gegroepeerde bronnen
+      const grouped = Object.keys(groupKeyToMembers).map(gid => ({ groupId: gid, label: groupKeyToLabel[gid] || gid, members: groupKeyToMembers[gid] }))
+        .sort((a,b) => (b.members.length - a.members.length));
+      // Filter op inhoudBronTypes
+      let specifiekeGroepen = grouped;
+      if (Array.isArray(filters?.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
+        const allowed = new Set(filters.inhoudBronTypes);
+        specifiekeGroepen = grouped.filter((g) => {
+          if (g.groupId.startsWith('channel:')) return allowed.has('video');
+          if (g.groupId.startsWith('boek:')) return allowed.has('boek');
+          if (g.groupId.startsWith('domain:')) {
+            try {
+              return g.members.some(m => {
+                const url = m.key.startsWith('url:') ? m.key.slice(4) : m.key;
+                const tmpRefs = extractResourceRefsFromText(url, manifestMap);
+                return tmpRefs.some((r: any) => allowed.has(r.contentType));
+              });
+            } catch { return false; }
+          }
+          return false;
+        });
+      }
+
+      return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen: specifiekeGroepen };
+    }, [alleOpdrachten, geselecteerdeCategorieen, manifestMap, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
 
     useEffect(() => {
       if (isOpen) {
@@ -561,6 +637,16 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       // Filter op opdrachtType
         const typeMatch = filters.opdrachtTypes.length === 0 || filters.opdrachtTypes.includes(op.opdrachtType || 'Onbekend');
         if (!typeMatch) return false;
+        // Inhoudsbron filters
+        if ((Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) || (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0)) {
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          if (Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
+            if (!refs.some((r: any) => (filters.inhoudBronTypes as any).includes(r.contentType))) return false;
+          }
+          if (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0) {
+            if (!refs.some((r: any) => (filters.inhoudBronnen as any).includes(r.key))) return false;
+          }
+        }
         // Filter op tekenen tri-status
         if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
           const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
@@ -573,7 +659,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         if (typeof niv === 'number') return nivs.includes(niv);
         return nivs.includes('undef');
     });
-  }, [alleOpdrachten, filters]);
+  }, [alleOpdrachten, filters, manifestMap]);
 
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
@@ -1230,6 +1316,119 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                     })}
                   </div>
                 </div>
+                {/* Inhoudsbron-type filters */}
+                <div className="filter-groep">
+                  <span className="filter-label">Inhoud:</span>
+                  <div className="filter-iconen">
+                    {(['video','richtlijn','artikel','boek','website'] as const).map((t) => (
+                      <InfoTooltip asChild content={`${t}: ${((bronTypeSelectedTelling as Record<'video'|'richtlijn'|'artikel'|'boek'|'website', number>)[t] || 0)}/${((bronTypeTelling as Record<'video'|'richtlijn'|'artikel'|'boek'|'website', number>)[t] || 0)} opdr.`} key={t}>
+                        <span
+                          className={`filter-icon ${Array.isArray(filters.inhoudBronTypes) && (filters.inhoudBronTypes as Array<'video'|'richtlijn'|'artikel'|'boek'|'website'>).includes(t) ? 'active' : 'inactive'}`}
+                          onClick={() => {
+                            if (!setFilters) return;
+                            const huidige = new Set(filters.inhoudBronTypes || []);
+                            huidige.has(t) ? huidige.delete(t) : huidige.add(t);
+                            setFilters({ ...filters, inhoudBronTypes: Array.from(huidige) as any });
+                          }}
+                        >
+                          {t === 'video' && '🎬'}
+                          {t === 'richtlijn' && '📑'}
+                          {t === 'artikel' && '📄'}
+                          {t === 'boek' && '📘'}
+                          {t === 'website' && '🌐'}
+                        </span>
+                      </InfoTooltip>
+                    ))}
+                  </div>
+                </div>
+                {/* Specifieke bronnen lijst (Top 12) */}
+                {(() => {
+                  const groups = (specifiekeBronnen || []) as Array<{ groupId: string; label: string; members: { key: string; label: string }[] }>;
+                  const top = groups.slice(0, 8);
+                  if (top.length === 0) return null;
+                  const selected = new Set(filters.inhoudBronnen || []);
+                  return (
+                    <div className="filter-groep">
+                      <span className="filter-label">Specifieke bron:</span>
+                      <div className="bron-toolbar">
+                        <div className="bron-actions">
+                          <button type="button" className="mini-btn" onClick={() => {
+                            if (!setFilters) return;
+                            const huidige = new Set(filters.inhoudBronnen || []);
+                            top.forEach(g => g.members.forEach(m => huidige.add(m.key)));
+                            setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                          }}>Alles</button>
+                          <button type="button" className="mini-btn" onClick={() => {
+                            if (!setFilters) return;
+                            const huidige = new Set(filters.inhoudBronnen || []);
+                            top.forEach(g => g.members.forEach(m => huidige.delete(m.key)));
+                            setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                          }}>Geen</button>
+                        </div>
+                      </div>
+                      <div className="bron-chips">
+                         {top.map(g => {
+                           const total = g.members.length;
+                           const selectedCount = g.members.filter(m => selected.has(m.key)).length;
+                           const isActive = selectedCount === total && total > 0;
+                           const isPartial = selectedCount > 0 && selectedCount < total;
+                           const className = `code-chip ${isActive ? 'active' : ''} ${isPartial ? 'partial' : ''}`;
+                           let dRef: HTMLDetailsElement | null = null;
+                           const toggleGroup = (selectAll: boolean) => {
+                             if (!setFilters) return;
+                             const huidige = new Set(filters.inhoudBronnen || []);
+                             g.members.forEach(m => { selectAll ? huidige.add(m.key) : huidige.delete(m.key); });
+                             setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                           };
+                           return (
+                             <details key={g.groupId} style={{ display: 'inline-block' }} ref={(el) => { dRef = el; }}>
+                               <summary className={className} style={{ listStyle: 'none', cursor: 'default', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                 <span
+                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGroup(!(isActive && !isPartial)); }}
+                                   title={total > 1 ? `${selectedCount}/${total} geselecteerd — klik om groep te togglen` : 'Klik om te togglen'}
+                                   style={{ cursor: 'pointer' }}
+                                 >
+                                   {g.label}{total > 1 ? ` (${selectedCount}/${total})` : ''}
+                                 </span>
+                                 <button
+                                   type="button"
+                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (dRef) dRef.open = !dRef.open; }}
+                                   aria-label="Open/Sluit"
+                                   style={{ cursor: 'pointer', background: 'transparent', border: '1px solid #444', color: '#ccc', borderRadius: 6, padding: '0 6px' }}
+                                 >
+                                   {dRef?.open ? '∨' : '+'}
+                                 </button>
+                               </summary>
+                               <div style={{ marginTop: 6, padding: 8, background: '#252525', border: '1px solid #404040', borderRadius: 6, minWidth: 260 }}>
+                                 <div className="bron-actions" style={{ justifyContent: 'flex-end', marginBottom: 6 }}>
+                                   <button type="button" onClick={() => toggleGroup(true)} className="mini-btn">Alles</button>
+                                   <button type="button" onClick={() => toggleGroup(false)} className="mini-btn">Geen</button>
+                                 </div>
+                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                   {g.members.map(m => (
+                                     <span
+                                       key={m.key}
+                                       className={`code-chip ${selected.has(m.key) ? 'active' : ''}`}
+                                       onClick={() => {
+                                         if (!setFilters) return;
+                                         const huidige = new Set(filters.inhoudBronnen || []);
+                                         huidige.has(m.key) ? huidige.delete(m.key) : huidige.add(m.key);
+                                         setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
+                                       }}
+                                       title={m.label}
+                                     >
+                                       {m.label}
+                                     </span>
+                                   ))}
+                                 </div>
+                               </div>
+                             </details>
+                           );
+                         })}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="filter-groep">
                   <span className="filter-label">Tekenen:</span>
                   <div className="filter-iconen">
@@ -1300,12 +1499,12 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                     </InfoTooltip>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 10 }}>
                   <button
                     className="snelle-selectie-knop"
                     onClick={() => {
                       if (!setFilters) return;
-                      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] });
+                      setFilters({ bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [], inhoudBronTypes: [], inhoudBronnen: [] });
                       setToastBericht('Filters hersteld naar standaard');
                       setIsToastZichtbaar(true);
                     }}

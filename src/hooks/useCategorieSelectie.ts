@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { extractResourceRefsFromText } from '../utils/sourceFacets';
 import type { Opdracht } from '../data/types';
 
 export type OpdrachtBron = 'systeem' | 'gebruiker';
@@ -9,6 +10,9 @@ export interface Filters {
   niveaus?: Array<1 | 2 | 3 | 'undef'>; // leeg of undefined = geen niveau-filter
   // vervang boolean door tri-status filter
   tekenen?: Array<'ja' | 'mogelijk' | 'nee'>; // leeg of undefined = geen teken-filter
+  // Nieuw: inhoudsbron filters
+  inhoudBronTypes?: Array<'video' | 'richtlijn' | 'artikel' | 'boek' | 'website'>; // leeg = geen filter
+  inhoudBronnen?: string[]; // lijst van resource keys (zie sourceFacets)
 }
 
 export interface CategorieSelectieState {
@@ -32,13 +36,15 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
   // Per-modus filters in localStorage
   const [filtersByMode, setFiltersByMode] = useState<Record<ModeKey, Filters>>(() => {
     const normalize = (f: Partial<Filters> | undefined): Filters => {
-      const base: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [] };
+      const base: Filters = { bronnen: ['systeem', 'gebruiker'], opdrachtTypes: [], niveaus: [], tekenen: [], inhoudBronTypes: [], inhoudBronnen: [] };
       if (!f) return base;
       const bronnen = Array.isArray(f.bronnen) && f.bronnen.length === 2 ? (f.bronnen as any) : ['systeem', 'gebruiker'];
       const opdrachtTypes = Array.isArray(f.opdrachtTypes) ? f.opdrachtTypes : [];
       const niveaus = Array.isArray(f.niveaus) ? f.niveaus : [];
       const tekenen = Array.isArray(f.tekenen) ? f.tekenen : [];
-      return { bronnen, opdrachtTypes, niveaus, tekenen };
+      const inhoudBronTypes = Array.isArray(f.inhoudBronTypes) ? (f.inhoudBronTypes as any) : [];
+      const inhoudBronnen = Array.isArray(f.inhoudBronnen) ? f.inhoudBronnen : [];
+      return { bronnen, opdrachtTypes, niveaus, tekenen, inhoudBronTypes, inhoudBronnen };
     };
     // Try new structured storage first
     const savedByMode = localStorage.getItem('opdrachtFiltersByMode');
@@ -133,6 +139,16 @@ export function useCategorieSelectie(opdrachten: Opdracht[], currentMode: ModeKe
       if (Array.isArray(filters.tekenen) && filters.tekenen.length > 0) {
         const status = (op as any).tekenStatus || ((op as any).isTekenen ? 'ja' : 'nee');
         if (!filters.tekenen.includes(status)) return false;
+      }
+      // Inhoudsbron: types en specifieke bronnen op basis van antwoordsleutel
+      if ((Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) || (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0)) {
+        const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
+        if (Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
+          if (!refs.some((r: any) => (filters.inhoudBronTypes as any).includes(r.contentType))) return false;
+        }
+        if (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0) {
+          if (!refs.some((r: any) => (filters.inhoudBronnen as any).includes(r.key))) return false;
+        }
       }
       const nivs = filters.niveaus || [];
       if (nivs.length === 0) return true; // geen niveau-filter
