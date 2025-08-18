@@ -6,7 +6,7 @@ import './LeitnerCategorieBeheer.css'; // Hergebruik de modal styling
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
 import { extractResourceRefsFromText } from '../utils/sourceFacets';
-import type { ManifestMap } from '../utils/sourceFacets';
+
 import { InfoTooltip } from './ui/InfoTooltip';
 import { getResourceGroup } from '../utils/sourceFacets';
 
@@ -123,7 +123,7 @@ export const CategorieSelectieModal = ({
   const [openHoofdCategorieen, setOpenHoofdCategorieen] = useState<Record<string, boolean>>({});
   const [toastBericht, setToastBericht] = useState('');
   const [isToastZichtbaar, setIsToastZichtbaar] = useState(false);
-  const [manifestMap, setManifestMap] = useState<ManifestMap>({});
+
   
   // State voor het bewerken van highscore namen
   const [editingHighscoreKey, setEditingHighscoreKey] = useState<string | null>(null);
@@ -166,15 +166,7 @@ export const CategorieSelectieModal = ({
     };
   }, [isOpen]);
 
-  // Lazy manifest laden (labels zoals videokanaal/titel)
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/answer-media/manifest.json')
-      .then(r => r.json())
-      .then((data) => { if (!cancelled) setManifestMap(data || {}); })
-      .catch(() => { if (!cancelled) setManifestMap({}); });
-    return () => { cancelled = true; };
-  }, []);
+
 
   // Sorteer functionaliteit (standaard alfabetisch op categorienaam)
   const [sortConfig, setSortConfig] = useState<{
@@ -375,7 +367,7 @@ export const CategorieSelectieModal = ({
       const key = (typeof niv === 'number' ? niv : 'undef') as 1|2|3|'undef';
       niveausTelling[key] = (niveausTelling[key] || 0) + 1;
       try {
-        const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+                    const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
         // Mark presence per type
         const present: Record<'video'|'richtlijn'|'artikel'|'boek'|'website', boolean> = { video: false, richtlijn: false, artikel: false, boek: false, website: false } as any;
         let hasSelectedKey = false;
@@ -421,7 +413,7 @@ export const CategorieSelectieModal = ({
             // Neem het eerste member om type te peilen
             return g.members.some(m => {
               const url = m.key.startsWith('url:') ? m.key.slice(4) : m.key;
-              const tmpRefs = extractResourceRefsFromText(url, manifestMap);
+                              const tmpRefs = extractResourceRefsFromText(url);
               return tmpRefs.some((r: any) => allowed.has(r.contentType));
             });
           } catch { return false; }
@@ -431,7 +423,7 @@ export const CategorieSelectieModal = ({
     }
     
     return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen } as any;
-  }, [opdrachten, actieveCategorieSelectie, manifestMap, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
+      }, [opdrachten, actieveCategorieSelectie, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
 
   const handleBronToggle = (bron: 'systeem' | 'gebruiker') => {
     if (!setFilters) return;
@@ -505,7 +497,7 @@ export const CategorieSelectieModal = ({
       // Inhoudsbronnen (types en specifieke bronnen)
       if ((Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) || (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0)) {
         try {
-          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
           if (Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
             if (!refs.some((r: any) => (filters.inhoudBronTypes as any).includes(r.contentType))) return false;
           }
@@ -521,7 +513,7 @@ export const CategorieSelectieModal = ({
       if (typeof niv === 'number') return nivs.includes(niv as any);
       return nivs.includes('undef' as any);
     });
-  }, [opdrachten, filters, manifestMap]);
+      }, [opdrachten, filters]);
 
   const gegroepeerdeCategorieen = useMemo(() => {
     const groepen: Record<string, string[]> = { 'Overig': [] };

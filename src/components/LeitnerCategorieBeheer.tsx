@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getLeerDataManager } from '../data/leerDataManager';
 import type { Opdracht } from '../data/types';
-import type { SortOption, HighScoreLibrary } from '../data/highScoreManager';
-import { getSortedHighScores } from '../data/highScoreManager';
+
 import './LeitnerCategorieBeheer.css';
 import { OpdrachtenDetailModal } from './OpdrachtenDetailModal';
 import { opdrachtTypeIconen, NIVEAU_LABELS, OPDRACHT_TYPE_ORDER } from '../data/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
 import { extractResourceRefsFromText } from '../utils/sourceFacets';
-import type { ManifestMap } from '../utils/sourceFacets';
+
 import { getResourceGroup } from '../utils/sourceFacets';
 
 // ... (rest van de interfaces en utility functions blijven hetzelfde)
@@ -211,16 +210,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
     const [opdrachtenVoorDetail, setOpdrachtenVoorDetail] = useState<any[]>([]);
     const [geselecteerdeOpdrachtenVoorDetail, setGeselecteerdeOpdrachtenVoorDetail] = useState<string[]>([]);
 
-    const [manifestMap, setManifestMap] = useState<ManifestMap>({});
 
-    useEffect(() => {
-      let cancelled = false;
-      fetch('/answer-media/manifest.json')
-        .then(r => r.json())
-        .then((data) => { if (!cancelled) setManifestMap(data || {}); })
-        .catch(() => { if (!cancelled) setManifestMap({}); });
-      return () => { cancelled = true; };
-    }, []);
 
     // Filter functionaliteit
     const { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen } = useMemo(() => {
@@ -253,7 +243,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         niveausTelling[key] = (niveausTelling[key] || 0) + 1;
         // inhoudsbronnen tellen
         try {
-          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
           const present: Record<'video'|'richtlijn'|'artikel'|'boek'|'website', boolean> = { video: false, richtlijn: false, artikel: false, boek: false, website: false } as any;
           let hasSelectedKey = false;
           refs.forEach((r: any) => {
@@ -283,9 +273,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
 
       const alleOpdrachtTypes = OPDRACHT_TYPE_ORDER;
 
-      let specifiekeBronnen = Object.keys(bronKeyTelling)
-        .map(k => ({ key: k, count: bronKeyTelling[k], label: bronKeyLabels[k] || k }))
-        .sort((a,b) => (b.count - a.count));
+
       // Vervang door gegroepeerde bronnen
       const grouped = Object.keys(groupKeyToMembers).map(gid => ({ groupId: gid, label: groupKeyToLabel[gid] || gid, members: groupKeyToMembers[gid] }))
         .sort((a,b) => (b.members.length - a.members.length));
@@ -300,7 +288,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
             try {
               return g.members.some(m => {
                 const url = m.key.startsWith('url:') ? m.key.slice(4) : m.key;
-                const tmpRefs = extractResourceRefsFromText(url, manifestMap);
+                const tmpRefs = extractResourceRefsFromText(url);
                 return tmpRefs.some((r: any) => allowed.has(r.contentType));
               });
             } catch { return false; }
@@ -310,7 +298,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
       }
 
       return { alleOpdrachtTypes, opdrachtenPerType, opdrachtenPerBron, niveausTelling, bronTypeTelling, bronTypeSelectedTelling, specifiekeBronnen: specifiekeGroepen };
-    }, [alleOpdrachten, geselecteerdeCategorieen, manifestMap, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
+    }, [alleOpdrachten, geselecteerdeCategorieen, filters?.inhoudBronTypes, filters?.inhoudBronnen]);
 
     useEffect(() => {
       if (isOpen) {
@@ -639,7 +627,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         if (!typeMatch) return false;
         // Inhoudsbron filters
         if ((Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) || (Array.isArray(filters.inhoudBronnen) && filters.inhoudBronnen.length > 0)) {
-          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '', manifestMap);
+          const refs = extractResourceRefsFromText(op.Antwoordsleutel || '');
           if (Array.isArray(filters.inhoudBronTypes) && filters.inhoudBronTypes.length > 0) {
             if (!refs.some((r: any) => (filters.inhoudBronTypes as any).includes(r.contentType))) return false;
           }
@@ -659,7 +647,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
         if (typeof niv === 'number') return nivs.includes(niv);
         return nivs.includes('undef');
     });
-  }, [alleOpdrachten, filters, manifestMap]);
+  }, [alleOpdrachten, filters]);
 
   const berekenStatistieken = useCallback(() => {
     setIsLoading(true);
@@ -1373,7 +1361,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                            const isActive = selectedCount === total && total > 0;
                            const isPartial = selectedCount > 0 && selectedCount < total;
                            const className = `code-chip ${isActive ? 'active' : ''} ${isPartial ? 'partial' : ''}`;
-                           let dRef: HTMLDetailsElement | null = null;
+                           const [isOpen, setIsOpen] = useState(false);
                            const toggleGroup = (selectAll: boolean) => {
                              if (!setFilters) return;
                              const huidige = new Set(filters.inhoudBronnen || []);
@@ -1381,7 +1369,7 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                              setFilters({ ...filters, inhoudBronnen: Array.from(huidige) });
                            };
                            return (
-                             <details key={g.groupId} style={{ display: 'inline-block' }} ref={(el) => { dRef = el; }}>
+                             <details key={g.groupId} style={{ display: 'inline-block' }} open={isOpen}>
                                <summary className={className} style={{ listStyle: 'none', cursor: 'default', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                                  <span
                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGroup(!(isActive && !isPartial)); }}
@@ -1392,11 +1380,11 @@ export const LeitnerCategorieBeheer: React.FC<LeitnerCategorieBeheerProps> = ({
                                  </span>
                                  <button
                                    type="button"
-                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (dRef) dRef.open = !dRef.open; }}
+                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(!isOpen); }}
                                    aria-label="Open/Sluit"
                                    style={{ cursor: 'pointer', background: 'transparent', border: '1px solid #444', color: '#ccc', borderRadius: 6, padding: '0 6px' }}
                                  >
-                                   {dRef?.open ? '∨' : '+'}
+                                   {isOpen ? '∨' : '+'}
                                  </button>
                                </summary>
                                <div style={{ marginTop: 6, padding: 8, background: '#252525', border: '1px solid #404040', borderRadius: 6, minWidth: 260 }}>

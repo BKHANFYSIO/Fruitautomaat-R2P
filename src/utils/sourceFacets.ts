@@ -5,11 +5,11 @@ interface ResourceRef {
   label?: string;
 }
 
-interface ManifestMap {
+export interface ManifestMap {
   [key: string]: any;
 }
 
-export function extractResourceRefsFromText(text: string, manifestMap?: ManifestMap): ResourceRef[] {
+export function extractResourceRefsFromText(text: string): ResourceRef[] {
   const refs: ResourceRef[] = [];
   
   if (!text) return refs;
