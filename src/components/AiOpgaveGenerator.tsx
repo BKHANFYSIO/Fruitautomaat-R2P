@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { CRITERIA } from '../data/criteria';
 import { OPDRACHT_TYPE_ORDER, opdrachtTypeIconen } from '../data/constants';
 import './AiOpgaveGenerator.css';
 
@@ -15,7 +14,7 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
   const [hoofdcategorie, setHoofdcategorie] = useState('');
   const [gekozenBestaandeHoofdcategorie, setGekozenBestaandeHoofdcategorie] = useState('');
   const [aantalOpdrachten, setAantalOpdrachten] = useState(30);
-  const [niveau] = useState<'makkelijk' | 'moeilijk' | 'mix'>('mix');
+  // niveau-filter is niet meer nodig in compacte prompt
   const [studentNiveau, setStudentNiveau] = useState<'1e jaar' | '2e jaar' | '3e/4e jaar' | ''>('');
   const [subcatMode, setSubcatMode] = useState<'ai' | 'handmatig'>('ai');
   // legacy input verwijderd; vervangen door handmatige lijst met aantallen
@@ -31,15 +30,7 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
     'Klinisch redeneren': 'Opdrachten die vragen om een gestructureerd redeneerproces met meerdere gegevens uit een casus, waarbij hypotheses, onderzoek en interventierichtingen gekozen en onderbouwd worden.'
   };
   const BESCHIKBARE_TYPES = OPDRACHT_TYPE_ORDER.filter(t => TYPE_BESCHRIJVINGEN[t as keyof typeof TYPE_BESCHRIJVINGEN]);
-  const TYPE_VOORBEELDEN: Record<string, string> = {
-    'Feitenkennis': 'Benoem de drie belangrijkste ligamenten die passieve stabiliteit geven aan het kniegewricht.',
-    'Begripsuitleg': 'Leg uit hoe de menisci bijdragen aan schokabsorptie en stabiliteit in de knie.',
-    'Toepassing': '**Casus:** Een 20-jarige voetballer heeft een mediaal collateraal bandletsel. **Opdracht:** Geef twee oefeningen die passen bij de subacute fase en onderbouw kort.',
-    'Vaardigheid – Onderzoek': 'Demonstreer de Lachman-test en benoem de structuren die getest worden.',
-    'Vaardigheid – Behandeling': 'Demonstreer een mobilisatietechniek voor het kniekapsel met als doel extensieverbetering.',
-    'Communicatie met patiënt': 'Leg aan een patiënt uit waarom de voorste kruisband belangrijk is voor voorwaartse stabiliteit.',
-    'Klinisch redeneren': '**Casus:** 30-jarige loper met pijn aan de mediale knie, slotklachten, positief McMurray. **Opdracht:** Bepaal twee mogelijke diagnoses en geef aan welk aanvullend onderzoek je kiest.'
-  };
+  // TYPE_VOORBEELDEN verwijderd (niet gebruikt)
 
   const TYPE_OPDRACHTEN_VOORBEELDEN: Record<string, string> = {
     'Feitenkennis': 'Benoemen van structuren, functies, fasen, data of namen; eenvoudige tekenopdrachten van structuren; vragen met "wat", "welke", "noem", "benoem".',
@@ -58,6 +49,68 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
   const [isTekenenUitlegOpen, setIsTekenenUitlegOpen] = useState(false);
   const [openTypeUitleg, setOpenTypeUitleg] = useState<string | null>(null);
   const [alleTypesUitgeklapt, setAlleTypesUitgeklapt] = useState(false);
+  
+  // State voor het beheren van links
+  const [linkInput, setLinkInput] = useState('');
+  const [addedLinks, setAddedLinks] = useState<string[]>([]);
+  const [useBronnenExpliciet, setUseBronnenExpliciet] = useState(true);
+  const [promptVariant, setPromptVariant] = useState<'standaard' | 'video'>('standaard');
+  // Accordion state: welke stap is geopend (null = alles ingeklapt)
+  const [openStep, setOpenStep] = useState<number | null>(null);
+  // Keuze in stap 2
+  type BronKeuze = 'model' | 'video' | 'bronnen' | 'mix';
+  const [bronKeuze, setBronKeuze] = useState<BronKeuze>('model');
+
+  // Scroll-naar-stap refs en handler
+  type StepIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  const stepSectionRefs = {
+    1: useRef<HTMLDivElement | null>(null),
+    2: useRef<HTMLDivElement | null>(null),
+    3: useRef<HTMLDivElement | null>(null),
+    4: useRef<HTMLDivElement | null>(null),
+    5: useRef<HTMLDivElement | null>(null),
+    6: useRef<HTMLDivElement | null>(null),
+    7: useRef<HTMLDivElement | null>(null),
+    8: useRef<HTMLDivElement | null>(null),
+  } as const;
+  const stepHeaderRefs = {
+    1: useRef<HTMLHeadingElement | null>(null),
+    2: useRef<HTMLHeadingElement | null>(null),
+    3: useRef<HTMLHeadingElement | null>(null),
+    4: useRef<HTMLHeadingElement | null>(null),
+    5: useRef<HTMLHeadingElement | null>(null),
+    6: useRef<HTMLHeadingElement | null>(null),
+    7: useRef<HTMLHeadingElement | null>(null),
+    8: useRef<HTMLHeadingElement | null>(null),
+  } as const;
+
+  const handleToggleStep = (step: StepIndex) => {
+    const next = openStep === step ? null : step;
+    setOpenStep(next);
+    if (next !== null) {
+      requestAnimationFrame(() => {
+        const headerEl = stepHeaderRefs[next].current || stepSectionRefs[next].current;
+        if (headerEl) {
+          const top = (headerEl as HTMLElement).getBoundingClientRect().top + window.scrollY - 8;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    }
+  };
+
+  // Functie om een link toe te voegen
+  const handleAddLink = () => {
+    const trimmedLink = linkInput.trim();
+    if (trimmedLink && !addedLinks.includes(trimmedLink)) {
+      setAddedLinks(prev => [...prev, trimmedLink]);
+      setLinkInput('');
+    }
+  };
+
+  // Functie om een link te verwijderen
+  const handleRemoveLink = (index: number) => {
+    setAddedLinks(prev => prev.filter((_, i) => i !== index));
+  };
 
   const updateHandmatigeSubcat = (index: number, veld: 'naam' | 'aantal', waarde: string | number) => {
     setHandmatigeSubcats(prev => {
@@ -102,7 +155,12 @@ export const AiOpgaveGenerator = ({ isOpen, onClose, hoofdcategorieen = [], subc
     }
   };
 
-  const generatePrompt = () => {
+  /*
+   * legacy generatePrompt (voorheen lange prompt) – behouden als comment voor referentie
+   * const generatePrompt = () => { ... }
+   */
+  // Verwijderd i.v.m. compacte promptvariant
+    /* LEGACY_PROMPT_BLOCK_START
     const niveauInstructie = niveau === 'makkelijk' 
       ? 'Focus op basisconcepten en eenvoudige toepassingen.'
       : niveau === 'moeilijk' 
@@ -117,6 +175,32 @@ ${Object.entries(CRITERIA).map(([, category]) =>
 ).join('\n\n')}
 
 Analyseer elke opdracht en bepaal welke criteria het meest relevant zijn. Maak de antwoordsleutel specifiek voor de opdracht en gebruik de relevante criteria als richtlijn.`;
+
+    // Links context voor de prompt
+    const linksContext = addedLinks.length > 0 
+      ? `\n\n**BRONMATERIAAL EN LINKS:**
+${useBronnenExpliciet ? '**BELANGRIJK: Gebruik EXCLUSIEF de volgende bronnen en links als basis voor het genereren van opdrachten. Baseer je antwoordsleutels en opdrachtinhoud op deze specifieke bronmateriaal.**' : 'De volgende links en bronmateriaal zijn beschikbaar voor het maken van opdrachten. Gebruik deze als basis waar mogelijk en verwijs ernaar in de antwoordsleutels:'}
+
+${addedLinks.map((link, index) => {
+  const url = link.toLowerCase();
+  let type = 'Website';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    type = 'YouTube video';
+  } else if (url.includes('vimeo.com')) {
+    type = 'Vimeo video';
+  } else if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+    type = 'Afbeelding';
+  }
+  return `${index + 1}. ${type}: ${link}`;
+}).join('\n')}
+
+**INSTRUCTIES VOOR GEBRUIK VAN LINKS:**
+- Voor YouTube en Vimeo video's: Gebruik de links in antwoordsleutels met eventuele timestamps (?t=... of ?start=...)
+- Voor afbeeldingen: Voeg de links toe in antwoordsleutels voor visuele ondersteuning
+- Voor websites: Verwijs naar relevante pagina's in antwoordsleutels
+- Als er timestamps in video links staan, neem dan een transcriptie van het relevante deel mee in de antwoordsleutel
+${useBronnenExpliciet ? '\n**EXPLICIETE INSTRUCTIE:** Baseer alle opdrachten en antwoordsleutels op de bovenstaande bronnen. Gebruik geen algemene kennis die niet in deze bronnen voorkomt.' : ''}`
+      : '';
 
     const fileContext = '';
 
@@ -197,7 +281,7 @@ Je bent een expert-docent en curriculumontwikkelaar op het gebied van ${onderwer
 **CONTEXT:**
 Je ontwikkelt opdrachten voor een educatieve fruitautomaat-game. De opdrachten worden gebruikt om de kennis en vaardigheden van hbo-studenten fysiotherapie te toetsen. Ze moeten kort, eenduidig en uitdagend zijn.
 
-**BELANGRIJK: Download de bijlagen uit stap 3 van de AI Generator om de juiste structuur en niveau-indeling te begrijpen:**
+**BELANGRIJK: Download de bijlagen uit stap 4 van de AI Generator om de juiste structuur en niveau-indeling te begrijpen:**
 - **Excel Sjabloon**: Voor de juiste kolomstructuur
 - **Niveau Bepaling Instructies**: Voor gedetailleerde richtlijnen per opdrachttype
 
@@ -337,7 +421,9 @@ Hoofdcategorie, Categorie, Type, Tekenen, Opdracht, Antwoordsleutel, Tijdslimiet
 - "Antwoordsleutel": Het modelantwoord met bronvermelding. Je kunt links toevoegen naar websites, afbeeldingen (.png, .jpg, .gif, .webp, .svg) en video's (YouTube, Vimeo). YouTube ondersteunt starttijden: ?t=2m30s of ?start=150. De app herkent en toont media automatisch.
 - "Tijdslimiet": Getal in seconden (bijv. 60 voor 1 minuut). Alleen toevoegen als de opdracht een tijdslimiet nodig heeft voor een goede uitvoering.
 - "Extra_Punten (max 2)": Getal tussen 0 en 2. Alleen extra punten geven voor moeilijke of complexe opdrachten die meer inspanning vereisen.
-- "Niveau": 1 (opwarmers/basis), 2 (standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
+      - "Niveau": 1 (opwarmers/basis), 2 (standaard), 3 (uitdagend). Leeg laten als je geen niveau wilt opgeven.
+
+${linksContext}
 
 **VOORBEELD TABEL FORMAAT:**
 
@@ -351,9 +437,74 @@ Hoofdcategorie,Categorie,Type,Tekenen,Opdracht,Antwoordsleutel,Tijdslimiet,Extra
 ${hoofdcategorie},${subcategorieen[0] || 'Subcategorie 1'},Begripsuitleg,Nee,"Leg uit wat de belangrijkste principes zijn van evidence-based practice in de fysiotherapie en geef een praktisch voorbeeld.","Evidence-based practice combineert: 1) Beste beschikbare wetenschappelijke bewijzen, 2) Klinische expertise van de therapeut, 3) Patiëntvoorkeuren en waarden. Praktisch voorbeeld: Bij een patiënt met lage rugpijn baseer je de behandeling op recente richtlijnen, je eigen ervaring met vergelijkbare casussen, en de wensen van de patiënt. Bron: KNGF-richtlijn Lage rugpijn (2017). Meer info: https://www.kngf.nl/richtlijnen",120,1,2,
 ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Benoem de belangrijkste spieren van de rotator cuff.","De rotator cuff bestaat uit: 1) Supraspinatus (abductie), 2) Infraspinatus (exorotatie), 3) Teres minor (exorotatie), 4) Subscapularis (endorotatie). Deze spieren werken samen om de humeruskop in de glenoïdholte te centreren. Zie anatomie: https://example.com/rotator-cuff.jpg Bron: Gray's Anatomy (2015).",45,0,1,${fileContext}`;
   };
+  LEGACY_PROMPT_BLOCK_END */
+
+  const generatePromptCompact = () => {
+    const toegestaneTekenenStatuses = [
+      allowTekenenJa ? 'Ja' : null,
+      allowTekenenMogelijk ? 'Mogelijk' : null,
+      allowTekenenNee ? 'Nee' : null,
+    ].filter(Boolean) as string[];
+    const effectieveTekenenStatuses = toegestaneTekenenStatuses.length > 0 ? toegestaneTekenenStatuses : ['Ja', 'Mogelijk', 'Nee'];
+
+    const totaalGevraagd = subcatMode === 'handmatig'
+      ? handmatigeSubcats.filter(s => s.naam.trim()).reduce((sum, s) => sum + (Number.isFinite(s.aantal) ? s.aantal : 0), 0)
+      : aantalOpdrachten;
+
+    const subcatsParam = subcatMode === 'handmatig' && handmatigeSubcats.some(s => s.naam.trim())
+      ? handmatigeSubcats.filter(s => s.naam.trim()).map(s => `${s.naam} (${s.aantal})`).join(', ')
+      : 'laat AI verdelen binnen onderwerp';
+    const typesParam = (geselecteerdeTypes && geselecteerdeTypes.length > 0)
+      ? geselecteerdeTypes.join(', ')
+      : 'geschikt uit lijst';
+    const linksParam = addedLinks.length
+      ? addedLinks.map((l, i) => `${i + 1}. ${l}`).join('\n')
+      : '- (geen links toegevoegd)';
+
+    const bronnenLijn = useBronnenExpliciet
+      ? 'Gebruik exclusief de meegeleverde bijlagen (Excel-sjabloon, Niveau-instructie, Opdracht-typen) en onderstaande links; geen externe/algemene kennis.'
+      : 'Baseer je primair op bijlagen en onderstaande links; vul aan met eigen kennis indien nodig.';
+    const videoLijn = promptVariant === 'video'
+      ? '\nVoeg bij video-opdrachten timestamp-links toe in de antwoordsleutel en citeer het relevante fragment (zie bijlage "Instructie voor AI - Video met timestamps.pdf").'
+      : '';
+    const videoRegel = promptVariant === 'video'
+      ? ' Als een video-link is gebruikt, voeg een timestamp toe (?t=... of ?start=...) en citeer kort de relevante zin/onderdeel uit het transcript.'
+      : '';
+
+    return `ROL
+Je bent docent/curriculumontwikkelaar voor ${onderwerpBeschrijving}. Genereer toetsbare, korte opdrachten voor hbo-fysiotherapie.
+
+BRONNEN
+${bronnenLijn}${videoLijn}
+Links:
+${linksParam}
+
+PARAMETERS
+- Doelgroep: ${studentNiveau}
+- Hoofdcategorie: ${hoofdcategorie}
+- Subcategorieën: ${subcatsParam}
+- Types: ${typesParam}
+- Tekenen: alleen deze waarden toestaan en filteren: ${effectieveTekenenStatuses.join(', ')}
+
+OPDRACHT
+Genereer precies ${totaalGevraagd} unieke opdrachten die passen bij het onderwerp en de doelgroep, verdeeld volgens bovenstaande restricties (subcategorie-aantallen zijn hard; anders evenredige verdeling). Schrijf per opdracht een kort, toetsbaar modelantwoord met bronverwijzing (URL of bijlage-naam + pag./sectie).${videoRegel}
+
+REGELS
+- Taal: Nederlands. Kort en eenduidig. Geen meta-uitleg of extra tekst buiten de CSV.
+- Media: links naar websites/afbeeldingen/video's zijn toegestaan in de antwoordsleutel; de app embedt automatisch.
+- Tijdslimiet: alleen invullen als functioneel nodig (getal in seconden).
+- Extra_Punten (max 2): 0–2, alleen als gerechtvaardigd.
+- Type moet uit de geselecteerde lijst komen${geselecteerdeTypes.length ? '' : ' of anders een geschikt type uit de app-lijst'}. Tekenen ∈ {${effectieveTekenenStatuses.join(', ')}}.
+- Kwaliteit: geen duplicaten, geen hallucinaties, bronverwijzing verplicht.
+
+OUTPUT (CSV, geen Markdown, exact deze header)
+Hoofdcategorie,Categorie,Type,Tekenen,Opdracht,Antwoordsleutel,Tijdslimiet,Extra_Punten (max 2),Niveau,Casus
+
+Controleer intern: (1) aantallen per subcategorie kloppen, (2) alleen toegestane "Tekenen"-waarden, (3) types conform restrictie, (4) elke rij citeert bron. Geef daarna uitsluitend de CSV-rijen terug.`;
+  };
 
   const handleCopyPrompt = async () => {
-    const prompt = generatePrompt();
+    const prompt = generatePromptCompact();
     try {
       await navigator.clipboard.writeText(prompt);
       window.dispatchEvent(new CustomEvent('app:notify', { detail: { message: 'Prompt gekopieerd naar klembord!', type: 'succes', timeoutMs: 6000 } }));
@@ -434,10 +585,15 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
         </div>
         
         <div className="ai-generator-body">
-          <div className="ai-generator-section">
-            <h4>Stap 1: Vul de parameters in</h4>
+          <div className="ai-generator-section" ref={stepSectionRefs[1]}>
+            <h4 ref={stepHeaderRefs[1]} onClick={() => handleToggleStep(1)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 1: Vul de parameters in</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 1 ? '▾' : '▸'}</span>
+              <span aria-label="status stap 1">{(onderwerpBeschrijving.trim() && studentNiveau) ? '✅' : '⚠️'}</span>
+            </h4>
+            <div style={{ display: openStep === 1 ? 'block' : 'none' }}>
             <p className="instruction-text">
-              De waarden hieronder (hoofdcategorie, onderwerp-beschrijving, aantal, studentniveau en eventuele subcategorieën) worden automatisch verwerkt in de prompt die je in stap 5 kunt kopiëren.
+              De waarden hieronder (hoofdcategorie, onderwerp-beschrijving, aantal, studentniveau en eventuele subcategorieën) worden automatisch verwerkt in de prompt die je in stap 6 kunt kopiëren.
             </p>
             <div className="form-group">
               <div style={{ 
@@ -750,310 +906,43 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               </div>
             </div>
             
-            <div className="form-group">
-              <div style={{ 
-                marginTop: 12, 
-                padding: '16px', 
-                backgroundColor: '#2d3748', 
-                borderRadius: '8px', 
-                border: '1px solid #4a5568' 
-              }}>
-                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
-                    Opdracht types (meerdere mogelijk):
-                  </label>
-                  {geselecteerdeTypes.length > 0 && (
-                    <span style={{
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {geselecteerdeTypes.length} geselecteerd
-                    </span>
-                  )}
+            {/* Blokken voor Opdracht types en Tekenen‑status verplaatst naar nieuwe Stap 3 */}
+                </div>
                 </div>
                 
-                <div className="instruction-text" style={{ marginBottom: 12 }}>
-                  <strong>Uitleg:</strong> Vink de typen aan die je wilt laten genereren. <strong>Tip:</strong> Kies maximaal 2-3 types tegelijk voor betere output. De AI kan zich dan beter focussen op specifieke vraagtypen in plaats van te veel verschillende stijlen door elkaar te mengen.
-                </div>
-                
-                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-                  <button
-                    onClick={toggleAlleTypesUitklappen}
-                    style={{
-                      backgroundColor: alleTypesUitgeklapt ? '#e53e3e' : '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                    title={alleTypesUitgeklapt ? 'Klik om alle types in te klappen' : 'Klik om alle types uit te klappen'}
-                  >
-                    {alleTypesUitgeklapt ? '🔽 Alles inklappen' : '🔼 Alles uitklappen'}
-                  </button>
-                </div>
-                
-                <ul className="type-list">
-                  {BESCHIKBARE_TYPES.map((t) => (
-                    <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`}>
-                      {/* Header rij met checkbox, titel en uitklap knop */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <label style={{ flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <input
-                            type="checkbox"
-                            checked={geselecteerdeTypes.includes(t)}
-                            onChange={() => toggleType(t)}
-                            style={{ cursor: 'pointer' }}
-                          />
-                          <span className="type-title" style={{ cursor: 'pointer' }} onClick={() => toggleType(t)}>
-                            <span className="type-icon" aria-hidden>{opdrachtTypeIconen[t] || '❓'}</span>
-                            {t}
-                          </span>
-                        </label>
-                        <div 
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            backgroundColor: (openTypeUitleg === t || openTypeUitleg === 'all') ? '#4a5568' : 'transparent',
-                            transition: 'background-color 0.2s'
-                          }} 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (openTypeUitleg === 'all') {
-                              // Als alles uitgeklapt is, klap alleen deze in
-                              setOpenTypeUitleg(null);
-                              setAlleTypesUitgeklapt(false);
-                            } else {
-                              // Normale toggle
-                              setOpenTypeUitleg(openTypeUitleg === t ? null : t);
-                            }
-                          }}
-                          title="Klik voor uitleg en voorbeelden"
-                        >
-                          <span style={{ 
-                            fontSize: '12px', 
-                            transition: 'transform 0.2s', 
-                            transform: (openTypeUitleg === t || openTypeUitleg === 'all') ? 'rotate(90deg)' : 'rotate(0deg)',
-                            color: '#a0aec0'
-                          }}>
-                            ▶
-                          </span>
-                        </div>
-                      </div>
-                      {(openTypeUitleg === t || openTypeUitleg === 'all') && (
-                        <div style={{ 
-                          marginTop: '8px', 
-                          padding: '12px', 
-                          backgroundColor: '#1a202c', 
-                          borderRadius: '6px', 
-                          border: '1px solid #2d3748'
-                        }}>
-                          {/* Definitie sectie */}
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ 
-                              color: '#90cdf4', 
-                              fontSize: '12px', 
-                              fontWeight: 'bold', 
-                              marginBottom: '6px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px'
-                            }}>
-                              📖 Definitie
-                            </div>
-                            <div style={{ color: '#cbd5e0', fontSize: '13px', lineHeight: '1.5' }}>
-                              {TYPE_BESCHRIJVINGEN[t]}
-                            </div>
-                          </div>
 
-                          {/* Wat voor opdrachten vallen hieronder sectie */}
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ 
-                              color: '#90cdf4', 
-                              fontSize: '12px', 
-                              fontWeight: 'bold', 
-                              marginBottom: '6px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px'
-                            }}>
-                              🎯 Wat voor opdrachten vallen hieronder?
-                            </div>
-                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.5' }}>
-                              {TYPE_OPDRACHTEN_VOORBEELDEN[t]}
-                            </div>
-                          </div>
-
-                          {/* Concrete voorbeelden sectie */}
-                          <div>
-                            <div style={{ 
-                              color: '#90cdf4', 
-                              fontSize: '12px', 
-                              fontWeight: 'bold', 
-                              marginBottom: '8px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px'
-                            }}>
-                              💡 Concrete voorbeelden
-                            </div>
-                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.4' }}>
-                              {(() => {
-                                const voorbeelden = {
-                                  'Feitenkennis': [
-                                    'Benoem de drie belangrijkste ligamenten die passieve stabiliteit geven aan het kniegewricht.',
-                                    'Noem de vier hoofdfasen van supercompensatie.',
-                                    'Noem twee klinische tekenen die passen bij een inversietrauma van de enkel in de acute fase.'
-                                  ],
-                                  'Begripsuitleg': [
-                                    'Leg uit hoe de menisci bijdragen aan schokabsorptie en stabiliteit in de knie.',
-                                    'Beschrijf hoe het overload-principe invloed heeft op bindweefseladaptatie.',
-                                    'Leg uit waarom vroege mobilisatie na een lateraal enkelbandletsel het herstel kan bevorderen.'
-                                  ],
-                                  'Toepassing': [
-                                    '**Casus:** Een 20-jarige voetballer heeft een mediaal collateraal bandletsel. **Opdracht:** Geef twee oefeningen die passen bij de subacute fase en onderbouw kort.',
-                                    '**Opdracht:** Pas het principe van specificiteit toe bij het opstellen van een oefenprogramma voor herstel van een verzwikte pols.',
-                                    '**Casus:** Patiënt, 25 jaar, lateraal enkelbandletsel 4 dagen geleden, wil lopen zonder krukken. **Opdracht:** Stel een oefenadvies op volgens de KNGF-richtlijn.'
-                                  ],
-                                  'Vaardigheid – Onderzoek': [
-                                    'Demonstreer de Lachman-test en benoem de structuren die getest worden.',
-                                    'Voer een hand-held dynamometertest uit voor de quadriceps en noteer de meetwaarden. Indien geen dynamometer beschikbaar: leg uit hoe je de test zou uitvoeren.',
-                                    'Meet de dorsaalflexie van de enkel met een goniometer en noteer het eindgevoel. Indien geen goniometer beschikbaar: leg uit hoe je de meting zou uitvoeren.'
-                                  ],
-                                  'Vaardigheid – Behandeling': [
-                                    'Demonstreer een mobilisatietechniek voor het kniekapsel met als doel extensieverbetering.',
-                                    'Voer een excentrische oefening uit voor de hamstrings en benoem de dosering.',
-                                    'Laat een enkelbalansoefening zien op een instabiele ondergrond voor een patiënt in de herstelfase.'
-                                  ],
-                                  'Communicatie met patiënt': [
-                                    'Leg aan een patiënt uit waarom de voorste kruisband belangrijk is voor voorwaartse stabiliteit.',
-                                    'Motiveer een patiënt om een progressief krachttrainingsprogramma vol te houden door het herstelproces van bindweefsel uit te leggen.',
-                                    'Leg in begrijpelijke taal uit waarom het belangrijk is om de enkel te blijven bewegen ondanks lichte pijn.'
-                                  ],
-                                  'Klinisch redeneren': [
-                                    '**Casus:** 30-jarige loper met pijn aan de mediale knie, slotklachten, positief McMurray. **Opdracht:** Bepaal twee mogelijke diagnoses en geef aan welk aanvullend onderzoek je kiest.',
-                                    '**Casus:** 22-jarige sporter met recidiverende kuitblessures, klachten na intensieve intervaltraining, onregelmatig herstelschema. **Opdracht:** Leg uit hoe je trainingsbelasting zou aanpassen om herhaling te voorkomen.',
-                                    '**Casus:** 19-jarige met inversietrauma 1 week geleden. Lichte zwelling rond de laterale malleolus, kan steunen maar niet rennen, pijnscore 4/10 bij dorsaalflexie, figure-of-eight omtrek +1,2 cm t.o.v. andere enkel. **Opdracht:** Beschrijf je behandelplan volgens de KNGF-richtlijn, inclusief criteria voor opbouw.'
-                                  ]
-                                };
-                                
-                                return voorbeelden[t as keyof typeof voorbeelden]?.map((voorbeeld, index) => (
-                                  <div key={index} style={{ 
-                                    marginBottom: '8px', 
-                                    padding: '8px', 
-                                    backgroundColor: '#2d3748', 
-                                    borderRadius: '4px',
-                                    borderLeft: '3px solid #4a5568'
-                                  }}>
-                                    <span style={{ 
-                                      color: '#a0aec0', 
-                                      fontSize: '11px', 
-                                      fontWeight: 'bold',
-                                      marginRight: '6px'
-                                    }}>
-                                      {index + 1}.
-                                    </span>
-                                    <span style={{ color: '#cbd5e0' }}>
-                                      {voorbeeld}
-                                    </span>
-                                  </div>
-                                )) || [TYPE_VOORBEELDEN[t]];
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            
-            <div className="form-group">
-              <div style={{ 
-                marginTop: 12, 
-                padding: '16px', 
-                backgroundColor: '#2d3748', 
-                borderRadius: '8px', 
-                border: '1px solid #4a5568' 
-              }}>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
-                    Tekenen‑status (filter voor generatie):
-                  </label>
-                </div>
-                
-                <div className="instruction-text" style={{ marginBottom: 12 }}>
-                  <strong>Uitleg:</strong> De AI labelt elke opdracht met Tekenen = Ja, Mogelijk of Nee. Selecteer hieronder welke categorieën je wilt laten genereren.
-                </div>
-                
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setIsTekenenUitlegOpen(!isTekenenUitlegOpen)}>
-                    <strong>📝 Uitgebreide uitleg en voorbeelden</strong>
-                    <span style={{ fontSize: '12px', transition: 'transform 0.2s', transform: isTekenenUitlegOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                  </div>
-                  {isTekenenUitlegOpen && (
-                    <div style={{ marginTop: '10px', padding: '12px', backgroundColor: '#1a202c', borderRadius: '6px', border: '1px solid #2d3748' }}>
-                      <p style={{ margin: '0 0 8px 0', color: '#e2e8f0' }}>
-                        <strong>Standaardinstelling:</strong> alle drie categorieën.
-                      </p>
-                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
-                        <strong>Als alle drie zijn geselecteerd:</strong> genereert de AI opdrachten uit alle categorieën.
-                      </p>
-                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
-                        <strong>Als alleen Ja is geselecteerd:</strong> genereert de AI uitsluitend opdrachten waarbij tekenen verplicht is.<br />
-                        <em>Voorbeeld:</em> "Teken een grafiek van de fasen van bindweefselherstel en leg deze uit aan de hand van je tekening."
-                      </p>
-                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
-                        <strong>Als alleen Mogelijk is geselecteerd:</strong> genereert de AI opdrachten waar tekenen optioneel is.<br />
-                        <em>Voorbeeld:</em> "Leg uit hoe een gewricht werkt (tekenen mag, maar is niet verplicht)."
-                      </p>
-                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
-                        <strong>Als alleen Nee is geselecteerd:</strong> genereert de AI opdrachten zonder tekenen.<br />
-                        <em>Voorbeeld:</em> "Noem 3 spieren die betrokken zijn bij schouderabductie."
-                      </p>
-                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}>
-                        <strong>De AI houdt bij het genereren rekening met het onderwerp.</strong><br />
-                        Als tekenen minder passend is bij het onderwerp, worden er automatisch minder tekenopdrachten gegenereerd.
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="tekenen-toggle-row">
-                  <label>
-                    <input type="checkbox" checked={allowTekenenJa} onChange={(e) => setAllowTekenenJa(e.target.checked)} />
-                    Expliciet tekenen (Ja)
-                  </label>
-                  <label>
-                    <input type="checkbox" checked={allowTekenenMogelijk} onChange={(e) => setAllowTekenenMogelijk(e.target.checked)} />
-                    Tekenen helpt (Mogelijk)
-                  </label>
-                  <label>
-                    <input type="checkbox" checked={allowTekenenNee} onChange={(e) => setAllowTekenenNee(e.target.checked)} />
-                    Zonder tekenen (Nee)
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="ai-generator-section">
-            <h4>Stap 2: Bepaal en verzamel bronmateriaal (optioneel)</h4>
+          <div className="ai-generator-section" ref={stepSectionRefs[2]}>
+            <h4 ref={stepHeaderRefs[2]} onClick={() => handleToggleStep(2)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 2: Kies hoe de AI moet genereren</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 2 ? '▾' : '▸'}</span>
+              <span aria-label="status stap 2">{(bronKeuze === 'model') || (bronKeuze !== ('model' as BronKeuze) && addedLinks.length > 0) ? '✅' : 'ℹ️'}</span>
+            </h4>
+            <div style={{ display: openStep === 2 ? 'block' : 'none' }}>
             <p className="instruction-text">
-              Zoek en verzamel zelf bronmateriaal waarop je de opdrachten wilt baseren. Denk aan:
+              Kies hieronder of de AI puur op het taalmodel genereert, of (ook) op basis van video/links/documenten. Afhankelijk van je keuze verschijnen passende velden.
             </p>
+            <div style={{ margin: '8px 0 16px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <input type="radio" name="bronKeuze" value="model" checked={bronKeuze === 'model'} onChange={() => setBronKeuze('model')} />
+                Alleen taalmodel
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <input type="radio" name="bronKeuze" value="video" checked={bronKeuze === 'video'} onChange={() => setBronKeuze('video')} />
+                Video‑links
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <input type="radio" name="bronKeuze" value="bronnen" checked={bronKeuze === 'bronnen'} onChange={() => setBronKeuze('bronnen')} />
+                Bronnen/links
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <input type="radio" name="bronKeuze" value="mix" checked={bronKeuze === 'mix'} onChange={() => setBronKeuze('mix')} />
+                Mix
+              </label>
+            </div>
+            <p className="instruction-text">
+              {bronKeuze === 'model' ? 'De AI gebruikt alleen zijn interne kennis. Tip: voor hogere kwaliteit kun je alsnog bronnen toevoegen in de onderstaande secties.' : 'Voeg relevante bronnen toe. Deze worden meegenomen in de prompt en antwoordsleutels.'}
+            </p>
+            { (bronKeuze === 'video' || bronKeuze === 'bronnen' || bronKeuze === 'mix') && (
             <ul style={{ 
               listStyle: 'none', 
               padding: 0, 
@@ -1081,7 +970,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                   flexShrink: 0,
                   marginTop: '1px'
                 }}>•</span>
-                <span>YouTube/kennisclips (tip: met tijdstempel – de app ondersteunt <code>?t=…</code> of <code>?start=…</code> waardoor de video exact start waar het relevant is voor de opdracht)</span>
+                <span>YouTube/kennisclips (met tijdstempel: <strong>youtu.be</strong> met <code>?t=…</code> of <code>?start=…</code>; bij <strong>watch</strong>-URL gebruik <code>&t=…</code> of <code>&start=…</code>. Vimeo: <code>#t=…s</code>)</span>
               </li>
               <li style={{ 
                 display: 'flex', 
@@ -1153,15 +1042,332 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                 <span>Websites en richtlijnen</span>
               </li>
             </ul>
+            )}
+            { (bronKeuze === 'video' || bronKeuze === 'bronnen' || bronKeuze === 'mix') && (
             <p className="instruction-text">
               Dit is optioneel. Zonder bronnen zal het taalmodel zijn eigen kennis gebruiken.
               Dat werkt vaak prima, maar verhoogt de kans op bias en hallucinaties. Controleer
               de inhoud dan extra kritisch en voeg bij voorkeur toch concrete bronnen toe.
+              <strong>Tip:</strong> Gebruik de link functionaliteit hieronder om video's, afbeeldingen en websites toe te voegen die automatisch in de prompt worden meegenomen.
             </p>
+            )}
+            { (bronKeuze === 'bronnen' || bronKeuze === 'mix') && (
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '12px', 
+              backgroundColor: '#2d3748', 
+              borderRadius: '6px', 
+              border: '1px solid #4a5568',
+              borderLeft: '4px solid #4299e1'
+            }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                cursor: 'pointer',
+                color: '#e2e8f0',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={useBronnenExpliciet}
+                  onChange={(e) => setUseBronnenExpliciet(e.target.checked)}
+                  style={{ 
+                    width: '16px', 
+                    height: '16px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span>AI moet expliciet uit opgegeven bronnen genereren</span>
+              </label>
+              <p style={{ 
+                margin: '8px 0 0 0', 
+                color: '#a0aec0', 
+                fontSize: '12px',
+                lineHeight: '1.4'
+              }}>
+                {useBronnenExpliciet 
+                  ? 'De AI zal alleen de toegevoegde bronnen en links gebruiken als basis voor opdrachten en antwoordsleutels. Geen algemene kennis die niet in deze bronnen voorkomt.'
+                  : 'De AI kan zowel de toegevoegde bronnen als algemene kennis gebruiken voor het genereren van opdrachten.'
+                }
+              </p>
+            </div>
+            )}
+            { bronKeuze !== 'model' && (
+            <div style={{ 
+              marginTop: '20px', 
+              padding: '16px', 
+              backgroundColor: '#2d3748', 
+              borderRadius: '8px', 
+              border: '1px solid #4a5568',
+              borderLeft: '4px solid #48bb78'
+            }}>
+              <h5 style={{ 
+                margin: '0 0 12px 0', 
+                color: '#48bb78', 
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🔗 Voeg video- en afbeeldingslinks toe
+              </h5>
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                color: '#cbd5e0', 
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}>
+                Voeg hier links toe naar video's en afbeeldingen die gebruikt kunnen worden in de opdrachten. 
+                Deze links worden automatisch meegenomen in de prompt die je later kunt kopiëren.
+              </p>
+
+              {/* Link input sectie */}
+              <div style={{ marginBottom: '16px' }}>
+                <div className="link-input-container">
+                  <input
+                    type="text"
+                    placeholder="Plak hier je link (YouTube, Vimeo, afbeelding, website)..."
+                    value={linkInput}
+                    onChange={(e) => setLinkInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddLink();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddLink}
+                    disabled={!linkInput.trim()}
+                    className="link-add-button"
+                  >
+                    Voeg toe
+                  </button>
+                </div>
+                
+                {/* Link type indicator */}
+                {linkInput && (
+                  <div className="link-type-indicator">
+                    <span>Type:</span>
+                    {(() => {
+                      const url = linkInput.toLowerCase();
+                      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                        return <span style={{ color: '#f56565' }}>🎬 YouTube video</span>;
+                      } else if (url.includes('vimeo.com')) {
+                        return <span style={{ color: '#4299e1' }}>🎬 Vimeo video</span>;
+                      } else if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                        return <span style={{ color: '#48bb78' }}>🖼️ Afbeelding</span>;
+                      } else if (url.startsWith('http')) {
+                        return <span style={{ color: '#ed8936' }}>🌐 Website</span>;
+                      } else {
+                        return <span style={{ color: '#a0aec0' }}>❓ Onbekend</span>;
+                      }
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Toegevoegde links lijst */}
+              {addedLinks.length > 0 && (
+                <div>
+                  <h6 style={{ 
+                    margin: '0 0 8px 0', 
+                    color: '#e2e8f0', 
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}>
+                    Toegevoegde links ({addedLinks.length}):
+                  </h6>
+                  <div className="links-list">
+                    {addedLinks.map((link, index) => (
+                      <div key={index} className="link-item">
+                        <span className="link-icon" style={{ 
+                          color: (() => {
+                            const url = link.toLowerCase();
+                            if (url.includes('youtube.com') || url.includes('youtu.be')) return '#f56565';
+                            if (url.includes('vimeo.com')) return '#4299e1';
+                            if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return '#48bb78';
+                            return '#ed8936';
+                          })()
+                        }}>
+                          {(() => {
+                            const url = link.toLowerCase();
+                            if (url.includes('youtube.com') || url.includes('youtu.be')) return '🎬';
+                            if (url.includes('vimeo.com')) return '🎬';
+                            if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return '🖼️';
+                            return '🌐';
+                          })()}
+                        </span>
+                        <span className="link-text">
+                          {link}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveLink(index)}
+                          className="link-remove-button"
+                          title="Verwijder link"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tips sectie */}
+              <div className="links-tips">
+                <h6>
+                  💡 Tips voor het gebruik van links:
+                </h6>
+                <ul>
+                  <li>
+                    <strong>YouTube:</strong> Gebruik de link uit de adresbalk (niet de deel-link). De app leest automatisch video ID en titel uit.
+                  </li>
+                  <li>
+                    <strong>Transcripties:</strong> Voor video's met timestamps wordt automatisch een transcriptie meegenomen in de prompt.
+                  </li>
+                  <li>
+                    <strong>Afbeeldingen:</strong> Ondersteunde formaten: .png, .jpg, .jpeg, .gif, .webp, .svg
+                  </li>
+                  <li>
+                    <strong>Websites:</strong> Normale klikbare links die in antwoordsleutels worden getoond.
+                  </li>
+                </ul>
+              </div>
+            </div>
+            )}
           </div>
+            </div>
+
+          {/* Nieuwe Stap 3: Kies opdrachttypes en Tekenen‑status (verplaatst onder Stap 2) */}
+          <div className="ai-generator-section">
+            <h4 onClick={() => setOpenStep(openStep === 3 ? null : 3)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 3: Kies vraagtypen en Tekenen‑status</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 3 ? '▾' : '▸'}</span>
+              <span aria-label="status stap 3">{geselecteerdeTypes.length > 0 ? '✅' : '⚠️'}</span>
+            </h4>
+            <div style={{ display: openStep === 3 ? 'block' : 'none' }}>
+            <p className="instruction-text">
+              Selecteer welke opdrachttypes en welke Tekenen‑status de AI moet genereren. Deze instellingen worden meegenomen in de prompt.
+            </p>
+
+            {/* Opdracht types blok */}
+            <div className="form-group">
+              <div style={{ marginTop: 12, padding: '16px', backgroundColor: '#2d3748', borderRadius: '8px', border: '1px solid #4a5568' }}>
+                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Opdracht types (meerdere mogelijk):
+                  </label>
+                  {geselecteerdeTypes.length > 0 && (
+                    <span style={{ backgroundColor: '#4CAF50', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                      {geselecteerdeTypes.length} geselecteerd
+                    </span>
+                  )}
+                </div>
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> Vink de typen aan die je wilt laten genereren. <strong>Tip:</strong> Kies maximaal 2-3 types tegelijk voor betere output.
+                </div>
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    onClick={toggleAlleTypesUitklappen}
+                    style={{ backgroundColor: alleTypesUitgeklapt ? '#e53e3e' : '#4CAF50', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    title={alleTypesUitgeklapt ? 'Klik om alle types in te klappen' : 'Klik om alle types uit te klappen'}
+                  >
+                    {alleTypesUitgeklapt ? '🔽 Alles inklappen' : '🔼 Alles uitklappen'}
+                  </button>
+                </div>
+                <ul className="type-list">
+                  {BESCHIKBARE_TYPES.map((t) => (
+                    <li key={t} className={`type-item ${geselecteerdeTypes.includes(t) ? 'selected' : ''}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <label style={{ flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input type="checkbox" checked={geselecteerdeTypes.includes(t)} onChange={() => toggleType(t)} style={{ cursor: 'pointer' }} />
+                          <span className="type-title" style={{ cursor: 'pointer' }} onClick={() => toggleType(t)}>
+                            <span className="type-icon" aria-hidden>{opdrachtTypeIconen[t] || '❓'}</span>
+                            {t}
+                          </span>
+                        </label>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', backgroundColor: (openTypeUitleg === t || openTypeUitleg === 'all') ? '#4a5568' : 'transparent', transition: 'background-color 0.2s' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (openTypeUitleg === 'all') {
+                              setOpenTypeUitleg(null);
+                              setAlleTypesUitgeklapt(false);
+                            } else {
+                              setOpenTypeUitleg(openTypeUitleg === t ? null : t);
+                            }
+                          }}
+                          title="Klik voor uitleg en voorbeelden"
+                        >
+                          <span style={{ fontSize: '12px', transition: 'transform 0.2s', transform: (openTypeUitleg === t || openTypeUitleg === 'all') ? 'rotate(90deg)' : 'rotate(0deg)', color: '#a0aec0' }}>▶</span>
+                        </div>
+                      </div>
+                      {(openTypeUitleg === t || openTypeUitleg === 'all') && (
+                        <div style={{ marginTop: '8px', padding: '12px', backgroundColor: '#1a202c', borderRadius: '6px', border: '1px solid #2d3748' }}>
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ color: '#90cdf4', fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📖 Definitie</div>
+                            <div style={{ color: '#cbd5e0', fontSize: '13px', lineHeight: '1.5' }}>{TYPE_BESCHRIJVINGEN[t]}</div>
+                          </div>
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ color: '#90cdf4', fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🎯 Wat voor opdrachten vallen hieronder?</div>
+                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.5' }}>{TYPE_OPDRACHTEN_VOORBEELDEN[t]}</div>
+                          </div>
+                          <div>
+                            <div style={{ color: '#90cdf4', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>💡 Concrete voorbeelden</div>
+                            <div style={{ color: '#a0aec0', fontSize: '12px', lineHeight: '1.4' }} />
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Tekenen-status blok */}
+            <div className="form-group">
+              <div style={{ marginTop: 12, padding: '16px', backgroundColor: '#2d3748', borderRadius: '8px', border: '1px solid #4a5568' }}>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontWeight: 'bold', color: '#e2e8f0', marginBottom: '8px', display: 'block' }}>
+                    Tekenen‑status (filter voor generatie):
+                  </label>
+                </div>
+                <div className="instruction-text" style={{ marginBottom: 12 }}>
+                  <strong>Uitleg:</strong> De AI labelt elke opdracht met Tekenen = Ja, Mogelijk of Nee. Selecteer hieronder welke categorieën je wilt laten genereren.
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setIsTekenenUitlegOpen(!isTekenenUitlegOpen)}>
+                    <strong>📝 Uitgebreide uitleg en voorbeelden</strong>
+                    <span style={{ fontSize: '12px', transition: 'transform 0.2s', transform: isTekenenUitlegOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                  </div>
+                  {isTekenenUitlegOpen && (
+                    <div style={{ marginTop: '10px', padding: '12px', backgroundColor: '#1a202c', borderRadius: '6px', border: '1px solid #2d3748' }}>
+                      <p style={{ margin: '0 0 8px 0', color: '#e2e8f0' }}><strong>Standaardinstelling:</strong> alle drie categorieën.</p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}><strong>Als alle drie zijn geselecteerd:</strong> genereert de AI opdrachten uit alle categorieën.</p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}><strong>Als alleen Ja is geselecteerd:</strong> genereert de AI uitsluitend opdrachten waarbij tekenen verplicht is.</p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}><strong>Als alleen Mogelijk is geselecteerd:</strong> genereert de AI opdrachten waar tekenen optioneel is.</p>
+                      <p style={{ margin: '8px 0', color: '#cbd5e0' }}><strong>Als alleen Nee is geselecteerd:</strong> genereert de AI opdrachten zonder tekenen.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="tekenen-toggle-row">
+                  <label><input type="checkbox" checked={allowTekenenJa} onChange={(e) => setAllowTekenenJa(e.target.checked)} />Expliciet tekenen (Ja)</label>
+                  <label><input type="checkbox" checked={allowTekenenMogelijk} onChange={(e) => setAllowTekenenMogelijk(e.target.checked)} />Tekenen helpt (Mogelijk)</label>
+                  <label><input type="checkbox" checked={allowTekenenNee} onChange={(e) => setAllowTekenenNee(e.target.checked)} />Zonder tekenen (Nee)</label>
+                </div>
+              </div>
+            </div>
+          </div>
+            </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 3: Download bijlagen voor AI chatbot</h4>
+            <h4 onClick={() => setOpenStep(openStep === 4 ? null : 4)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 4: Download bijlagen voor AI chatbot</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 4 ? '▾' : '▸'}</span>
+            </h4>
+            <div style={{ display: openStep === 4 ? 'block' : 'none' }}>
             <p className="instruction-text">
               Download de benodigde bijlagen om mee te geven aan je AI chatbot. Deze helpen de AI om de juiste structuur en niveau-indeling te begrijpen.
               <strong>Kies zelf welke bestanden je nodig hebt, maar download altijd:</strong>
@@ -1263,9 +1469,14 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               </ul>
             </div>
           </div>
+            </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 4: Kies je AI‑chatbot</h4>
+            <h4 onClick={() => setOpenStep(openStep === 5 ? null : 5)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 5: Kies je AI‑chatbot</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 5 ? '▾' : '▸'}</span>
+            </h4>
+            <div style={{ display: openStep === 5 ? 'block' : 'none' }}>
             <p className="instruction-text">
               Chatbots en onderliggende modellen veranderen snel; kies wat voor jou werkt. Wil je meer garantie dat opdrachten echt op je eigen
               bronnen zijn gebaseerd, overweeg dan een chatbot die sterk op geüploade of gelinkte bronnen leunt (bijv. NotebookLM). Binnen een
@@ -1279,14 +1490,31 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               <button className="download-knop" onClick={() => window.open('https://chat.mistral.ai/', '_blank', 'noopener,noreferrer')}>Mistral</button>
             </div>
           </div>
+            </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 5: Kopieer de prompt</h4>
+            <h4 onClick={() => setOpenStep(openStep === 6 ? null : 6)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 6: Kopieer de prompt</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 6 ? '▾' : '▸'}</span>
+            </h4>
+            <div style={{ display: openStep === 6 ? 'block' : 'none' }}>
             <p className="instruction-text">
               Klik op "Kopieer Prompt" om de gegenereerde prompt naar je klembord te kopiëren. 
-              <strong>Let op:</strong> Je moet eerst het studentniveau selecteren en ten minste één opdrachttype selecteren in Stap 1 voordat je de prompt kunt kopiëren.
+              <strong>Let op:</strong> Je moet eerst het studentniveau selecteren in Stap 1 en ten minste één opdrachttype selecteren in Stap 3 voordat je de prompt kunt kopiëren.
               Plak deze vervolgens in je favoriete AI-tool (zoals ChatGPT, Claude, NotebookLM, etc.).
             </p>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '8px 0 12px' }}>
+              <label htmlFor="promptVariant" style={{ color: '#e2e8f0', fontWeight: 'bold' }}>Prompt variant:</label>
+              <select
+                id="promptVariant"
+                value={promptVariant}
+                onChange={(e) => setPromptVariant(e.target.value as 'standaard' | 'video')}
+                style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #4a5568', background: '#1a202c', color: '#e2e8f0' }}
+              >
+                <option value="standaard">Standaard</option>
+                <option value="video">Video (timestamps)</option>
+              </select>
+            </div>
             <button 
               className="kopieer-knop"
               onClick={() => {
@@ -1309,9 +1537,14 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               Kopieer Prompt
             </button>
           </div>
+            </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 6: Stappen in de AI‑chatbot</h4>
+            <h4 onClick={() => setOpenStep(openStep === 7 ? null : 7)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 7: Stappen in de AI‑chatbot</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 7 ? '▾' : '▸'}</span>
+            </h4>
+            <div style={{ display: openStep === 7 ? 'block' : 'none' }}>
             <ol className="steps-list">
               <li className="step-item">
                 <span className="step-badge">1</span>
@@ -1321,6 +1554,8 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                     <li className="substep-item"><span className="substep-badge">a</span><span>Sjabloon toevoegen.</span></li>
                     <li className="substep-item"><span className="substep-badge">b</span><span>Instructies voor niveau bepaling en opdracht types toevoegen (de gedownloade PDF's).</span></li>
                     <li className="substep-item"><span className="substep-badge">c</span><span>Br(on)nen toevoegen (indien van toepassing).</span></li>
+                    <li className="substep-item"><span className="substep-badge">d</span><span>Links naar video's en afbeeldingen toevoegen via de link functionaliteit in Stap 2.</span></li>
+                    <li className="substep-item"><span className="substep-badge">e</span><span>Controleer of het vinkje "AI moet expliciet uit opgegeven bronnen genereren" is aangevinkt (standaard aan).</span></li>
                   </ul>
                 </div>
               </li>
@@ -1343,7 +1578,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
                     <li className="substep-item"><span className="substep-badge">a</span><span>Geef bijsturing: extra instructies, voorbeelden of specificaties.</span></li>
                     <li className="substep-item"><span className="substep-badge">b</span><span>Vraag om extra opdrachten of aanpassingen.</span></li>
                     <li className="substep-item"><span className="substep-badge">c</span><span>Wijzig opdrachten handmatig waar nodig.</span></li>
-                    <li className="substep-item"><span className="substep-badge">d</span><span>Voeg links toe voor afbeeldingen/video's met timestamps in antwoordsleutels.</span></li>
+                    <li className="substep-item"><span className="substep-badge">d</span><span>Voeg links toe voor afbeeldingen/video's met timestamps in antwoordsleutels (of gebruik de link functionaliteit in Stap 2).</span></li>
                     <li className="substep-item"><span className="substep-badge">e</span><span>Controleer alles op juistheid, volledigheid en consistentie.</span></li>
                   </ul>
                 </div>
@@ -1394,9 +1629,14 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               </p>
             </div>
           </div>
+            </div>
 
           <div className="ai-generator-section">
-            <h4>Stap 7: Voeg opdrachten toe</h4>
+            <h4 onClick={() => setOpenStep(openStep === 8 ? null : 8)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Stap 8: Voeg opdrachten toe</span>
+              <span style={{ marginLeft: 'auto' }}>{openStep === 8 ? '▾' : '▸'}</span>
+            </h4>
+            <div style={{ display: openStep === 8 ? 'block' : 'none' }}>
             <p className="instruction-text">
               Upload het Excel-bestand met de door AI gegenereerde en door jou gecontroleerde/aangepaste opdrachten in de app via Instellingen → Opdrachtenbeheer.
             </p>
@@ -1418,6 +1658,7 @@ ${hoofdcategorie},${subcategorieen[1] || 'Subcategorie 2'},Feitenkennis,Ja,"Beno
               🎯 Sluit deze instructie en klik in instellingen op de 'Kies een bestand' knop
             </button>
           </div>
+            </div>
 
           <div className="ai-generator-section">
             <h4>Meer leren over AI en prompts</h4>

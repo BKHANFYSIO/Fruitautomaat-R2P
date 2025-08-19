@@ -376,6 +376,151 @@
 
 /* De .sluit-knop styling is verplaatst naar Modal.css als .modal-close-button */
 
+/* Link management styling */
+.link-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.link-input-container input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #4a5568;
+  background: #1a202c;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.link-input-container input:focus {
+  outline: none;
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
+}
+
+.link-add-button {
+  background-color: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.link-add-button:hover:not(:disabled) {
+  background-color: #38a169;
+}
+
+.link-add-button:disabled {
+  background-color: #4a5568;
+  cursor: not-allowed;
+}
+
+.link-type-indicator {
+  font-size: 12px;
+  color: #a0aec0;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.links-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  background-color: #1a202c;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2d3748;
+}
+
+.link-item:last-child {
+  border-bottom: none;
+}
+
+.link-item:nth-child(even) {
+  background-color: #2d3748;
+}
+
+.link-icon {
+  font-size: 16px;
+  min-width: 20px;
+}
+
+.link-text {
+  flex: 1;
+  font-size: 13px;
+  color: #cbd5e0;
+  word-break: break-all;
+}
+
+.link-remove-button {
+  background-color: transparent;
+  border: none;
+  color: #f56565;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  transition: background-color 0.2s;
+}
+
+.link-remove-button:hover {
+  background-color: rgba(245, 101, 101, 0.1);
+}
+
+.links-tips {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #1a202c;
+  border-radius: 6px;
+  border: 1px solid #2d3748;
+}
+
+.links-tips h6 {
+  margin: 0 0 8px 0;
+  color: #90cdf4;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.links-tips ul {
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: #a0aec0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.links-tips li {
+  margin-bottom: 4px;
+}
+
+.links-tips code {
+  background-color: #2d3748;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #e2e8f0;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .ai-generator-content {
@@ -390,5 +535,13 @@
   
   .ai-generator-section {
     padding: 12px;
+  }
+
+  .link-input-container {
+    flex-direction: column;
+  }
+
+  .link-add-button {
+    width: 100%;
   }
 } 

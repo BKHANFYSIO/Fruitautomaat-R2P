@@ -31,7 +31,14 @@ function parseYouTubeStartParam(url: URL): number | undefined {
 function parseVimeoStartParam(url: URL): number | undefined {
   // Vimeo ondersteunt #t= (bijv. #t=30s, #t=2m30s, #t=1h2m30s, #t=38.172)
   const hash = url.hash;
-  if (!hash) return undefined;
+  if (!hash) {
+    // Fallback: soms wordt t/start in query gebruikt → probeer die ook te parsen (seconden)
+    const qp = url.searchParams.get('t') || url.searchParams.get('start');
+    if (qp && /^\d+(?:\.\d+)?$/.test(qp)) {
+      return Math.max(0, parseFloat(qp));
+    }
+    return undefined;
+  }
   
   // Eerst proberen decimale seconden te matchen (bijv. #t=38.172)
   const decimalMatch = hash.match(/#t=(\d+\.\d+)/);
@@ -67,6 +74,10 @@ function extractEmbedsFromUrls(urls: string[]): EmbedItem[] {
           videoId = url.pathname.split('/').filter(Boolean)[1] || null;
         } else if (url.pathname.startsWith('/embed/')) {
           videoId = url.pathname.split('/').filter(Boolean)[1] || null;
+        }
+        // Sanitize: verwijder per-ongeluk aangeplakte query/hash uit videoId (bv. v=abc123?t=2m30s)
+        if (videoId) {
+          videoId = videoId.split(/[?&#]/)[0];
         }
         if (videoId) {
           const startSec = parseYouTubeStartParam(url);
@@ -144,8 +155,14 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
         if (offset > lastIndex) {
           parts.push(para.slice(lastIndex, offset));
         }
-        parts.push({ url: match });
-        allUrls.push(match);
+        // Strip trailing punctuation like .,;:!?
+        const cleaned = match.replace(/[.,;:!?]+$/, '');
+        const trailing = match.slice(cleaned.length);
+        parts.push({ url: cleaned });
+        if (trailing) {
+          parts.push(trailing);
+        }
+        allUrls.push(cleaned);
         lastIndex = offset + match.length;
         return match;
       });
@@ -200,6 +217,9 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
               const startQuery = typeof item.startSec === 'number' && item.startSec > 0 ? `&start=${item.startSec}` : '';
               const embedSrc = `https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1${startQuery}`;
               const entry: ManifestEntry | undefined = manifestMap[item.url];
+              const clickableHref = typeof item.startSec === 'number' && item.startSec > 0
+                ? `https://www.youtube.com/watch?v=${item.id}&t=${item.startSec}`
+                : item.url;
               return (
                 <div className="media-video" key={`yt-${i}`}>
                   <iframe
@@ -211,7 +231,7 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
                     sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                   />
                   <div className="media-link">
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">Open video</a>
+                    <a href={clickableHref} target="_blank" rel="noopener noreferrer">Open video</a>
                     {entry && (
                       <div className="apa-citation">{renderApa(entry)}</div>
                     )}
@@ -223,6 +243,9 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
               const startQuery = typeof item.startSec === 'number' && item.startSec > 0 ? `#t=${item.startSec}` : '';
               const embedSrc = `https://player.vimeo.com/video/${item.id}${startQuery}`;
               const entry: ManifestEntry | undefined = manifestMap[item.url];
+              const clickableHref = typeof item.startSec === 'number' && item.startSec > 0
+                ? `https://vimeo.com/${item.id}#t=${item.startSec}s`
+                : item.url;
               return (
                 <div className="media-video" key={`vimeo-${i}`}>
                   <iframe
@@ -234,7 +257,7 @@ export const AntwoordContent: React.FC<AntwoordContentProps> = ({ text }) => {
                     sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                   />
                   <div className="media-link">
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">Open video</a>
+                    <a href={clickableHref} target="_blank" rel="noopener noreferrer">Open video</a>
                     {entry && (
                       <div className="apa-citation">{renderApa(entry)}</div>
                     )}
